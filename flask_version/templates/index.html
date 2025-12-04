@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短剧搜索</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .search-input {
+            flex: 1;
+            max-width: 500px;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-btn {
+            padding: 12px 25px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #2980b9;
+        }
+
+        .search-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .results-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .drama-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .drama-item {
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .drama-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .drama-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .drama-link {
+            display: inline-block;
+            background: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+
+        .drama-link:hover {
+            background: #27ae60;
+        }
+
+        .drama-time {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 40px;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #3498db;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-input {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎬 短剧搜索</h1>
+
+    <form id="searchForm" class="search-box">
+        <input type="text"
+               name="search_name"
+               class="search-input"
+               placeholder="请输入短剧名称，如：太子..."
+               required>
+        <button type="submit" class="search-btn" id="searchBtn">搜索</button>
+    </form>
+
+    <div id="loading" class="loading hidden">搜索中...</div>
+    <div id="error" class="error hidden"></div>
+
+    <div id="resultsSection">
+        <div id="resultsInfo" class="results-info hidden"></div>
+        <div id="dramaList" class="drama-list"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const searchInput = document.querySelector('input[name="search_name"]');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const resultsInfo = document.getElementById('resultsInfo');
+        const dramaList = document.getElementById('dramaList');
+
+        const searchName = searchInput.value.trim();
+
+        if (!searchName) {
+            showError('请输入搜索关键词');
+            return;
+        }
+
+        // 显示加载状态
+        loading.classList.remove('hidden');
+        error.classList.add('hidden');
+        searchBtn.disabled = true;
+        searchBtn.textContent = '搜索中...';
+
+        // 发送Ajax请求
+        fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'search_name=' + encodeURIComponent(searchName)
+        })
+            .then(response => response.json())
+            .then(data => {
+                // 隐藏加载状态
+                loading.classList.add('hidden');
+                searchBtn.disabled = false;
+                searchBtn.textContent = '搜索';
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                if (data.success) {
+                    displayResults(data);
+                }
+            })
+            .catch(err => {
+                loading.classList.add('hidden');
+                searchBtn.disabled = false;
+                searchBtn.textContent = '搜索';
+                showError('搜索失败，请重试');
+                console.error('搜索错误:', err);
+            });
+    });
+
+    function showError(message) {
+        const error = document.getElementById('error');
+        error.textContent = message;
+        error.classList.remove('hidden');
+
+        // 清空结果
+        document.getElementById('resultsInfo').classList.add('hidden');
+        document.getElementById('dramaList').innerHTML = '';
+    }
+
+    function displayResults(data) {
+        const resultsInfo = document.getElementById('resultsInfo');
+        const dramaList = document.getElementById('dramaList');
+
+        // 更新结果信息
+        resultsInfo.textContent = `「${data.search_name}」的搜索结果（共 ${data.result_count} 条）`;
+        resultsInfo.classList.remove('hidden');
+
+        // 清空之前的搜索结果
+        dramaList.innerHTML = '';
+
+        if (data.dramas && data.dramas.length > 0) {
+            data.dramas.forEach(drama => {
+                const dramaItem = document.createElement('div');
+                dramaItem.className = 'drama-item';
+                dramaItem.innerHTML = `
+                        <div class="drama-name">${drama.name}</div>
+                        <a href="${drama.viewlink}" class="drama-link" target="_blank">  <!-- target="_blank" 新标签页打开 -->
+                            查看资源 🔗
+                        </a>
+                        <div class="drama-time">更新时间：${drama.addtime}</div>
+                    `;
+                dramaList.appendChild(dramaItem);
+            });
+        } else {
+            dramaList.innerHTML = '<div class="no-results">没有找到相关短剧</div>';
+        }
+
+        // 隐藏错误信息
+        document.getElementById('error').classList.add('hidden');
+    }
+</script>
+</body>
+</html>

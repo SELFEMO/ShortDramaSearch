@@ -1,0 +1,7 @@
+requests~=2.32.5
+flask~=2.2.5
+streamlit~=1.21.0
+pandas~=1.5.3
+PyQt5>=5.15.0
+pyinstaller>=4.0
+pyqt5-tools
