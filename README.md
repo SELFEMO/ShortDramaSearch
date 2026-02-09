@@ -1,6 +1,6 @@
 # 🎬 [短剧搜索系统](https://github.com/SELFEMO/ShortDramaSearch)
 
-一个多版本的短剧搜索Web应用，提供Flask和Streamlit两种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
+一个多版本的短剧搜索应用，提供Flask、Streamlit两种Web实现方式和基于Python Qt5开发的桌面应用实现方式，可以快速搜索短剧资源并获取百度网盘链接。
 
 ## 🌟 [项目简介](https://github.com/SELFEMO/ShortDramaSearch.git)
 
