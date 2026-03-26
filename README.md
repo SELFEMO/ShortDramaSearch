@@ -1,6 +1,6 @@
 # 🎬 [短剧搜索系统](https://github.com/SELFEMO/ShortDramaSearch)
 
-一个多版本的短剧搜索应用，提供Flask、Streamlit两种Web实现方式和基于Python Qt5开发的桌面应用实现方式，可以快速搜索短剧资源并获取百度网盘链接。
+一个多版本的短剧搜索应用，提供Flask、Streamlit、Desktop和Web在线版本四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
 
 ## 🌟 [项目简介](https://github.com/SELFEMO/ShortDramaSearch.git)
 
@@ -14,6 +14,20 @@
 - 💾 **数据导出** - 支持将搜索结果导出
 - 📱 **响应式设计** - 适配不同屏幕尺寸
 - ⚡ **实时反馈** - 搜索状态实时提示
+
+---
+
+## 🚩 [Github 直接访问版本（Online-Website版本）](https://yourusername.github.io/ShortDramaSearch/docs/index.html)：[https://selfemo.github.io/ShortDramaSearch/](https://selfemo.github.io/ShortDramaSearch/)
+
+### 主要功能
+
+- **零安装使用** - 无需安装任何环境，直接浏览器访问
+- **跨平台兼容** - 支持所有现代浏览器，PC和移动端均可使用
+- **响应式界面** - 自适应不同屏幕尺寸，移动端体验友好
+- **动态视觉效果** - 渐变背景、浮动光球、入场动画等现代UI设计
+- **多代理容错** - 内置多个CORS代理，提高API调用成功率
+- **图标自动获取** - 自动获取并显示网站favicon和来源平台图标
+- **GitHub Pages部署** - 支持一键部署到 GitHub Pages
 
 ---
 
@@ -280,6 +294,10 @@ ShortDramaSearch/
 ├── README.md                      # 项目说明文档
 ├── requirements.txt               # Python依赖包列表
 │
+├── docs                           # Online-Website版本文件夹
+│   └── index.html                 # Online-Website版本网页（单文件）
+│
+│
 ├── flask_version/                 # Flask版本
 │   ├── app.py                     # Flask主应用文件
 │   └── templates/                 # 网页模板目录
@@ -386,9 +404,10 @@ python build.py
 **Q: 如何选择使用哪个版本？**
 
 - A:
-    - **Flask版本**：适合需要高度自定义界面的场景
+    -- **Online-Website版本**：适合无需安装、即时访问、分享链接或部署在 GitHub Pages 的场景
+    -  **Flask版本**：适合需要高度自定义界面的场景
     - **Streamlit版本**：适合快速开发和数据展示场景
-    - **Desktop版本**：适合需要本地运行和跨平台支持的用户
+    - **Desktop版本**：适合需要本地运行和跨平台支持的用户🚩
 
 **Q: 可以同时运行多个版本吗？**
 
