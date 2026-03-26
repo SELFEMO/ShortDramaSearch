@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>短剧 / 资源聚合搜索 + 每日影视资源</title>
 
     <!-- 网站标识图标 -->
@@ -276,6 +276,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
 
         .search-btn:hover {
@@ -324,6 +325,7 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            flex-shrink: 0;
         }
 
         .tags-toggle:hover {
@@ -607,6 +609,8 @@
             margin-bottom: 8px;
             display: block;
             line-height: 1.4;
+            word-break: break-all;
+            /* 防止长标题撑开容器 */
         }
 
         .drama-title::before {
@@ -631,13 +635,15 @@
             font-size: 13px;
             color: var(--muted);
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 6px;
+            /* 改为flex-start防止内容换行对齐问题 */
         }
 
         .info-label {
             color: #888;
             min-width: 60px;
+            flex-shrink: 0;
         }
 
         .info-link {
@@ -703,6 +709,8 @@
             font-size: 14px;
             z-index: 1000;
             display: none;
+            max-width: 80%;
+            /* 移动端限制宽度 */
         }
 
         .search-status.show {
@@ -735,6 +743,135 @@
 
         .timeout-message strong {
             color: var(--accent);
+        }
+
+        /* ==================== 移动端响应式优化 ==================== */
+        @media (max-width: 768px) {
+
+            /* 整体布局 */
+            .main-content {
+                padding: 1.5rem 0.8rem;
+            }
+
+            /* 顶部导航 */
+            .app-nav {
+                flex-direction: column;
+                /* 改为上下结构 */
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .app-title {
+                font-size: 1.1rem;
+            }
+
+            .nav-link {
+                padding: 4px 10px;
+                font-size: 13px;
+            }
+
+            /* 标题区域 */
+            .header h1 {
+                font-size: 1.8rem;
+                /* 缩小标题 */
+            }
+
+            .header p {
+                font-size: 0.9rem;
+                padding: 0 10px;
+            }
+
+            .header-top {
+                gap: 0.5rem;
+            }
+
+            .title-logo {
+                width: 30px;
+                height: 30px;
+            }
+
+            /* 搜索框区域 */
+            .search-input {
+                /* 调整右侧预留空间，防止文字被按钮遮挡 */
+                padding: 14px 110px 14px 12px;
+                font-size: 16px;
+                /* 保持16px防止iOS自动缩放 */
+            }
+
+            .search-tools {
+                right: 4px;
+                gap: 4px;
+            }
+
+            .type-select {
+                /* 缩小选择框宽度 */
+                min-width: 70px;
+                max-width: 80px;
+                font-size: 12px;
+                padding: 4px;
+                /* 隐藏部分文字，靠截断显示 */
+                text-overflow: ellipsis;
+            }
+
+            .search-btn {
+                width: 36px;
+                height: 36px;
+            }
+
+            /* 热门标签 */
+            .tags-title {
+                font-size: 13px;
+            }
+
+            .tag {
+                padding: 4px 8px;
+                font-size: 12px;
+                margin-bottom: 4px;
+            }
+
+            .tag-rank {
+                display: none;
+                /* 移动端隐藏排名数字，节省空间 */
+            }
+
+            .tag-hot {
+                font-size: 11px;
+            }
+
+            /* 结果卡片 */
+            .result-item {
+                padding: 12px;
+            }
+
+            .drama-title {
+                font-size: 15px;
+            }
+
+            .info-item {
+                font-size: 12px;
+            }
+
+            .info-label {
+                min-width: 50px;
+            }
+
+            /* 每日影视页面工具栏 */
+            .daily-toolbar {
+                flex-direction: column;
+                /* 改为上下结构 */
+                align-items: stretch;
+            }
+
+            .daily-search-input {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .daily-refresh-btn {
+                width: 100%;
+                /* 按钮撑满 */
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -778,8 +915,8 @@
                     autocomplete="off">
                 <div class="search-tools">
                     <select id="typeSelect" class="type-select">
-                        <option value="all">全局聚合（全部类型）</option>
-                        <option value="netdisk">网盘聚合（主流网盘）</option>
+                        <option value="all">全局聚合</option>
+                        <option value="netdisk">网盘聚合</option>
                         <option value="baidu">百度网盘</option>
                         <option value="quark">夸克网盘</option>
                         <option value="aliyun">阿里云盘</option>
@@ -805,7 +942,7 @@
             <!-- 热门标签区域（由接口填充） -->
             <div class="tags-container" id="hotTagsContainer">
                 <div class="tags-header">
-                    <div class="tags-title">🔥 <strong>短剧热度榜</strong>（前10）</div>
+                    <div class="tags-title">🔥 <strong>短剧热度榜</strong></div>
                     <div class="tags-toggle" id="toggleMoreRank">
                         展开更多
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -820,7 +957,7 @@
                 <!-- vtquark 热度榜 -->
                 <div class="vtquark-section" id="vtquarkSection" style="display:none;">
                     <div class="vtquark-header">
-                        <div class="vtquark-title">🎬 <strong>夸克短剧热度榜</strong>（前10）</div>
+                        <div class="vtquark-title">🎬 <strong>夸克短剧热度榜</strong></div>
                         <div class="vtquark-toggle" id="toggleVtquark">
                             展开查看
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
