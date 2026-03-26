@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>短剧搜索</title>
 
-    <!-- 网站标识图标：直接调用酷乐 API 获取 kuleu.com 的 ico -->
+    <!-- 网站标识图标 -->
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
 
     <!-- 预连接字体服务 -->
@@ -128,7 +128,6 @@
             margin-bottom: 0.5rem;
         }
 
-        /* 主页 Logo 样式 */
         .title-logo {
             width: 40px;
             height: 40px;
@@ -136,8 +135,6 @@
             object-fit: contain;
             background: rgba(255, 255, 255, 0.05);
             padding: 2px;
-            /* 防止图标加载抖动 */
-            image-rendering: -webkit-optimize-contrast;
         }
 
         .header h1 {
@@ -203,6 +200,11 @@
             background: #ff8555;
         }
 
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .search-btn svg {
             width: 20px;
             height: 20px;
@@ -232,6 +234,11 @@
         .tag:hover {
             border-color: var(--accent);
             color: var(--accent);
+        }
+
+        .tag.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* --- 结果列表样式 --- */
@@ -269,7 +276,6 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* 短剧名称 - 突出显示 */
         .drama-title {
             font-size: 17px;
             font-weight: 700;
@@ -287,7 +293,6 @@
             display: inline-block;
         }
 
-        /* 信息列表 */
         .info-list {
             display: grid;
             grid-template-columns: 1fr;
@@ -360,6 +365,37 @@
                 transform: translateY(0);
             }
         }
+
+        /* 搜索状态指示器 */
+        .search-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -368,11 +404,13 @@
     <div class="floating-orb orb-1"></div>
     <div class="floating-orb orb-2"></div>
 
+    <!-- 搜索状态指示器 -->
+    <div id="searchStatus" class="search-status"></div>
+
     <main class="main-content">
         <!-- 标题区域 -->
         <header class="header">
             <div class="header-top">
-                <!-- 主页 Logo：使用酷乐 API 获取 -->
                 <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/"
                     alt="Logo">
                 <h1 class="font-display">短剧搜索</h1>
@@ -410,14 +448,12 @@
 
     <script>
         // === 配置部分 ===
-        // 搜索 API
         const SEARCH_API = 'https://api.kuleu.com/api/bddj';
-        // 图标 API (酷乐)
         const ICO_API = 'https://api.kuleu.com/api/ico';
 
-        // 公共 CORS 代理列表 (优先级从高到低)
+        // 公共 CORS 代理列表
         const CORS_PROXIES = [
-            'https://cors.sh/', // 专用 CORS 代理
+            'https://cors.sh/',
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?'
         ];
@@ -428,9 +464,23 @@
         const resultsArea = document.getElementById('resultsArea');
         const hotTags = document.getElementById('hotTags');
         const titleLogo = document.getElementById('titleLogo');
+        const searchStatus = document.getElementById('searchStatus');
 
-        // === 1. Logo 容错处理 ===
-        // 如果主页 Logo 加载失败（例如 API 超时），隐藏图片以免显示破损图标
+        // === 状态管理 ===
+        let isSearching = false;
+        let searchTimer = null;
+
+        // === 显示状态通知 ===
+        function showStatus(message, duration = 2000) {
+            searchStatus.textContent = message;
+            searchStatus.classList.add('show');
+
+            setTimeout(() => {
+                searchStatus.classList.remove('show');
+            }, duration);
+        }
+
+        // === Logo 容错处理 ===
         if (titleLogo) {
             titleLogo.onerror = function () {
                 console.warn('主页 Logo 加载失败，已隐藏');
@@ -438,27 +488,71 @@
             };
         }
 
-        // === 2. 搜索逻辑 ===
-        async function performSearch(keyword) {
+        // === 搜索逻辑（带防抖） ===
+        function performSearch(keyword) {
             const term = keyword.trim();
-            if (!term) return;
+            if (!term) {
+                showStatus('请输入搜索关键词');
+                return;
+            }
+
+            if (isSearching) {
+                showStatus('正在搜索中，请稍候...');
+                return;
+            }
+
+            // 清除之前的定时器
+            if (searchTimer) {
+                clearTimeout(searchTimer);
+            }
+
+            // 设置防抖延迟
+            searchTimer = setTimeout(() => {
+                executeSearch(term);
+            }, 300);
+        }
+
+        // === 执行实际搜索 ===
+        async function executeSearch(term) {
+            isSearching = true;
+            searchBtn.disabled = true;
+
+            // 禁用所有标签
+            document.querySelectorAll('.tag').forEach(tag => {
+                tag.classList.add('disabled');
+            });
 
             showLoading();
             console.log(`正在搜索: ${term}`);
+            showStatus(`正在搜索: ${term}`);
 
-            // 尝试直接请求 (虽然大概率会跨域失败，但先试一下)
-            let data = await tryFetchDirect(term);
+            try {
+                // 尝试直接请求
+                let data = await tryFetchDirect(term);
 
-            // 如果失败，依次尝试代理
-            if (!data) {
-                data = await tryFetchWithProxies(term);
-            }
+                // 如果失败，依次尝试代理
+                if (!data) {
+                    data = await tryFetchWithProxies(term);
+                }
 
-            // 处理结果
-            if (data) {
-                renderResults(data, term);
-            } else {
-                showError('搜索失败：网络连接错误或 API 暂时不可用。');
+                // 处理结果
+                if (data) {
+                    renderResults(data, term);
+                    showStatus(`找到 ${data.data?.length || 0} 个结果`);
+                } else {
+                    showError('搜索失败：网络连接错误或 API 暂时不可用。');
+                }
+            } catch (error) {
+                console.error('搜索出错:', error);
+                showError('搜索过程中发生错误，请重试。');
+            } finally {
+                isSearching = false;
+                searchBtn.disabled = false;
+
+                // 启用所有标签
+                document.querySelectorAll('.tag').forEach(tag => {
+                    tag.classList.remove('disabled');
+                });
             }
         }
 
@@ -466,7 +560,9 @@
             try {
                 const res = await fetch(`${SEARCH_API}?text=${encodeURIComponent(term)}`);
                 if (res.ok) return await res.json();
-            } catch (e) { console.log('直接请求受阻，切换代理...'); }
+            } catch (e) {
+                console.log('直接请求受阻，切换代理...');
+            }
             return null;
         }
 
@@ -475,7 +571,6 @@
 
             for (let proxy of CORS_PROXIES) {
                 try {
-                    // cors.sh 需要特殊拼接，其他通常是直接拼接 url
                     const proxyUrl = proxy.includes('cors.sh')
                         ? `${proxy}${encodeURIComponent(targetUrl)}`
                         : `${proxy}${encodeURIComponent(targetUrl)}`;
@@ -485,7 +580,6 @@
 
                     if (res.ok) {
                         const json = await res.json();
-                        // 检查是否是有效 JSON
                         if (json && (json.code || json.data)) {
                             console.log(`代理 ${proxy} 成功`);
                             return json;
@@ -498,7 +592,7 @@
             return null;
         }
 
-        // === 3. UI 渲染 ===
+        // === UI 渲染 ===
         function renderResults(data, term) {
             if (data.code === 200 && data.data && data.data.length > 0) {
                 const count = data.data.length;
@@ -521,20 +615,15 @@
             const link = item.viewlink || item.url || '#';
             const time = item.addtime || '未知时间';
 
-            // 从链接提取域名用于显示图标
             const domain = extractDomain(link);
-            // 使用酷乐 API 获取来源网站的图标
             const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
 
-            // 每一项依次延迟显示
             const delay = index * 0.05;
 
             return `
                 <div class="result-item" style="animation-delay: ${delay}s">
-                    <!-- 名称突出显示 -->
                     <div class="drama-title">${escapeHtml(name)}</div>
                     
-                    <!-- 详细信息列表 -->
                     <div class="info-list">
                         <div class="info-item">
                             <span class="info-label">更新时间:</span>
@@ -543,7 +632,6 @@
                         <div class="info-item">
                             <span class="info-label">观看链接:</span>
                             <a href="${escapeHtml(link)}" target="_blank" class="info-link">
-                                <!-- 尝试加载来源网站图标 -->
                                 ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'" title="来源图标">` : ''}
                                 ${escapeHtml(link)}
                             </a>
@@ -579,14 +667,24 @@
 
         // === 事件绑定 ===
         searchBtn.addEventListener('click', () => performSearch(searchInput.value));
+
         searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') performSearch(searchInput.value);
+            if (e.key === 'Enter') {
+                performSearch(searchInput.value);
+            }
         });
+
         hotTags.addEventListener('click', (e) => {
-            if (e.target.classList.contains('tag')) {
+            if (e.target.classList.contains('tag') && !e.target.classList.contains('disabled')) {
                 searchInput.value = e.target.dataset.keyword;
                 performSearch(e.target.dataset.keyword);
             }
+        });
+
+        // 防止双击提交
+        searchBtn.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            return false;
         });
     </script>
 </body>
