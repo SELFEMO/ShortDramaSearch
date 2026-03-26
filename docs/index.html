@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>短剧搜索</title>
+    <title>短剧 / 资源聚合搜索</title>
 
-    <!-- 网站标识图标：使用酷乐 API 获取 kuleu.com 的 ico -->
+    <!-- 网站标识图标 -->
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
 
     <!-- 预连接字体服务 -->
@@ -107,7 +107,7 @@
             z-index: 10;
             min-height: 100vh;
             padding: 2rem 1rem;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -157,7 +157,7 @@
             border-radius: 12px;
             transition: all 0.3s ease;
             overflow: hidden;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .search-box:focus-within {
@@ -167,7 +167,7 @@
 
         .search-input {
             width: 100%;
-            padding: 18px 140px 18px 20px;
+            padding: 18px 170px 18px 20px;
             background: transparent;
             border: none;
             outline: none;
@@ -179,7 +179,7 @@
             color: var(--muted);
         }
 
-        /* 右侧工具栏：数据源选择 + 搜索按钮 */
+        /* 右侧工具栏：类型选择 + 搜索按钮 */
         .search-tools {
             position: absolute;
             right: 6px;
@@ -190,7 +190,8 @@
             gap: 6px;
         }
 
-        .source-select {
+        /* 修改：扩展下拉框宽度 */
+        .type-select {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -199,9 +200,13 @@
             font-size: 13px;
             outline: none;
             cursor: pointer;
+            max-width: 180px;
+            /* 增加宽度 */
+            min-width: 150px;
+            /* 设置最小宽度 */
         }
 
-        .source-select option {
+        .type-select option {
             background: #1a1a24;
             color: var(--fg);
         }
@@ -264,11 +269,16 @@
             cursor: not-allowed;
         }
 
-        /* --- 结果列表样式 --- */
+        /* --- 结果统计 --- */
         .result-stats {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             color: var(--muted);
             font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .result-stats span {
@@ -276,17 +286,100 @@
             font-weight: 600;
         }
 
+        /* --- 结果按类型分块 --- */
+        .result-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+            color: var(--fg);
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .section-label {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .section-label.baidu {
+            background: rgba(6, 167, 255, 0.15);
+            color: #06a7ff;
+        }
+
+        .section-label.quark {
+            background: rgba(255, 149, 0, 0.15);
+            color: #ff9500;
+        }
+
+        .section-label.aliyun {
+            background: rgba(255, 204, 0, 0.15);
+            color: #ffc400;
+        }
+
+        .section-label.tianyi {
+            background: rgba(0, 153, 255, 0.15);
+            color: #0099ff;
+        }
+
+        .section-label.uc {
+            background: rgba(255, 87, 34, 0.15);
+            color: #ff5722;
+        }
+
+        .section-label.mobile {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+
+        .section-label['115'] {
+            background: rgba(103, 58, 183, 0.15);
+            color: #673ab7;
+        }
+
+        .section-label.pikpak {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+        }
+
+        .section-label.xunlei {
+            background: rgba(0, 150, 136, 0.15);
+            color: #009688;
+        }
+
+        .section-label['123'] {
+            background: rgba(255, 87, 34, 0.15);
+            color: #ff5722;
+        }
+
+        .section-label.magnet {
+            background: rgba(156, 39, 176, 0.15);
+            color: #9c27b0;
+        }
+
+        .section-label.ed2k {
+            background: rgba(63, 81, 181, 0.15);
+            color: #3f51b5;
+        }
+
         .result-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .result-item {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 16px 20px;
+            padding: 14px 18px;
             transition: all 0.2s ease;
             opacity: 0;
             transform: translateY(20px);
@@ -299,12 +392,12 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
-        /* 短剧名称 - 突出显示 */
+        /* 资源名称 */
         .drama-title {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
             color: var(--fg);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: block;
             line-height: 1.4;
         }
@@ -321,14 +414,14 @@
         .info-list {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 8px;
+            gap: 6px;
             padding-left: 22px;
             border-left: 2px solid var(--border);
             margin-left: 4px;
         }
 
         .info-item {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--muted);
             display: flex;
             align-items: center;
@@ -421,6 +514,22 @@
                 opacity: 1;
             }
         }
+
+        /* 新增：超时提示样式 */
+        .timeout-message {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: left;
+        }
+
+        .timeout-message strong {
+            color: var(--accent);
+        }
     </style>
 </head>
 
@@ -438,19 +547,33 @@
             <div class="header-top">
                 <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/"
                     alt="Logo">
-                <h1 class="font-display">短剧搜索</h1>
+                <h1 class="font-display">短剧 / 资源聚合搜索</h1>
             </div>
-            <p>发现精彩短剧，聚合全网资源（百度网盘 & 夸克网盘）</p>
+            <p>基于酷乐API聚合资源搜索接口，支持多种网盘与磁力链接</p>
+            <p style="margin-top: 6px; font-size: 13px; color: #888;">
+                提示：关键词之间的空格会被用于拆分搜索，以提高命中率，无需使用引号。
+            </p>
         </header>
 
         <!-- 搜索框 -->
         <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="输入短剧名称搜索..." autocomplete="off">
+            <input type="text" id="searchInput" class="search-input" placeholder="输入短剧 / 资源名称搜索..." autocomplete="off">
             <div class="search-tools">
-                <select id="sourceSelect" class="source-select">
-                    <option value="global">全局搜索（默认）</option>
+                <select id="typeSelect" class="type-select">
+                    <option value="all">全局聚合（全部类型）</option>
+                    <option value="netdisk">网盘聚合（主流网盘）</option>
                     <option value="baidu">百度网盘</option>
                     <option value="quark">夸克网盘</option>
+                    <option value="aliyun">阿里云盘</option>
+                    <option value="tianyi">天翼云盘</option>
+                    <option value="uc">UC网盘</option>
+                    <option value="mobile">移动云盘</option>
+                    <option value="115">115网盘</option>
+                    <option value="pikpak">PikPak</option>
+                    <option value="xunlei">迅雷网盘</option>
+                    <option value="123">123网盘</option>
+                    <option value="magnet">磁力链接</option>
+                    <option value="ed2k">电驴链接</option>
                 </select>
                 <button class="search-btn" id="searchBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -473,26 +596,66 @@
         <!-- 结果区域 -->
         <div id="resultsArea">
             <div class="status-message" id="initialState">
-                <p>输入关键词开始搜索（支持切换数据源：百度网盘 / 夸克网盘 / 全局）</p>
+                <p>已适配酷乐聚合资源搜索接口所有网盘类型与磁力/电驴链接。</p>
+                <p>选择"全局聚合"将一次性查询所有支持类型。</p>
+                <p style="margin-top: 10px; font-size: 13px; color: #888;">
+                    提示：输入“关键词 2024”这样的形式，系统会自动拆分搜索以提高命中率，无需使用引号。
+                </p>
             </div>
         </div>
     </main>
 
     <script>
         // === 配置部分 ===
-        // 百度网盘短剧搜索 API
-        const BAIDU_API = 'https://api.kuleu.com/api/bddj';
-        // 夸克网盘短剧搜索 API
-        const QUARK_API = 'https://api.kuleu.com/api/action';
-        // 图标 API
+        const JHSJ_API = 'https://api.kuleu.com/api/jhsj';
         const ICO_API = 'https://api.kuleu.com/api/ico';
 
-        // 公共 CORS 代理列表
         const CORS_PROXIES = [
             'https://cors.sh/',
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?'
         ];
+
+        // 新增：超时配置（毫秒）
+        const SEARCH_TIMEOUT = 15000; // 15秒超时
+
+        // 类型 -> 中文名映射（对应文档中的参数说明）
+        const TYPE_LABEL = {
+            baidu: '百度网盘',
+            aliyun: '阿里云盘',
+            quark: '夸克网盘',
+            tianyi: '天翼云盘',
+            uc: 'UC网盘',
+            mobile: '移动云盘',
+            '115': '115网盘',
+            pikpak: 'PikPak',
+            xunlei: '迅雷网盘',
+            '123': '123网盘',
+            magnet: '磁力链接',
+            ed2k: '电驴链接'
+        };
+
+        // 预设类型组（用于下拉菜单选项）
+        const TYPE_PRESETS = {
+            all: [
+                'baidu', 'aliyun', 'quark', 'tianyi', 'uc', 'mobile', '115', 'pikpak', 'xunlei', '123', 'magnet', 'ed2k'
+            ],
+            netdisk: [
+                'baidu', 'aliyun', 'quark', 'tianyi', 'uc', 'mobile', '115', 'pikpak', 'xunlei', '123'
+            ],
+            baidu: ['baidu'],
+            quark: ['quark'],
+            aliyun: ['aliyun'],
+            tianyi: ['tianyi'],
+            uc: ['uc'],
+            mobile: ['mobile'],
+            '115': ['115'],
+            pikpak: ['pikpak'],
+            xunlei: ['xunlei'],
+            '123': ['123'],
+            magnet: ['magnet'],
+            ed2k: ['ed2k']
+        };
 
         // === DOM 元素 ===
         const searchInput = document.getElementById('searchInput');
@@ -501,229 +664,423 @@
         const hotTags = document.getElementById('hotTags');
         const titleLogo = document.getElementById('titleLogo');
         const searchStatus = document.getElementById('searchStatus');
-        const sourceSelect = document.getElementById('sourceSelect');
+        const typeSelect = document.getElementById('typeSelect');
 
         // === 状态管理 ===
         let isSearching = false;
         let searchTimer = null;
-        let currentSource = 'global'; // 默认全局搜索
+        let currentPreset = 'all'; // 默认全局聚合
+        let timeoutId = null; // 超时定时器ID
 
-        // === 显示状态通知 ===
+        // === 辅助函数 ===
         function showStatus(message, duration = 2000) {
             searchStatus.textContent = message;
             searchStatus.classList.add('show');
-            setTimeout(() => {
-                searchStatus.classList.remove('show');
-            }, duration);
+            setTimeout(() => searchStatus.classList.remove('show'), duration);
         }
 
-        // === Logo 容错处理 ===
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[s]));
+        }
+
+        function extractDomain(url) {
+            if (!url) return '';
+            try { return new URL(url).hostname; } catch (e) { return ''; }
+        }
+
         if (titleLogo) {
-            titleLogo.onerror = function () {
-                console.warn('主页 Logo 加载失败，已隐藏');
-                this.style.display = 'none';
-            };
+            titleLogo.onerror = function () { this.style.display = 'none'; };
         }
 
-        // === 数据源切换 ===
-        sourceSelect.addEventListener('change', () => {
-            currentSource = sourceSelect.value;
-            // 如果当前有搜索内容，自动重新搜索
-            const term = searchInput.value.trim();
-            if (term) {
-                performSearch(term);
+        // 清除超时定时器
+        function clearTimeouts() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
             }
+        }
+
+        // === 类型选择 ===
+        typeSelect.addEventListener('change', () => {
+            currentPreset = typeSelect.value;
+            const term = searchInput.value.trim();
+            if (term) performSearch(term);
         });
 
         // === 搜索逻辑（带防抖） ===
         function performSearch(keyword) {
             const term = keyword.trim();
-            if (!term) {
-                showStatus('请输入搜索关键词');
-                return;
-            }
+            if (!term) { showStatus('请输入搜索关键词'); return; }
 
-            if (isSearching) {
-                showStatus('正在搜索中，请稍候...');
-                return;
-            }
+            if (isSearching) { showStatus('正在搜索中，请稍候...'); return; }
 
-            if (searchTimer) {
-                clearTimeout(searchTimer);
-            }
-
-            searchTimer = setTimeout(() => {
-                executeSearch(term);
-            }, 300);
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => executeSearch(term), 300);
         }
 
-        // === 执行实际搜索 ===
+        // === 搜索词预处理：生成多个搜索词 ===
+        function buildSearchTerms(rawInput) {
+            const input = rawInput.trim();
+            if (!input) return [];
+
+            // 1. 按空格拆分
+            const parts = input.split(/\s+/).filter(Boolean);
+
+            // 2. 总是保留“整体输入”作为一级搜索
+            const terms = new Set([input]);
+
+            // 3. 如果拆分后不止一个单词，再生成“单词级搜索”
+            if (parts.length > 1) {
+                parts.forEach(p => terms.add(p));
+            }
+
+            // 转成数组并排序：优先整体输入，再按单词长度降序
+            const arr = Array.from(terms);
+            arr.sort((a, b) => {
+                if (a === input) return -1;
+                if (b === input) return 1;
+                return b.length - a.length;
+            });
+
+            return arr;
+        }
+
+        // === 执行搜索：对每个搜索词发一次请求，合并结果 ===
         async function executeSearch(term) {
             isSearching = true;
             searchBtn.disabled = true;
+            document.querySelectorAll('.tag').forEach(tag => tag.classList.add('disabled'));
 
-            // 禁用所有标签
-            document.querySelectorAll('.tag').forEach(tag => {
-                tag.classList.add('disabled');
-            });
-
+            clearTimeouts();
             showLoading();
-            console.log(`正在搜索: ${term}，数据源: ${currentSource}`);
-            showStatus(`正在搜索: ${term}（${sourceSelect.options[sourceSelect.selectedIndex].text}）`);
+            console.log('正在搜索:', term, '类型预设:', currentPreset);
+            showStatus(`正在搜索: ${term}...`);
 
             try {
-                let results = [];
+                const types = TYPE_PRESETS[currentPreset] || TYPE_PRESETS.all;
+                const typeParam = types.join(',');
 
-                if (currentSource === 'baidu') {
-                    // 只调用百度网盘 API
-                    const data = await fetchSearchApi(BAIDU_API, term);
-                    if (data && data.code === 200 && data.data) {
-                        results = data.data.map(item => ({
-                            ...item,
-                            source: 'baidu'
-                        }));
-                    }
-                } else if (currentSource === 'quark') {
-                    // 只调用夸克网盘 API
-                    const data = await fetchSearchApi(QUARK_API, term);
-                    if (data && data.code === 200 && data.data) {
-                        results = data.data.map(item => ({
-                            ...item,
-                            source: 'quark'
-                        }));
-                    }
-                } else {
-                    // 全局搜索：并发调用两个 API，合并结果
-                    const [baiduData, quarkData] = await Promise.all([
-                        fetchSearchApi(BAIDU_API, term),
-                        fetchSearchApi(QUARK_API, term)
-                    ]);
+                // 生成搜索词列表
+                const searchTerms = buildSearchTerms(term);
 
-                    if (baiduData && baiduData.code === 200 && baiduData.data) {
-                        const baiduResults = baiduData.data.map(item => ({
-                            ...item,
-                            source: 'baidu'
-                        }));
-                        results = results.concat(baiduResults);
+                // 用 Map 去重：key = url
+                const mergedByType = {};
+                const urlSet = new Set();
+                let total = 0;
+
+                // 对每个搜索词发起一次请求
+                for (const st of searchTerms) {
+                    const fullUrl = `${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`;
+
+                    let data;
+                    try {
+                        data = await fetchSearchApi(fullUrl);
+                    } catch (e) {
+                        console.warn('搜索词失败:', st, e);
+                        continue; // 单个搜索词失败不影响整体
                     }
 
-                    if (quarkData && quarkData.code === 200 && quarkData.data) {
-                        const quarkResults = quarkData.data.map(item => ({
-                            ...item,
-                            source: 'quark'
-                        }));
-                        results = results.concat(quarkResults);
+                    if (data && data.code === 0 && data.data && data.data.merged_by_type) {
+                        const merged = data.data.merged_by_type;
+                        const typeList = Object.keys(merged);
+
+                        typeList.forEach(type => {
+                            const items = merged[type];
+                            if (!Array.isArray(items)) return;
+
+                            if (!mergedByType[type]) {
+                                mergedByType[type] = [];
+                            }
+
+                            items.forEach(item => {
+                                if (!item.url) return;
+                                if (urlSet.has(item.url)) return; // 去重
+
+                                urlSet.add(item.url);
+                                mergedByType[type].push({
+                                    ...item,
+                                    _searchTerm: st
+                                });
+                                total++;
+                            });
+                        });
+                    }
+
+                    // 简单限制：如果已经找到一定数量结果，可以提前停止后续请求
+                    if (total >= 200) {
+                        console.log('已达到合并上限，提前终止剩余搜索词');
+                        break;
                     }
                 }
 
-                // 按时间倒序排序（最新的在前）
-                results.sort((a, b) => {
-                    const timeA = a.addtime ? new Date(a.addtime).getTime() : 0;
-                    const timeB = b.addtime ? new Date(b.addtime).getTime() : 0;
-                    return timeB - timeA;
+                const typeList = Object.keys(mergedByType);
+
+                if (typeList.length === 0 || total === 0) {
+                    resultsArea.innerHTML = `
+                        <div class="status-message">
+                            <p>未找到相关结果。</p>
+                            <p style="margin-top: 8px; font-size: 13px; color: #888;">
+                                建议：尝试更换关键词或缩小搜索范围，例如“${escapeHtml(term)} 完整版”、“${escapeHtml(term)} 4K”等。
+                            </p>
+                        </div>
+                    `;
+                    showStatus('未找到相关结果');
+                    return;
+                }
+
+                // 对结果做简单排序：
+                // - 优先展示“整体搜索词”匹配的结果
+                // - 再按名称长度、时间等排序
+                typeList.forEach(type => {
+                    mergedByType[type].sort((a, b) => {
+                        const aIsWhole = a._searchTerm === term ? 1 : 0;
+                        const bIsWhole = b._searchTerm === term ? 1 : 0;
+                        if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole;
+
+                        const aLen = a.name ? a.name.length : 0;
+                        const bLen = b.name ? b.name.length : 0;
+                        return bLen - aLen;
+                    });
                 });
 
-                renderResults(results, term);
-                showStatus(`找到 ${results.length} 个结果`);
+                renderGroupedResults(mergedByType, typeList, term, total);
+                showStatus(`共找到 ${total} 条结果，${typeList.length} 个类型`);
 
             } catch (error) {
-                console.error('搜索出错:', error);
-                showError('搜索过程中发生错误，请重试。');
+                console.error('搜索过程捕获到错误:', error);
+                handleError(error, term);
             } finally {
+                clearTimeouts();
                 isSearching = false;
                 searchBtn.disabled = false;
-
-                // 启用所有标签
-                document.querySelectorAll('.tag').forEach(tag => {
-                    tag.classList.remove('disabled');
-                });
+                document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled'));
             }
         }
 
-        // === 通用 API 请求函数 ===
-        async function fetchSearchApi(baseUrl, term) {
-            // 尝试直接请求
-            let data = await tryFetchDirect(baseUrl, term);
-            if (!data) {
-                // 尝试通过代理请求
-                data = await tryFetchWithProxies(baseUrl, term);
+        // 新增：统一错误处理函数
+        function handleError(error, term) {
+            const errorType = error.errorType || 'unknown';
+            let title = '发生错误';
+            let message = '请稍后重试。';
+
+            switch (errorType) {
+                case 'timeout':
+                    title = '请求超时';
+                    message = '搜索结果过多，服务器响应时间过长。';
+                    break;
+                case 'network':
+                    title = '网络连接失败';
+                    message = '无法连接到服务器，请检查您的网络连接。';
+                    break;
+                case 'api':
+                    title = '接口提示';
+                    message = error.message || '接口返回错误信息';
+                    break;
+                case 'server':
+                    title = '服务器错误';
+                    message = `API 接口返回错误 (状态码: ${error.status || '未知'})，可能是由于搜索结果过多导致服务器压力过大。`;
+                    break;
+                case 'parse':
+                    title = '数据解析失败';
+                    message = '接口返回了无法解析的数据，请稍后重试。';
+                    break;
+                case 'cors':
+                    title = '跨域请求失败';
+                    message = '所有代理尝试均失败，请检查网络环境或稍后重试。';
+                    break;
+                default:
+                    if (error.message) message = error.message;
             }
-            return data;
+
+            showDetailedError(title, message, term);
         }
 
-        async function tryFetchDirect(baseUrl, term) {
+        // 新增：显示详细错误提示
+        function showDetailedError(title, message, term) {
+            const html = `
+                <div class="status-message">
+                    <p style="font-size: 16px; margin-bottom: 10px; color: var(--error);">${escapeHtml(title)}</p>
+                    <p style="font-size: 14px; color: var(--muted);">${escapeHtml(message)}</p>
+                    <div class="timeout-message" style="margin-top: 15px;">
+                        <p><strong>建议尝试：</strong></p>
+                        <p>1. 使用更具体的搜索词，例如：“${escapeHtml(term)} 2024” 或 “${escapeHtml(term)} 完整版”</p>
+                        <p>2. 选择单个网盘类型进行搜索，减少服务器压力</p>
+                        <p>3. 稍后重试，避开使用高峰期</p>
+                    </div>
+                    <button onclick="document.getElementById('searchInput').focus()" style="margin-top: 20px; padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        重新搜索
+                    </button>
+                </div>
+            `;
+            resultsArea.innerHTML = html;
+            showStatus(title, 5000);
+        }
+
+        // --- API 请求逻辑（重写，增加详细错误抛出） ---
+        async function fetchSearchApi(fullUrl) {
             try {
-                const res = await fetch(`${baseUrl}?text=${encodeURIComponent(term)}`);
-                if (res.ok) return await res.json();
-            } catch (e) {
-                console.log('直接请求受阻，切换代理...');
+                let data = await tryFetchDirect(fullUrl);
+                if (!data) {
+                    data = await tryFetchWithProxies(fullUrl);
+                }
+                if (!data) {
+                    throw { errorType: 'network', message: '所有请求尝试均失败，请检查网络连接。' };
+                }
+                return data;
+            } catch (error) {
+                if (error.errorType) throw error;
+                console.error('fetchSearchApi 捕获到未处理错误:', error);
+                throw { errorType: 'unknown', message: error.message || '发生未知错误', originalError: error };
             }
-            return null;
         }
 
-        async function tryFetchWithProxies(baseUrl, term) {
-            const targetUrl = `${baseUrl}?text=${encodeURIComponent(term)}`;
+        async function tryFetchDirect(url) {
+            const controller = new AbortController();
+            const signal = controller.signal;
+
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    controller.abort();
+                    reject({ errorType: 'timeout', message: '请求超时' });
+                }, SEARCH_TIMEOUT);
+            });
+
+            try {
+                const fetchPromise = fetch(url, { signal });
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+                if (!response.ok) {
+                    throw { errorType: 'server', status: response.status, message: `服务器返回错误: ${response.status}` };
+                }
+
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw { errorType: 'timeout', message: '请求超时' };
+                }
+                if (error.errorType) throw error;
+
+                console.warn('直接请求失败:', error);
+                return null;
+            } finally {
+                clearTimeouts();
+            }
+        }
+
+        async function tryFetchWithProxies(url) {
+            let lastError = null;
 
             for (let proxy of CORS_PROXIES) {
+                const controller = new AbortController();
+                const signal = controller.signal;
+
+                const proxyUrl = proxy.includes('cors.sh')
+                    ? `${proxy}${encodeURIComponent(url)}`
+                    : `${proxy}${encodeURIComponent(url)}`;
+
+                const timeoutPromise = new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        controller.abort();
+                        reject({ errorType: 'timeout', message: '代理请求超时' });
+                    }, SEARCH_TIMEOUT);
+                });
+
                 try {
-                    const proxyUrl = proxy.includes('cors.sh')
-                        ? `${proxy}${encodeURIComponent(targetUrl)}`
-                        : `${proxy}${encodeURIComponent(targetUrl)}`;
-
                     console.log(`尝试代理: ${proxy}`);
-                    const res = await fetch(proxyUrl);
+                    const fetchPromise = fetch(proxyUrl, { signal });
+                    const res = await Promise.race([fetchPromise, timeoutPromise]);
 
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json && (json.code || json.data)) {
-                            console.log(`代理 ${proxy} 成功`);
-                            return json;
-                        }
+                    if (!res.ok) {
+                        throw { errorType: 'server', status: res.status, message: `代理服务器返回错误: ${res.status}` };
                     }
-                } catch (e) {
-                    console.warn(`代理 ${proxy} 失败`, e);
+
+                    const json = await res.json();
+                    if (json && (json.code !== undefined || json.data)) {
+                        console.log(`代理 ${proxy} 成功`);
+                        return json;
+                    } else {
+                        throw { errorType: 'parse', message: '接口返回数据格式不正确' };
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        lastError = { errorType: 'timeout', message: '代理请求超时' };
+                        console.warn(`代理 ${proxy} 超时`);
+                    } else if (error.errorType) {
+                        lastError = error;
+                        console.warn(`代理 ${proxy} 失败:`, error.message);
+                    } else {
+                        lastError = { errorType: 'network', message: error.message };
+                        console.warn(`代理 ${proxy} 失败:`, error);
+                    }
+                    continue;
+                } finally {
+                    clearTimeouts();
                 }
             }
-            return null;
+
+            if (lastError) throw lastError;
+            throw { errorType: 'cors', message: '所有跨域代理尝试均失败' };
         }
 
-        // === UI 渲染 ===
-        function renderResults(results, term) {
-            if (!results || results.length === 0) {
+        // --- UI 渲染：按类型分组 ---
+        function renderGroupedResults(mergedByType, typeList, term, total) {
+            if (!typeList || typeList.length === 0) {
                 resultsArea.innerHTML = `<div class="status-message">未找到相关结果</div>`;
                 return;
             }
 
-            const count = results.length;
-            let html = `<div class="result-stats">找到 <span>${count}</span> 个 "${escapeHtml(term)}" 的相关结果</div>`;
-            html += '<div class="result-list">';
+            let html = `
+                <div class="result-stats">
+                    <span>关键词：${escapeHtml(term)}</span>
+                    <span>共 ${total} 条结果 · ${typeList.length} 个类型</span>
+                </div>
+            `;
 
-            results.forEach((item, index) => {
-                html += createResultItem(item, index);
+            typeList.forEach(type => {
+                const items = mergedByType[type];
+                if (!Array.isArray(items) || items.length === 0) return;
+
+                const typeLabel = TYPE_LABEL[type] || type;
+                const safeType = type.replace(/\s+/g, '_');
+
+                html += `
+                    <div class="result-section" data-type="${safeType}">
+                        <div class="section-header">
+                            <div>
+                                <span class="section-label ${safeType}">${escapeHtml(typeLabel)}</span>
+                                <span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span>
+                            </div>
+                        </div>
+                        <div class="result-list">
+                `;
+
+                items.forEach((item, index) => {
+                    html += createResultItem(item, type, index);
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
             });
 
-            html += '</div>';
             resultsArea.innerHTML = html;
         }
 
-        function createResultItem(item, index) {
-            const name = item.name || '未知短剧';
-            const link = item.viewlink || item.url || '#';
-            const time = item.addtime || '未知时间';
-            const sourceType = item.source || (link.includes('quark.cn') ? 'quark' : 'baidu');
+        function createResultItem(item, type, index) {
+            const name = item.name || '未知资源';
+            const link = item.url || '#';
+            const pwd = item.pwd || '';
+            const typeLabel = TYPE_LABEL[type] || type;
 
             const domain = extractDomain(link);
             const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
 
             const delay = index * 0.05;
-
-            // 根据来源显示不同标签
-            let sourceLabel = '来源未知';
-            if (sourceType === 'baidu') {
-                sourceLabel = '百度网盘';
-            } else if (sourceType === 'quark') {
-                sourceLabel = '夸克网盘';
-            }
 
             return `
                 <div class="result-item" style="animation-delay: ${delay}s">
@@ -732,44 +1089,40 @@
                     <div class="info-list">
                         <div class="info-item">
                             <span class="info-label">来源:</span>
-                            <span style="color: #aaa;">${sourceLabel}</span>
+                            <span style="color: ${type === 'baidu' ? '#06a7ff' :
+                    type === 'quark' ? '#ff9500' :
+                        type === 'aliyun' ? '#ffc400' :
+                            '#aaa'
+                };">${escapeHtml(typeLabel)}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">更新时间:</span>
-                            <span>${escapeHtml(time)}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">观看链接:</span>
+                            <span class="info-label">链接:</span>
                             <a href="${escapeHtml(link)}" target="_blank" class="info-link">
                                 ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'" title="来源图标">` : ''}
                                 ${escapeHtml(link)}
                             </a>
                         </div>
+                        ${pwd ? `
+                        <div class="info-item">
+                            <span class="info-label">密码:</span>
+                            <span style="color: #f59e0b;">${escapeHtml(pwd)}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
         }
 
-        // === 辅助函数 ===
-        function extractDomain(url) {
-            if (!url) return '';
-            try {
-                return new URL(url).hostname;
-            } catch (e) {
-                return '';
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            return String(text).replace(/[&<>"']/g, function (s) {
-                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-                return map[s];
-            });
-        }
-
         function showLoading() {
-            resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`;
+            resultsArea.innerHTML = `
+                <div class="status-message">
+                    <div class="spinner"></div>
+                    <p>正在搜索...</p>
+                    <p style="margin-top: 8px; font-size: 12px; color: #888;">
+                        已自动拆分关键词进行多次搜索，以提升命中率。如长时间无响应，请尝试缩小搜索范围。
+                    </p>
+                </div>
+            `;
         }
 
         function showError(msg) {
@@ -780,9 +1133,7 @@
         searchBtn.addEventListener('click', () => performSearch(searchInput.value));
 
         searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                performSearch(searchInput.value);
-            }
+            if (e.key === 'Enter') performSearch(searchInput.value);
         });
 
         hotTags.addEventListener('click', (e) => {
@@ -790,12 +1141,6 @@
                 searchInput.value = e.target.dataset.keyword;
                 performSearch(e.target.dataset.keyword);
             }
-        });
-
-        // 防止双击提交
-        searchBtn.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            return false;
         });
     </script>
 </body>
