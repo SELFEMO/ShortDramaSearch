@@ -17,7 +17,7 @@
 
 ---
 
-## 🚩 [Github 直接访问版本（Online-Website版本）]([https://yourusername.github.io](https://github.com/SELFEMO/ShortDramaSearch/tree/master/docs/index.html)
+## 🚩 [Github 直接访问版本（Online-Website版本）](https://github.com/SELFEMO/ShortDramaSearch/tree/master/docs/index.html)
 
 ***🔗 Github Page 访问链接：[https://selfemo.github.io/ShortDramaSearch/](https://selfemo.github.io/ShortDramaSearch/)***
 
