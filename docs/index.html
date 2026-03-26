@@ -2,872 +2,613 @@
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>短剧搜索</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;800&family=ZCOOL+KuaiLe&display=swap"
-    rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --bg-secondary: #12121a;
-      --fg: #f0f0f5;
-      --muted: #6b6b80;
-      --accent: #ff6b35;
-      --accent-glow: rgba(255, 107, 53, 0.4);
-      --card: #1a1a24;
-      --border: #2a2a3a;
-      --success: #22c55e;
-      --error: #ef4444;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Noto Sans SC', sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .font-display {
-      font-family: 'ZCOOL KuaiLe', cursive;
-    }
-
-    /* === 布局工具类 === */
-    .container {
-      max-width: 56rem;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .flex {
-      display: flex;
-    }
-
-    .flex-wrap {
-      flex-wrap: wrap;
-    }
-
-    .justify-center {
-      justify-content: center;
-    }
-
-    .items-center {
-      align-items: center;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    @media (min-width: 768px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    /* === 动态背景 === */
-    .bg-pattern {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 107, 53, 0.15), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.1), transparent),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
-    }
-
-    .grid-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
-    }
-
-    .floating-orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.5;
-      animation: float 20s ease-in-out infinite;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .orb-1 {
-      width: 400px;
-      height: 400px;
-      background: var(--accent);
-      top: -100px;
-      right: -100px;
-    }
-
-    .orb-2 {
-      width: 300px;
-      height: 300px;
-      background: #8b5cf6;
-      bottom: -50px;
-      left: -50px;
-      animation-delay: -10s;
-    }
-
-    @keyframes float {
-
-      0%,
-      100% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      33% {
-        transform: translate(30px, -30px) scale(1.05);
-      }
-
-      66% {
-        transform: translate(-20px, 20px) scale(0.95);
-      }
-    }
-
-    /* === 主内容区 === */
-    .main-content {
-      position: relative;
-      z-index: 10;
-      min-height: 100vh;
-      padding: 3rem 1rem;
-    }
-
-    @media (min-width: 768px) {
-      .main-content {
-        padding: 5rem 1rem;
-      }
-    }
-
-    /* === 标题区域 === */
-    .header {
-      text-align: center;
-      margin-bottom: 3rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .header-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .title-logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      object-fit: contain;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px;
-    }
-
-    .header h1 {
-      font-size: 3rem;
-      margin: 0;
-      letter-spacing: 0.05em;
-    }
-
-    @media (min-width: 768px) {
-      .header h1 {
-        font-size: 3.5rem;
-      }
-    }
-
-    .header p {
-      font-size: 1.125rem;
-      color: var(--muted);
-      margin-top: 0.5rem;
-    }
-
-    /* === 搜索区域 === */
-    .search-container {
-      margin-bottom: 2rem;
-    }
-
-    .search-box {
-      position: relative;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      transition: all 0.3s ease;
-      overflow: hidden;
-    }
-
-    .search-box::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, transparent 50%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    .search-box:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px var(--accent-glow), 0 20px 40px rgba(0, 0, 0, 0.3);
-    }
-
-    .search-box:focus-within::before {
-      opacity: 1;
-    }
-
-    .search-input {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      padding: 20px 60px 20px 24px;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--fg);
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-    }
-
-    @media (max-width: 640px) {
-      .search-input {
-        font-size: 16px;
-        padding: 16px 56px 16px 16px;
-      }
-    }
-
-    .search-input::placeholder {
-      color: var(--muted);
-    }
-
-    .search-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 3;
-      width: 48px;
-      height: 48px;
-      background: var(--accent);
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    @media (max-width: 640px) {
-      .search-btn {
-        width: 40px;
-        height: 40px;
-      }
-    }
-
-    .search-btn:hover {
-      background: #ff8555;
-      transform: translateY(-50%) scale(1.05);
-    }
-
-    .search-btn:active {
-      transform: translateY(-50%) scale(0.95);
-    }
-
-    .search-btn svg {
-      width: 22px;
-      height: 22px;
-      color: white;
-    }
-
-    /* === 热门标签 === */
-    .tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.75rem;
-      margin-bottom: 3rem;
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      font-size: 14px;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tag:hover {
-      background: rgba(255, 107, 53, 0.15);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .tag.small {
-      padding: 4px 10px;
-      font-size: 12px;
-      cursor: default;
-    }
-
-    .tag.small:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: var(--border);
-      color: var(--muted);
-    }
-
-    /* === 结果卡片 === */
-    .result-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      opacity: 0;
-      transform: translateY(30px);
-    }
-
-    .result-card.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .result-card:hover {
-      border-color: var(--accent);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--accent);
-    }
-
-    .card-image {
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      background: var(--bg-secondary);
-    }
-
-    .card-content {
-      padding: 20px;
-    }
-
-    .card-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    @media (max-width: 640px) {
-      .card-title {
-        font-size: 16px;
-      }
-    }
-
-    .card-desc {
-      color: var(--muted);
-      font-size: 14px;
-      margin-top: 8px;
-      line-height: 1.6;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .card-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 16px;
-      padding: 10px 20px;
-      background: rgba(255, 107, 53, 0.15);
-      color: var(--accent);
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .card-link:hover {
-      background: var(--accent);
-      color: white;
-    }
-
-    /* 来源站点小 logo */
-    .source-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      object-fit: contain;
-      vertical-align: middle;
-      margin-right: 4px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    /* === 状态提示 === */
-    .status-message {
-      text-align: center;
-      padding: 60px 20px;
-    }
-
-    .status-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .status-icon.loading {
-      background: rgba(255, 107, 53, 0.2);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    .status-icon.error {
-      background: rgba(239, 68, 68, 0.2);
-    }
-
-    .status-icon.empty {
-      background: rgba(107, 107, 128, 0.2);
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-
-      50% {
-        transform: scale(1.1);
-        opacity: 0.7;
-      }
-    }
-
-    .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(255, 107, 53, 0.3);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* === 入场动画 === */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(40px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-in {
-      animation: fadeInUp 0.6s ease forwards;
-    }
-
-    .delay-1 {
-      animation-delay: 0.1s;
-      opacity: 0;
-    }
-
-    .delay-2 {
-      animation-delay: 0.2s;
-      opacity: 0;
-    }
-
-    .delay-3 {
-      animation-delay: 0.3s;
-      opacity: 0;
-    }
-
-    /* === 结果统计 === */
-    .result-stats {
-      margin-bottom: 1.5rem;
-      color: var(--muted);
-    }
-
-    .result-stats span {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* === Reduced motion === */
-    @media (prefers-reduced-motion: reduce) {
-
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* === Focus visible === */
-    .search-btn:focus-visible,
-    .card-link:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .search-input:focus-visible {
-      outline: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短剧搜索</title>
+    <!-- 动态 Favicon，初始为空，由 JS 填充 -->
+    <link rel="icon" type="image/x-icon"
+        href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAAAAAAAAA vividlywAAAGQAAACRAAAAkAAAAJEAAACQAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;800&family=ZCOOL+KuaiLe&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --bg-secondary: #12121a;
+            --fg: #f0f0f5;
+            --muted: #6b6b80;
+            --accent: #ff6b35;
+            --accent-glow: rgba(255, 107, 53, 0.4);
+            --card: #1a1a24;
+            --border: #2a2a3a;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+
+        /* 背景效果 */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 107, 53, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.1), transparent),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
+        }
+
+        .floating-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            top: -100px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #8b5cf6;
+            bottom: -50px;
+            left: -50px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -30px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.95);
+            }
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 标题区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .title-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            letter-spacing: 0.05em;
+            color: var(--fg);
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: var(--muted);
+        }
+
+        /* 搜索区域 */
+        .search-box {
+            position: relative;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 60px 18px 20px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--fg);
+            font-size: 16px;
+        }
+
+        .search-input::placeholder {
+            color: var(--muted);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .search-btn:hover {
+            background: #ff8555;
+        }
+
+        .search-btn svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        /* 热门标签 */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-size: 13px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* 结果列表样式 */
+        .result-stats {
+            margin-bottom: 1rem;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .result-stats span {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .result-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .result-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 短剧名称 - 突出显示 */
+        .drama-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--fg);
+            margin-bottom: 10px;
+            display: block;
+            line-height: 1.4;
+        }
+
+        .drama-title::before {
+            content: '▶';
+            color: var(--accent);
+            margin-right: 8px;
+            font-size: 14px;
+            display: inline-block;
+        }
+
+        /* 信息列表 */
+        .info-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding-left: 22px;
+            border-left: 2px solid var(--border);
+            margin-left: 4px;
+        }
+
+        .info-item {
+            font-size: 14px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-label {
+            color: #888;
+            min-width: 60px;
+        }
+
+        .info-link {
+            color: var(--accent);
+            text-decoration: none;
+            word-break: break-all;
+            transition: opacity 0.2s;
+        }
+
+        .info-link:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+
+        .source-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            object-fit: contain;
+            vertical-align: middle;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 状态 */
+        .status-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <!-- 背景层 -->
-  <div class="bg-pattern"></div>
-  <div class="grid-overlay"></div>
-  <div class="floating-orb orb-1"></div>
-  <div class="floating-orb orb-2"></div>
+    <div class="bg-pattern"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
 
-  <!-- 主内容 -->
-  <main class="main-content">
-    <div class="container">
-      <!-- 标题区域 -->
-      <header class="header animate-in">
-        <div class="header-title-row">
-          <!-- 通过酷乐 API 获取标题 logo -->
-          <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://github.com/"
-            alt="短剧搜索 logo">
-          <h1 class="font-display" style="color: var(--fg);">短剧搜索</h1>
-        </div>
-        <p>发现精彩短剧，随时随地观看</p>
-      </header>
+    <main class="main-content">
+        <!-- 标题区域 -->
+        <header class="header">
+            <div class="header-top">
+                <img id="titleLogo" class="title-logo" src="" alt="Logo">
+                <h1 class="font-display">短剧搜索</h1>
+            </div>
+            <p>发现精彩短剧，聚合全网资源</p>
+        </header>
 
-      <!-- 搜索区域 -->
-      <div class="search-container animate-in delay-1">
+        <!-- 搜索框 -->
         <div class="search-box">
-          <input type="text" id="searchInput" class="search-input" placeholder="输入短剧名称搜索..." autocomplete="off"
-            aria-label="搜索短剧">
-          <button class="search-btn" id="searchBtn" aria-label="搜索">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-              stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
+            <input type="text" id="searchInput" class="search-input" placeholder="输入短剧名称搜索..." autocomplete="off">
+            <button class="search-btn" id="searchBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                </svg>
+            </button>
         </div>
-      </div>
 
-      <!-- 热门标签 -->
-      <div class="tags-container animate-in delay-2" id="hotTags">
-        <span class="tag" data-keyword="霸总">霸总</span>
-        <span class="tag" data-keyword="甜宠">甜宠</span>
-        <span class="tag" data-keyword="穿越">穿越</span>
-        <span class="tag" data-keyword="重生">重生</span>
-        <span class="tag" data-keyword="都市">都市</span>
-        <span class="tag" data-keyword="古装">古装</span>
-      </div>
-
-      <!-- 结果区域 -->
-      <div id="resultsArea" class="animate-in delay-3">
-        <div class="status-message" id="initialState">
-          <div class="status-icon empty">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-              style="color: var(--muted);">
-              <path
-                d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />
-            </svg>
-          </div>
-          <p style="color: var(--muted);">输入关键词开始搜索</p>
+        <!-- 热门标签 -->
+        <div class="tags-container" id="hotTags">
+            <span class="tag" data-keyword="霸总">霸总</span>
+            <span class="tag" data-keyword="甜宠">甜宠</span>
+            <span class="tag" data-keyword="穿越">穿越</span>
+            <span class="tag" data-keyword="重生">重生</span>
+            <span class="tag" data-keyword="古装">古装</span>
         </div>
-      </div>
-    </div>
-  </main>
 
-  <script>
-    // DOM 元素初始化
-    var searchInput = document.getElementById('searchInput');
-    var searchBtn = document.getElementById('searchBtn');
-    var resultsArea = document.getElementById('resultsArea');
-    var hotTags = document.getElementById('hotTags');
+        <!-- 结果区域 -->
+        <div id="resultsArea">
+            <div class="status-message" id="initialState">
+                <p>输入关键词开始搜索</p>
+            </div>
+        </div>
+    </main>
 
-    // 短剧搜索 API
-    var DRAMA_API = 'https://api.kuleu.com/api/action';
-    // CORS 代理
-    var CORS_PROXIES = [
-      'https://corsproxy.io/?',
-      'https://api.allorigins.win/raw?url='
-    ];
+    <script>
+        // === 配置部分 ===
+        // 搜索 API (原接口)
+        const SEARCH_API = 'https://api.kuleu.com/api/bddj';
+        // 图标 API (酷乐)
+        const ICO_API = 'https://api.kuleu.com/api/ico';
+        // 备用图标 API (Google 服务，防备酷乐 API 无图)
+        const ICO_BACKUP = 'https://www.google.com/s2/favicons?domain=';
 
-    // 根据网址获取酷乐 ico 接口 URL
-    function getKuleIcoUrl(pageUrl) {
-      return 'https://api.kuleu.com/api/ico?url=' + encodeURIComponent(pageUrl);
-    }
+        // 公共 CORS 代理列表 (优先级从高到低)
+        const CORS_PROXIES = [
+            'https://cors.sh/', // 专用 CORS 代理，通常较稳定
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?'
+        ];
 
-    // 从 URL 中提取域名
-    function extractDomain(url) {
-      try {
-        var u = new URL(url);
-        return u.hostname; // 如 pan.quark.cn
-      } catch (e) {
-        return '';
-      }
-    }
+        // === DOM 元素 ===
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsArea = document.getElementById('resultsArea');
+        const hotTags = document.getElementById('hotTags');
+        const titleLogo = document.getElementById('titleLogo');
 
-    // 搜索函数
-    async function performSearch(keyword) {
-      var searchTerm = keyword.trim();
-      if (!searchTerm) {
-        showError('请输入搜索关键词');
-        return;
-      }
+        // === 1. Logo 与 Favicon 处理 ===
+        function initLogo() {
+            // 获取当前页面域名，如果没有则使用默认
+            const domain = window.location.hostname || 'github.com';
+            const pageUrl = 'https://' + domain;
 
-      showLoading();
-      console.log('[INFO] 开始搜索: ' + searchTerm);
+            // 构建酷乐 API URL
+            const kuleUrl = `${ICO_API}?url=${encodeURIComponent(pageUrl)}`;
 
-      // 直接请求短剧搜索 API
-      try {
-        console.log('[INFO] 尝试直接请求短剧 API...');
-        var response = await fetch(DRAMA_API + '?text=' + encodeURIComponent(searchTerm), {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
+            // 1. 设置标题旁的 Logo
+            titleLogo.src = kuleUrl;
+
+            // 2. 设置浏览器标签页 Favicon
+            changeFavicon(kuleUrl);
+
+            // 3. 容错处理：如果酷乐 API 加载失败，尝试备用 API
+            titleLogo.onerror = function () {
+                console.warn('酷乐 Logo API 加载失败，尝试备用方案');
+                const backupUrl = ICO_BACKUP + domain;
+                this.src = backupUrl;
+                changeFavicon(backupUrl);
+            };
+        }
+
+        function changeFavicon(src) {
+            let favicon = document.querySelector('link[rel="icon"]');
+            if (!favicon) {
+                favicon = document.createElement('link');
+                favicon.rel = 'icon';
+                document.head.appendChild(favicon);
+            }
+            favicon.href = src;
+        }
+
+        // === 2. 搜索逻辑 ===
+        async function performSearch(keyword) {
+            const term = keyword.trim();
+            if (!term) return;
+
+            showLoading();
+            console.log(`正在搜索: ${term}`);
+
+            // 尝试直接请求 (虽然大概率会跨域失败，但先试一下)
+            let data = await tryFetchDirect(term);
+
+            // 如果失败，依次尝试代理
+            if (!data) {
+                data = await tryFetchWithProxies(term);
+            }
+
+            // 处理结果
+            if (data) {
+                renderResults(data, term);
+            } else {
+                showError('搜索失败：网络连接错误或 API 暂时不可用。');
+            }
+        }
+
+        async function tryFetchDirect(term) {
+            try {
+                const res = await fetch(`${SEARCH_API}?text=${encodeURIComponent(term)}`);
+                if (res.ok) return await res.json();
+            } catch (e) { console.log('直接请求受阻，切换代理...'); }
+            return null;
+        }
+
+        async function tryFetchWithProxies(term) {
+            const targetUrl = `${SEARCH_API}?text=${encodeURIComponent(term)}`;
+
+            for (let proxy of CORS_PROXIES) {
+                try {
+                    // cors.sh 需要特殊拼接，其他通常是直接拼接 url
+                    const proxyUrl = proxy.includes('cors.sh')
+                        ? `${proxy}${encodeURIComponent(targetUrl)}`
+                        : `${proxy}${encodeURIComponent(targetUrl)}`;
+
+                    console.log(`尝试代理: ${proxy}`);
+                    const res = await fetch(proxyUrl);
+
+                    if (res.ok) {
+                        const json = await res.json();
+                        // 检查是否是有效 JSON
+                        if (json && (json.code || json.data)) {
+                            console.log(`代理 ${proxy} 成功`);
+                            return json;
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`代理 ${proxy} 失败`, e);
+                }
+            }
+            return null;
+        }
+
+        // === 3. UI 渲染 ===
+        function renderResults(data, term) {
+            if (data.code === 200 && data.data && data.data.length > 0) {
+                const count = data.data.length;
+                let html = `<div class="result-stats">找到 <span>${count}</span> 个 "${escapeHtml(term)}" 的相关结果</div>`;
+                html += '<div class="result-list">';
+
+                data.data.forEach((item, index) => {
+                    html += createResultItem(item, index);
+                });
+
+                html += '</div>';
+                resultsArea.innerHTML = html;
+            } else {
+                resultsArea.innerHTML = `<div class="status-message">未找到相关结果</div>`;
+            }
+        }
+
+        function createResultItem(item, index) {
+            const name = item.name || '未知短剧';
+            const link = item.viewlink || item.url || '#';
+            const time = item.addtime || '未知时间';
+
+            // 从链接提取域名用于显示图标
+            const domain = extractDomain(link);
+            const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+
+            // 每一项依次延迟显示
+            const delay = index * 0.05;
+
+            return `
+                <div class="result-item" style="animation-delay: ${delay}s">
+                    <!-- 名称突出显示 -->
+                    <div class="drama-title">${escapeHtml(name)}</div>
+                    
+                    <!-- 详细信息列表 -->
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">更新时间:</span>
+                            <span>${escapeHtml(time)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">观看链接:</span>
+                            <a href="${escapeHtml(link)}" target="_blank" class="info-link">
+                                <!-- 尝试加载来源网站图标 -->
+                                ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'" title="来源图标">` : ''}
+                                ${escapeHtml(link)}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // === 辅助函数 ===
+        function extractDomain(url) {
+            if (!url) return '';
+            try {
+                return new URL(url).hostname;
+            } catch (e) { return ''; }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"']/g, function (s) {
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return map[s];
+            });
+        }
+
+        function showLoading() {
+            resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`;
+        }
+
+        function showError(msg) {
+            resultsArea.innerHTML = `<div class="status-message" style="color: var(--error);">${msg}</div>`;
+        }
+
+        // === 事件绑定 ===
+        searchBtn.addEventListener('click', () => performSearch(searchInput.value));
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') performSearch(searchInput.value);
+        });
+        hotTags.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag')) {
+                searchInput.value = e.target.dataset.keyword;
+                performSearch(e.target.dataset.keyword);
+            }
         });
 
-        if (response.ok) {
-          var data = await response.json();
-          console.log('[SUCCESS] 直接请求成功');
-          handleApiResponse(data, searchTerm);
-          return;
-        }
-      } catch (directError) {
-        console.log('[ERROR] 直接请求失败: ' + directError.message);
-      }
-
-      // 尝试 CORS 代理
-      for (var i = 0; i < CORS_PROXIES.length; i++) {
-        var proxy = CORS_PROXIES[i];
-        try {
-          console.log('[INFO] 尝试代理: ' + proxy);
-          var proxyUrl = proxy + encodeURIComponent(DRAMA_API + '?text=' + encodeURIComponent(searchTerm));
-          var proxyResponse = await fetch(proxyUrl);
-
-          if (proxyResponse.ok) {
-            var proxyData = await proxyResponse.json();
-            console.log('[SUCCESS] 代理请求成功: ' + proxy);
-            handleApiResponse(proxyData, searchTerm);
-            return;
-          }
-        } catch (proxyError) {
-          console.log('[ERROR] 代理失败: ' + proxyError.message);
-        }
-      }
-
-      showError('网络请求失败。可能是跨域限制或 API 不可用。');
-    }
-
-    // 处理 API 响应
-    function handleApiResponse(data, searchTerm) {
-      if (data.code === 200) {
-        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          console.log('[SUCCESS] 找到 ' + data.data.length + ' 条结果');
-          renderResults(data.data, searchTerm);
-        } else {
-          showEmpty(searchTerm);
-        }
-      } else {
-        showError(data.msg || 'API 返回错误');
-      }
-    }
-
-    // 显示加载状态
-    function showLoading() {
-      resultsArea.innerHTML = '<div class="status-message">' +
-        '<div class="status-icon loading"><div class="spinner"></div></div>' +
-        '<p style="color: var(--muted);">搜索中...</p>' +
-        '</div>';
-    }
-
-    // 显示错误
-    function showError(message) {
-      resultsArea.innerHTML = '<div class="status-message">' +
-        '<div class="status-icon error">' +
-        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--error);">' +
-        '<circle cx="12" cy="12" r="10"/>' +
-        '<path d="m15 9-6 6M9 9l6 6"/>' +
-        '</svg>' +
-        '</div>' +
-        '<p style="color: var(--error); margin-bottom: 12px;">' + escapeHtml(message) + '</p>' +
-        '<p style="color: var(--muted); font-size: 14px;">请检查网络连接后重试</p>' +
-        '</div>';
-    }
-
-    // 显示空结果
-    function showEmpty(searchTerm) {
-      resultsArea.innerHTML = '<div class="status-message">' +
-        '<div class="status-icon empty">' +
-        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--muted);">' +
-        '<circle cx="11" cy="11" r="8"/>' +
-        '<path d="m21 21-4.3-4.3"/>' +
-        '</svg>' +
-        '</div>' +
-        '<p style="color: var(--muted);">未找到 "' + escapeHtml(searchTerm) + '" 相关短剧</p>' +
-        '</div>';
-    }
-
-    // 渲染结果
-    function renderResults(results, searchTerm) {
-      var html = '<div class="result-stats">' +
-        '找到 <span>' + results.length + '</span> 个 "' + escapeHtml(searchTerm) + '" 相关结果' +
-        '</div>' +
-        '<div class="grid">';
-
-      for (var i = 0; i < results.length; i++) {
-        html += createResultCard(results[i]);
-      }
-
-      html += '</div>';
-      resultsArea.innerHTML = html;
-
-      // 动画显示
-      setTimeout(function () {
-        var cards = resultsArea.querySelectorAll('.result-card');
-        for (var j = 0; j < cards.length; j++) {
-          (function (idx) {
-            setTimeout(function () {
-              cards[idx].classList.add('visible');
-            }, idx * 80);
-          })(j);
-        }
-      }, 50);
-    }
-
-    // 创建结果卡片
-    function createResultCard(item) {
-      var title = item.name || '未知短剧';
-      var url = item.viewlink || '';
-      var time = item.addtime || '';
-
-      var domain = extractDomain(url);
-      var iconUrl = url ? getKuleIcoUrl('https://' + domain) : '';
-
-      var cardHtml = '<article class="result-card">';
-
-      if (url) {
-        cardHtml += '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" style="display:block;">';
-      }
-      cardHtml += '<div style="padding: 16px;">';
-      cardHtml += '<h3 class="card-title">' + escapeHtml(title) + '</h3>';
-      cardHtml += '</div>';
-      if (url) {
-        cardHtml += '</a>';
-      }
-
-      cardHtml += '<div class="card-content">';
-
-      if (domain) {
-        cardHtml += '<div class="card-meta">' +
-          '<img src="' + escapeHtml(iconUrl) + '" alt="站点图标" class="source-icon" onerror="this.style.display=\'none\'">' +
-          '<span class="tag small">' + escapeHtml(domain) + '</span>' +
-          '</div>';
-      }
-
-      if (time) {
-        cardHtml += '<div class="card-meta">' +
-          '<span class="tag small">更新于 ' + escapeHtml(time) + '</span>' +
-          '</div>';
-      }
-
-      if (url) {
-        cardHtml += '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" class="card-link">' +
-          '立即观看' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-          '<path d="M5 12h14M12 5l7 7-7 7"/>' +
-          '</svg>' +
-          '</a>';
-      }
-
-      cardHtml += '</div></article>';
-      return cardHtml;
-    }
-
-    // HTML 转义
-    function escapeHtml(text) {
-      if (!text) return '';
-      var div = document.createElement('div');
-      div.textContent = String(text);
-      return div.innerHTML;
-    }
-
-    // 事件绑定
-    searchBtn.addEventListener('click', function () {
-      performSearch(searchInput.value);
-    });
-
-    searchInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        performSearch(searchInput.value);
-      }
-    });
-
-    hotTags.addEventListener('click', function (e) {
-      var tag = e.target.closest('[data-keyword]');
-      if (tag) {
-        searchInput.value = tag.dataset.keyword;
-        performSearch(tag.dataset.keyword);
-      }
-    });
-
-    // 根据 GitHub Pages 地址自动设置标题 logo
-    function updateTitleLogo() {
-      var titleLogo = document.getElementById('titleLogo');
-      if (titleLogo) {
-        // 使用当前页面地址作为 ico 的 url 参数
-        var pageUrl = window.location.href || 'https://github.com/';
-        titleLogo.src = getKuleIcoUrl(pageUrl);
-      }
-    }
-    updateTitleLogo();
-  </script>
+        // 初始化
+        initLogo();
+    </script>
 </body>
 
 </html>
