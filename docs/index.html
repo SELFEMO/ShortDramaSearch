@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>短剧 / 资源聚合搜索</title>
+    <title>短剧 / 资源聚合搜索 + 每日影视资源</title>
 
     <!-- 网站标识图标 -->
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
@@ -101,6 +101,54 @@
             }
         }
 
+        /* --- 顶部导航 --- */
+        .app-nav {
+            position: relative;
+            z-index: 20;
+            padding: 12px 16px;
+            background: rgba(10, 10, 15, 0.9);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .app-title span {
+            color: var(--accent);
+        }
+
+        .app-nav-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--muted);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
         /* --- 布局容器 --- */
         .main-content {
             position: relative;
@@ -109,6 +157,15 @@
             padding: 2rem 1rem;
             max-width: 900px;
             margin: 0 auto;
+        }
+
+        /* --- 页面容器 --- */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
         }
 
         /* --- 标题区域 --- */
@@ -149,7 +206,7 @@
             margin-top: 0.5rem;
         }
 
-        /* --- 搜索框 --- */
+        /* --- 搜索框（短剧页面） --- */
         .search-box {
             position: relative;
             background: var(--card);
@@ -190,7 +247,6 @@
             gap: 6px;
         }
 
-        /* 修改：扩展下拉框宽度 */
         .type-select {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
@@ -201,9 +257,7 @@
             outline: none;
             cursor: pointer;
             max-width: 180px;
-            /* 增加宽度 */
             min-width: 150px;
-            /* 设置最小宽度 */
         }
 
         .type-select option {
@@ -239,13 +293,47 @@
             color: white;
         }
 
-        /* --- 标签 --- */
+        /* --- 热门标签区域 --- */
         .tags-container {
+            margin-bottom: 2rem;
+        }
+
+        .tags-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+        }
+
+        .tags-title {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .tags-title strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .tags-toggle {
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tags-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .tags-list {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
             gap: 0.5rem;
-            margin-bottom: 2rem;
         }
 
         .tag {
@@ -257,6 +345,9 @@
             color: var(--muted);
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .tag:hover {
@@ -267,6 +358,122 @@
         .tag.disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .tag-rank {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .tag-hot {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 12px;
+            color: #ff9500;
+        }
+
+        .tags-more {
+            margin-top: 0.5rem;
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }
+
+        /* vtquark 热度榜折叠区域 */
+        .vtquark-section {
+            margin-top: 1rem;
+            border-top: 1px dashed var(--border);
+            padding-top: 0.75rem;
+        }
+
+        .vtquark-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .vtquark-title {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .vtquark-title strong {
+            color: #ff9500;
+        }
+
+        .vtquark-toggle {
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .vtquark-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* --- 每日影视资源页面 --- */
+        .daily-page {
+            padding-top: 1rem;
+        }
+
+        .daily-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .daily-search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .daily-search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .daily-refresh-btn {
+            padding: 9px 14px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .daily-refresh-btn:hover {
+            background: #ff8555;
+        }
+
+        .daily-refresh-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .daily-stats {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
         }
 
         /* --- 结果统计 --- */
@@ -515,7 +722,6 @@
             }
         }
 
-        /* 新增：超时提示样式 */
         .timeout-message {
             margin-top: 10px;
             padding: 10px 15px;
@@ -541,73 +747,137 @@
     <!-- 搜索状态通知 -->
     <div id="searchStatus" class="search-status"></div>
 
+    <!-- 顶部导航 -->
+    <nav class="app-nav">
+        <div class="app-title font-display">酷乐短剧 / 影视资源 · <span>聚合搜索</span></div>
+        <div class="app-nav-links">
+            <div class="nav-link active" data-page="search">短剧搜索</div>
+            <div class="nav-link" data-page="daily">每日影视</div>
+        </div>
+    </nav>
+
+    <!-- 页面容器 -->
     <main class="main-content">
-        <!-- 标题区域 -->
-        <header class="header">
-            <div class="header-top">
-                <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/"
-                    alt="Logo">
-                <h1 class="font-display">短剧 / 资源聚合搜索</h1>
-            </div>
-            <p>基于酷乐API聚合资源搜索接口，支持多种网盘与磁力链接</p>
-            <p style="margin-top: 6px; font-size: 13px; color: #888;">
-                提示：关键词之间的空格会被用于拆分搜索，以提高命中率，无需使用引号。
-            </p>
-        </header>
-
-        <!-- 搜索框 -->
-        <div class="search-box">
-            <input type="text" id="searchInput" class="search-input" placeholder="输入短剧 / 资源名称搜索..." autocomplete="off">
-            <div class="search-tools">
-                <select id="typeSelect" class="type-select">
-                    <option value="all">全局聚合（全部类型）</option>
-                    <option value="netdisk">网盘聚合（主流网盘）</option>
-                    <option value="baidu">百度网盘</option>
-                    <option value="quark">夸克网盘</option>
-                    <option value="aliyun">阿里云盘</option>
-                    <option value="tianyi">天翼云盘</option>
-                    <option value="uc">UC网盘</option>
-                    <option value="mobile">移动云盘</option>
-                    <option value="115">115网盘</option>
-                    <option value="pikpak">PikPak</option>
-                    <option value="xunlei">迅雷网盘</option>
-                    <option value="123">123网盘</option>
-                    <option value="magnet">磁力链接</option>
-                    <option value="ed2k">电驴链接</option>
-                </select>
-                <button class="search-btn" id="searchBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.3-4.3" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- 热门标签 -->
-        <div class="tags-container" id="hotTags">
-            <span class="tag" data-keyword="霸总">霸总</span>
-            <span class="tag" data-keyword="甜宠">甜宠</span>
-            <span class="tag" data-keyword="穿越">穿越</span>
-            <span class="tag" data-keyword="重生">重生</span>
-            <span class="tag" data-keyword="古装">古装</span>
-        </div>
-
-        <!-- 结果区域 -->
-        <div id="resultsArea">
-            <div class="status-message" id="initialState">
-                <p>已适配酷乐聚合资源搜索接口所有网盘类型与磁力/电驴链接。</p>
-                <p>选择"全局聚合"将一次性查询所有支持类型。</p>
-                <p style="margin-top: 10px; font-size: 13px; color: #888;">
-                    提示：输入“关键词 2024”这样的形式，系统会自动拆分搜索以提高命中率，无需使用引号。
+        <!-- 页面1：短剧 / 资源聚合搜索 -->
+        <section id="page-search" class="page active">
+            <div class="header">
+                <div class="header-top">
+                    <img id="titleLogo" class="title-logo"
+                        src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                    <h1 class="font-display">短剧 / 资源聚合搜索</h1>
+                </div>
+                <p>基于酷乐API聚合资源搜索接口，支持多种网盘与磁力链接</p>
+                <p style="margin-top: 6px; font-size: 13px; color: #888;">
+                    提示：关键词之间的空格会被用于拆分搜索，以提高命中率，无需使用引号。
                 </p>
             </div>
-        </div>
+
+            <!-- 搜索框 -->
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="输入短剧 / 资源名称搜索..."
+                    autocomplete="off">
+                <div class="search-tools">
+                    <select id="typeSelect" class="type-select">
+                        <option value="all">全局聚合（全部类型）</option>
+                        <option value="netdisk">网盘聚合（主流网盘）</option>
+                        <option value="baidu">百度网盘</option>
+                        <option value="quark">夸克网盘</option>
+                        <option value="aliyun">阿里云盘</option>
+                        <option value="tianyi">天翼云盘</option>
+                        <option value="uc">UC网盘</option>
+                        <option value="mobile">移动云盘</option>
+                        <option value="115">115网盘</option>
+                        <option value="pikpak">PikPak</option>
+                        <option value="xunlei">迅雷网盘</option>
+                        <option value="123">123网盘</option>
+                        <option value="magnet">磁力链接</option>
+                        <option value="ed2k">电驴链接</option>
+                    </select>
+                    <button class="search-btn" id="searchBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 热门标签区域（由接口填充） -->
+            <div class="tags-container" id="hotTagsContainer">
+                <div class="tags-header">
+                    <div class="tags-title">🔥 <strong>短剧热度榜</strong>（前10）</div>
+                    <div class="tags-toggle" id="toggleMoreRank">
+                        展开更多
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="tags-list" id="rankTagsList"></div>
+                <div class="tags-more" id="rankMoreHint">仅展示前 10 条，点击可展开前 20 条</div>
+
+                <!-- vtquark 热度榜 -->
+                <div class="vtquark-section" id="vtquarkSection" style="display:none;">
+                    <div class="vtquark-header">
+                        <div class="vtquark-title">🎬 <strong>夸克短剧热度榜</strong>（前10）</div>
+                        <div class="vtquark-toggle" id="toggleVtquark">
+                            展开查看
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="vtquark-list" id="vtquarkTagsList"></div>
+                </div>
+            </div>
+
+            <!-- 结果区域 -->
+            <div id="resultsArea">
+                <div class="status-message" id="initialState">
+                    <p>已适配酷乐聚合资源搜索接口所有网盘类型与磁力/电驴链接。</p>
+                    <p>选择"全局聚合"将一次性查询所有支持类型。</p>
+                    <p style="margin-top: 10px; font-size: 13px; color: #888;">
+                        提示：输入“关键词 2024”这样的形式，系统会自动拆分搜索以提高命中率，无需使用引号。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面2：每日影视资源 -->
+        <section id="page-daily" class="page">
+            <div class="daily-page">
+                <div class="header" style="margin-bottom: 1.5rem;">
+                    <h2 class="font-display" style="font-size: 2rem;">每日影视资源</h2>
+                    <p style="margin-top: 0.5rem;">仅更新每日最新影视资源和一些热门资源（短剧除外，短剧有单独的接口）</p>
+                </div>
+
+                <!-- 工具栏：搜索 + 刷新 -->
+                <div class="daily-toolbar">
+                    <input type="text" id="dailySearchInput" class="daily-search-input"
+                        placeholder="在今日影视资源中检索（名称 / 链接）..." autocomplete="off">
+                    <button id="dailyRefreshBtn" class="daily-refresh-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6M1 20v-6h6" />
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        刷新
+                    </button>
+                </div>
+
+                <div id="dailyStats" class="daily-stats"></div>
+                <div id="dailyResultsArea"></div>
+            </div>
+        </section>
     </main>
 
     <script>
-        // === 配置部分 ===
+        // ==================== 公共配置 ====================
         const JHSJ_API = 'https://api.kuleu.com/api/jhsj';
+        const YINGSHI_API = 'https://api.kuleu.com/api/yingshi';
+        const SHORTDRAMA_RANK_API = 'https://api.kuleu.com/api/shortdramarank';
+        const VTQUARK_API = 'https://api.kuleu.com/api/vtquark?tag=短剧';
         const ICO_API = 'https://api.kuleu.com/api/ico';
 
         const CORS_PROXIES = [
@@ -616,10 +886,8 @@
             'https://corsproxy.io/?'
         ];
 
-        // 新增：超时配置（毫秒）
         const SEARCH_TIMEOUT = 15000; // 15秒超时
 
-        // 类型 -> 中文名映射（对应文档中的参数说明）
         const TYPE_LABEL = {
             baidu: '百度网盘',
             aliyun: '阿里云盘',
@@ -635,7 +903,6 @@
             ed2k: '电驴链接'
         };
 
-        // 预设类型组（用于下拉菜单选项）
         const TYPE_PRESETS = {
             all: [
                 'baidu', 'aliyun', 'quark', 'tianyi', 'uc', 'mobile', '115', 'pikpak', 'xunlei', '123', 'magnet', 'ed2k'
@@ -657,22 +924,69 @@
             ed2k: ['ed2k']
         };
 
-        // === DOM 元素 ===
+        // ==================== DOM ====================
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
         const resultsArea = document.getElementById('resultsArea');
-        const hotTags = document.getElementById('hotTags');
         const titleLogo = document.getElementById('titleLogo');
         const searchStatus = document.getElementById('searchStatus');
         const typeSelect = document.getElementById('typeSelect');
 
-        // === 状态管理 ===
-        let isSearching = false;
-        let searchTimer = null;
-        let currentPreset = 'all'; // 默认全局聚合
-        let timeoutId = null; // 超时定时器ID
+        const dailySearchInput = document.getElementById('dailySearchInput');
+        const dailyRefreshBtn = document.getElementById('dailyRefreshBtn');
+        const dailyStats = document.getElementById('dailyStats');
+        const dailyResultsArea = document.getElementById('dailyResultsArea');
 
-        // === 辅助函数 ===
+        // ==================== 路由 ====================
+        const pages = {
+            search: document.getElementById('page-search'),
+            daily: document.getElementById('page-daily')
+        };
+
+        function navigateTo(pageName) {
+            Object.keys(pages).forEach(key => {
+                pages[key].classList.toggle('active', key === pageName);
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.page === pageName);
+            });
+
+            if (pageName === 'daily') {
+                loadDailyResources();
+            }
+        }
+
+        // 初始化路由
+        function initRouter() {
+            const hash = window.location.hash || '#/';
+            let page = 'search';
+            if (hash.startsWith('#/daily')) {
+                page = 'daily';
+            }
+            navigateTo(page);
+
+            window.addEventListener('hashchange', () => {
+                const newHash = window.location.hash || '#/';
+                let newPage = 'search';
+                if (newHash.startsWith('#/daily')) {
+                    newPage = 'daily';
+                }
+                navigateTo(newPage);
+            });
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    const targetPage = link.dataset.page;
+                    if (targetPage === 'search') {
+                        window.location.hash = '#/';
+                    } else {
+                        window.location.hash = '#/daily';
+                    }
+                });
+            });
+        }
+
+        // ==================== 工具函数 ====================
         function showStatus(message, duration = 2000) {
             searchStatus.textContent = message;
             searchStatus.classList.add('show');
@@ -695,7 +1009,7 @@
             titleLogo.onerror = function () { this.style.display = 'none'; };
         }
 
-        // 清除超时定时器
+        let timeoutId = null;
         function clearTimeouts() {
             if (timeoutId) {
                 clearTimeout(timeoutId);
@@ -703,52 +1017,43 @@
             }
         }
 
-        // === 类型选择 ===
+        // ==================== 短剧搜索页面逻辑 ====================
+        let isSearching = false;
+        let searchTimer = null;
+        let currentPreset = 'all';
+
         typeSelect.addEventListener('change', () => {
             currentPreset = typeSelect.value;
             const term = searchInput.value.trim();
             if (term) performSearch(term);
         });
 
-        // === 搜索逻辑（带防抖） ===
         function performSearch(keyword) {
             const term = keyword.trim();
             if (!term) { showStatus('请输入搜索关键词'); return; }
-
             if (isSearching) { showStatus('正在搜索中，请稍候...'); return; }
 
             clearTimeout(searchTimer);
             searchTimer = setTimeout(() => executeSearch(term), 300);
         }
 
-        // === 搜索词预处理：生成多个搜索词 ===
         function buildSearchTerms(rawInput) {
             const input = rawInput.trim();
             if (!input) return [];
-
-            // 1. 按空格拆分
             const parts = input.split(/\s+/).filter(Boolean);
-
-            // 2. 总是保留“整体输入”作为一级搜索
             const terms = new Set([input]);
-
-            // 3. 如果拆分后不止一个单词，再生成“单词级搜索”
             if (parts.length > 1) {
                 parts.forEach(p => terms.add(p));
             }
-
-            // 转成数组并排序：优先整体输入，再按单词长度降序
             const arr = Array.from(terms);
             arr.sort((a, b) => {
                 if (a === input) return -1;
                 if (b === input) return 1;
                 return b.length - a.length;
             });
-
             return arr;
         }
 
-        // === 执行搜索：对每个搜索词发一次请求，合并结果 ===
         async function executeSearch(term) {
             isSearching = true;
             searchBtn.disabled = true;
@@ -763,15 +1068,11 @@
                 const types = TYPE_PRESETS[currentPreset] || TYPE_PRESETS.all;
                 const typeParam = types.join(',');
 
-                // 生成搜索词列表
                 const searchTerms = buildSearchTerms(term);
-
-                // 用 Map 去重：key = url
                 const mergedByType = {};
                 const urlSet = new Set();
                 let total = 0;
 
-                // 对每个搜索词发起一次请求
                 for (const st of searchTerms) {
                     const fullUrl = `${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`;
 
@@ -780,7 +1081,7 @@
                         data = await fetchSearchApi(fullUrl);
                     } catch (e) {
                         console.warn('搜索词失败:', st, e);
-                        continue; // 单个搜索词失败不影响整体
+                        continue;
                     }
 
                     if (data && data.code === 0 && data.data && data.data.merged_by_type) {
@@ -790,26 +1091,18 @@
                         typeList.forEach(type => {
                             const items = merged[type];
                             if (!Array.isArray(items)) return;
-
-                            if (!mergedByType[type]) {
-                                mergedByType[type] = [];
-                            }
+                            if (!mergedByType[type]) mergedByType[type] = [];
 
                             items.forEach(item => {
                                 if (!item.url) return;
-                                if (urlSet.has(item.url)) return; // 去重
-
+                                if (urlSet.has(item.url)) return;
                                 urlSet.add(item.url);
-                                mergedByType[type].push({
-                                    ...item,
-                                    _searchTerm: st
-                                });
+                                mergedByType[type].push({ ...item, _searchTerm: st });
                                 total++;
                             });
                         });
                     }
 
-                    // 简单限制：如果已经找到一定数量结果，可以提前停止后续请求
                     if (total >= 200) {
                         console.log('已达到合并上限，提前终止剩余搜索词');
                         break;
@@ -831,15 +1124,11 @@
                     return;
                 }
 
-                // 对结果做简单排序：
-                // - 优先展示“整体搜索词”匹配的结果
-                // - 再按名称长度、时间等排序
                 typeList.forEach(type => {
                     mergedByType[type].sort((a, b) => {
                         const aIsWhole = a._searchTerm === term ? 1 : 0;
                         const bIsWhole = b._searchTerm === term ? 1 : 0;
                         if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole;
-
                         const aLen = a.name ? a.name.length : 0;
                         const bLen = b.name ? b.name.length : 0;
                         return bLen - aLen;
@@ -860,7 +1149,6 @@
             }
         }
 
-        // 新增：统一错误处理函数
         function handleError(error, term) {
             const errorType = error.errorType || 'unknown';
             let title = '发生错误';
@@ -898,7 +1186,6 @@
             showDetailedError(title, message, term);
         }
 
-        // 新增：显示详细错误提示
         function showDetailedError(title, message, term) {
             const html = `
                 <div class="status-message">
@@ -919,13 +1206,10 @@
             showStatus(title, 5000);
         }
 
-        // --- API 请求逻辑（重写，增加详细错误抛出） ---
         async function fetchSearchApi(fullUrl) {
             try {
                 let data = await tryFetchDirect(fullUrl);
-                if (!data) {
-                    data = await tryFetchWithProxies(fullUrl);
-                }
+                if (!data) data = await tryFetchWithProxies(fullUrl);
                 if (!data) {
                     throw { errorType: 'network', message: '所有请求尝试均失败，请检查网络连接。' };
                 }
@@ -1026,7 +1310,6 @@
             throw { errorType: 'cors', message: '所有跨域代理尝试均失败' };
         }
 
-        // --- UI 渲染：按类型分组 ---
         function renderGroupedResults(mergedByType, typeList, term, total) {
             if (!typeList || typeList.length === 0) {
                 resultsArea.innerHTML = `<div class="status-message">未找到相关结果</div>`;
@@ -1125,23 +1408,346 @@
             `;
         }
 
-        function showError(msg) {
-            resultsArea.innerHTML = `<div class="status-message" style="color: var(--error);">${msg}</div>`;
-        }
-
-        // === 事件绑定 ===
+        // 短剧页面事件绑定
         searchBtn.addEventListener('click', () => performSearch(searchInput.value));
 
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') performSearch(searchInput.value);
         });
 
-        hotTags.addEventListener('click', (e) => {
-            if (e.target.classList.contains('tag') && !e.target.classList.contains('disabled')) {
-                searchInput.value = e.target.dataset.keyword;
-                performSearch(e.target.dataset.keyword);
+        // ==================== 热度榜标签渲染 ====================
+        let rankData = [];       // shortdramarank 数据
+        let vtquarkData = [];    // vtquark 数据
+        let showAllRank = false; // 是否展开全部热度榜
+        let showVtquark = false; // 是否展开 vtquark
+
+        async function loadRankTags() {
+            try {
+                const res = await fetch(SHORTDRAMA_RANK_API);
+                const json = await res.json();
+                if (json && json.code === 200 && Array.isArray(json.data)) {
+                    rankData = json.data;
+                    renderRankTags();
+                }
+            } catch (e) {
+                console.warn('加载短剧热度榜失败:', e);
+            }
+        }
+
+        async function loadVtquarkTags() {
+            try {
+                const res = await fetch(VTQUARK_API);
+                const json = await res.json();
+                if (json && json.code === 200 && Array.isArray(json.data)) {
+                    vtquarkData = json.data;
+                    // 初始不展示，等用户点击
+                }
+            } catch (e) {
+                console.warn('加载 vtquark 热度榜失败:', e);
+            }
+        }
+
+        function renderRankTags() {
+            const list = document.getElementById('rankTagsList');
+            const hint = document.getElementById('rankMoreHint');
+            const vtquarkSection = document.getElementById('vtquarkSection');
+
+            const displayCount = showAllRank ? Math.min(rankData.length, 20) : Math.min(rankData.length, 10);
+
+            let html = '';
+            rankData.slice(0, displayCount).forEach((item, idx) => {
+                const title = item.title || '未知短剧';
+                const hots = item.hots || '';
+                const rank = item.ranking || (idx + 1);
+
+                html += `
+                    <span class="tag" data-keyword="${escapeHtml(title)}">
+                        <span class="tag-rank">${rank}</span>
+                        ${escapeHtml(title)}
+                        <span class="tag-hot">🔥 ${escapeHtml(hots)}</span>
+                    </span>
+                `;
+            });
+
+            list.innerHTML = html;
+
+            if (rankData.length > 10) {
+                hint.style.display = showAllRank ? 'none' : 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+
+            // 显示 vtquark 区域（折叠状态）
+            if (vtquarkData.length > 0) {
+                vtquarkSection.style.display = 'block';
+            }
+        }
+
+        function renderVtquarkTags() {
+            const list = document.getElementById('vtquarkTagsList');
+            const displayCount = Math.min(vtquarkData.length, 10);
+
+            let html = '';
+            vtquarkData.slice(0, displayCount).forEach((item, idx) => {
+                const title = item.content_title || '未知短剧';
+                const hot = item.hot || 0;
+                const rank = item.content_rank || (idx + 1);
+
+                html += `
+                    <span class="tag" data-keyword="${escapeHtml(title)}">
+                        <span class="tag-rank">${rank}</span>
+                        ${escapeHtml(title)}
+                        <span class="tag-hot">🔥 ${hot}</span>
+                    </span>
+                `;
+            });
+
+            list.innerHTML = html;
+        }
+
+        // 展开/折叠热度榜
+        document.getElementById('toggleMoreRank').addEventListener('click', () => {
+            showAllRank = !showAllRank;
+            const toggle = document.getElementById('toggleMoreRank');
+            if (showAllRank) {
+                toggle.innerHTML = `
+                    收起
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                `;
+            } else {
+                toggle.innerHTML = `
+                    展开更多
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                `;
+            }
+            renderRankTags();
+        });
+
+        // 展开/折叠 vtquark
+        document.getElementById('toggleVtquark').addEventListener('click', () => {
+            showVtquark = !showVtquark;
+            const toggle = document.getElementById('toggleVtquark');
+            const list = document.getElementById('vtquarkTagsList');
+
+            if (showVtquark) {
+                toggle.innerHTML = `
+                    收起
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                `;
+                renderVtquarkTags();
+            } else {
+                toggle.innerHTML = `
+                    展开查看
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                `;
+                list.innerHTML = '';
             }
         });
+
+        // 热度标签点击搜索
+        document.getElementById('rankTagsList').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag || tag.classList.contains('disabled')) return;
+            const keyword = tag.dataset.keyword;
+            if (!keyword) return;
+            searchInput.value = keyword;
+            performSearch(keyword);
+        });
+
+        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag || tag.classList.contains('disabled')) return;
+            const keyword = tag.dataset.keyword;
+            if (!keyword) return;
+            searchInput.value = keyword;
+            performSearch(keyword);
+        });
+
+        // ==================== 每日影视资源页面逻辑 ====================
+        let dailyData = [];      // 原始数据
+        let filteredDaily = [];  // 过滤后的数据
+
+        async function loadDailyResources() {
+            dailyStats.textContent = '正在加载今日影视资源...';
+            dailyResultsArea.innerHTML = `
+                <div class="status-message">
+                    <div class="spinner"></div>
+                    <p>正在加载今日影视资源...</p>
+                </div>
+            `;
+
+            try {
+                // 请求百度和夸克两个接口
+                const [baiduData, quarkData] = await Promise.all([
+                    fetchDailyApi('baidu'),
+                    fetchDailyApi('quark')
+                ]);
+
+                dailyData = [
+                    ...(baiduData || []),
+                    ...(quarkData || [])
+                ];
+
+                // 按时间降序排序
+                dailyData.sort((a, b) => {
+                    const timeA = a.addtime ? new Date(a.addtime).getTime() : 0;
+                    const timeB = b.addtime ? new Date(b.addtime).getTime() : 0;
+                    return timeB - timeA;
+                });
+
+                filteredDaily = dailyData;
+                renderDailyResults(filteredDaily);
+
+                showStatus(`已加载 ${dailyData.length} 条今日影视资源`);
+
+            } catch (error) {
+                console.error('加载每日影视资源失败:', error);
+                dailyStats.textContent = '';
+                dailyResultsArea.innerHTML = `
+                    <div class="status-message" style="color: var(--error);">
+                        <p>加载每日影视资源失败，请稍后重试。</p>
+                        <p style="margin-top: 8px; font-size: 13px;">${escapeHtml(error.message || error.errorType || '未知错误')}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function fetchDailyApi(source = 'baidu') {
+            const url = `${YINGSHI_API}?${source}`;
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    controller.abort();
+                    reject({ errorType: 'timeout', message: '请求超时' });
+                }, SEARCH_TIMEOUT);
+            });
+
+            try {
+                const fetchPromise = fetch(url, { signal });
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+                if (!response.ok) {
+                    throw { errorType: 'server', status: response.status, message: `服务器返回错误: ${response.status}` };
+                }
+
+                const json = await response.json();
+                if (json && json.code === 1 && Array.isArray(json.data)) {
+                    // 给每条数据打上来源标记
+                    return json.data.map(item => ({ ...item, _source: source }));
+                } else {
+                    return [];
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw { errorType: 'timeout', message: '请求超时' };
+                }
+                throw error;
+            } finally {
+                clearTimeouts();
+            }
+        }
+
+        function renderDailyResults(data) {
+            if (!data || data.length === 0) {
+                dailyStats.textContent = '未找到匹配的影视资源。';
+                dailyResultsArea.innerHTML = `
+                    <div class="status-message">
+                        <p>未找到匹配的影视资源。</p>
+                        <p style="margin-top: 8px; font-size: 13px; color: #888;">
+                            提示：可以尝试刷新页面，或使用更宽泛的关键词。
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            dailyStats.textContent = `共 ${data.length} 条今日影视资源`;
+
+            let html = '<div class="result-list">';
+
+            data.forEach((item, index) => {
+                const name = item.name || '未知资源';
+                const link = item.viewlink || '#';
+                const addtime = item.addtime || '';
+                const source = item._source || 'baidu';
+
+                const domain = extractDomain(link);
+                const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+
+                const delay = index * 0.03;
+
+                html += `
+                    <div class="result-item" style="animation-delay: ${delay}s">
+                        <div class="drama-title">${escapeHtml(name)}</div>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <span class="info-label">来源:</span>
+                                <span style="color: ${source === 'baidu' ? '#06a7ff' :
+                        source === 'quark' ? '#ff9500' :
+                            '#aaa'
+                    };">${source === 'baidu' ? '百度网盘' : '夸克网盘'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">链接:</span>
+                                <a href="${escapeHtml(link)}" target="_blank" class="info-link">
+                                    ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'" title="来源图标">` : ''}
+                                    ${escapeHtml(link)}
+                                </a>
+                            </div>
+                            ${addtime ? `
+                            <div class="info-item">
+                                <span class="info-label">更新时间:</span>
+                                <span>${escapeHtml(addtime)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            dailyResultsArea.innerHTML = html;
+        }
+
+        // 每日页面搜索框过滤
+        dailySearchInput.addEventListener('input', () => {
+            const keyword = dailySearchInput.value.trim().toLowerCase();
+            if (!keyword) {
+                filteredDaily = dailyData;
+            } else {
+                filteredDaily = dailyData.filter(item => {
+                    const name = (item.name || '').toLowerCase();
+                    const link = (item.viewlink || '').toLowerCase();
+                    return name.includes(keyword) || link.includes(keyword);
+                });
+            }
+            renderDailyResults(filteredDaily);
+        });
+
+        // 刷新按钮：重新加载页面（清空检索框）
+        dailyRefreshBtn.addEventListener('click', () => {
+            // 刷新页面，hash 保持为 #/daily
+            window.location.hash = '#/daily';
+            window.location.reload();
+        });
+
+        // ==================== 初始化 ====================
+        initRouter();
+
+        // 加载热度榜标签
+        loadRankTags();
+        loadVtquarkTags();
     </script>
 </body>
 
