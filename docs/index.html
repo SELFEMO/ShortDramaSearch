@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>短剧搜索</title>
 
-    <!-- 网站标识图标 -->
+    <!-- 网站标识图标：使用酷乐 API 获取 kuleu.com 的 ico -->
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
 
     <!-- 预连接字体服务 -->
@@ -167,7 +167,7 @@
 
         .search-input {
             width: 100%;
-            padding: 18px 60px 18px 20px;
+            padding: 18px 140px 18px 20px;
             background: transparent;
             border: none;
             outline: none;
@@ -179,11 +179,34 @@
             color: var(--muted);
         }
 
-        .search-btn {
+        /* 右侧工具栏：数据源选择 + 搜索按钮 */
+        .search-tools {
             position: absolute;
             right: 6px;
             top: 50%;
             transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .source-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--fg);
+            padding: 6px 8px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .source-select option {
+            background: #1a1a24;
+            color: var(--fg);
+        }
+
+        .search-btn {
             width: 42px;
             height: 42px;
             background: var(--accent);
@@ -276,6 +299,7 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
 
+        /* 短剧名称 - 突出显示 */
         .drama-title {
             font-size: 17px;
             font-weight: 700;
@@ -293,6 +317,7 @@
             display: inline-block;
         }
 
+        /* 信息列表 */
         .info-list {
             display: grid;
             grid-template-columns: 1fr;
@@ -366,7 +391,7 @@
             }
         }
 
-        /* 搜索状态指示器 */
+        /* 搜索状态通知 */
         .search-status {
             position: fixed;
             top: 20px;
@@ -404,7 +429,7 @@
     <div class="floating-orb orb-1"></div>
     <div class="floating-orb orb-2"></div>
 
-    <!-- 搜索状态指示器 -->
+    <!-- 搜索状态通知 -->
     <div id="searchStatus" class="search-status"></div>
 
     <main class="main-content">
@@ -415,18 +440,25 @@
                     alt="Logo">
                 <h1 class="font-display">短剧搜索</h1>
             </div>
-            <p>发现精彩短剧，聚合全网资源</p>
+            <p>发现精彩短剧，聚合全网资源（百度网盘 & 夸克网盘）</p>
         </header>
 
         <!-- 搜索框 -->
         <div class="search-box">
             <input type="text" id="searchInput" class="search-input" placeholder="输入短剧名称搜索..." autocomplete="off">
-            <button class="search-btn" id="searchBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
-            </button>
+            <div class="search-tools">
+                <select id="sourceSelect" class="source-select">
+                    <option value="global">全局搜索（默认）</option>
+                    <option value="baidu">百度网盘</option>
+                    <option value="quark">夸克网盘</option>
+                </select>
+                <button class="search-btn" id="searchBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- 热门标签 -->
@@ -441,14 +473,18 @@
         <!-- 结果区域 -->
         <div id="resultsArea">
             <div class="status-message" id="initialState">
-                <p>输入关键词开始搜索</p>
+                <p>输入关键词开始搜索（支持切换数据源：百度网盘 / 夸克网盘 / 全局）</p>
             </div>
         </div>
     </main>
 
     <script>
         // === 配置部分 ===
-        const SEARCH_API = 'https://api.kuleu.com/api/bddj';
+        // 百度网盘短剧搜索 API
+        const BAIDU_API = 'https://api.kuleu.com/api/bddj';
+        // 夸克网盘短剧搜索 API
+        const QUARK_API = 'https://api.kuleu.com/api/action';
+        // 图标 API
         const ICO_API = 'https://api.kuleu.com/api/ico';
 
         // 公共 CORS 代理列表
@@ -465,16 +501,17 @@
         const hotTags = document.getElementById('hotTags');
         const titleLogo = document.getElementById('titleLogo');
         const searchStatus = document.getElementById('searchStatus');
+        const sourceSelect = document.getElementById('sourceSelect');
 
         // === 状态管理 ===
         let isSearching = false;
         let searchTimer = null;
+        let currentSource = 'global'; // 默认全局搜索
 
         // === 显示状态通知 ===
         function showStatus(message, duration = 2000) {
             searchStatus.textContent = message;
             searchStatus.classList.add('show');
-
             setTimeout(() => {
                 searchStatus.classList.remove('show');
             }, duration);
@@ -487,6 +524,16 @@
                 this.style.display = 'none';
             };
         }
+
+        // === 数据源切换 ===
+        sourceSelect.addEventListener('change', () => {
+            currentSource = sourceSelect.value;
+            // 如果当前有搜索内容，自动重新搜索
+            const term = searchInput.value.trim();
+            if (term) {
+                performSearch(term);
+            }
+        });
 
         // === 搜索逻辑（带防抖） ===
         function performSearch(keyword) {
@@ -501,12 +548,10 @@
                 return;
             }
 
-            // 清除之前的定时器
             if (searchTimer) {
                 clearTimeout(searchTimer);
             }
 
-            // 设置防抖延迟
             searchTimer = setTimeout(() => {
                 executeSearch(term);
             }, 300);
@@ -523,25 +568,64 @@
             });
 
             showLoading();
-            console.log(`正在搜索: ${term}`);
-            showStatus(`正在搜索: ${term}`);
+            console.log(`正在搜索: ${term}，数据源: ${currentSource}`);
+            showStatus(`正在搜索: ${term}（${sourceSelect.options[sourceSelect.selectedIndex].text}）`);
 
             try {
-                // 尝试直接请求
-                let data = await tryFetchDirect(term);
+                let results = [];
 
-                // 如果失败，依次尝试代理
-                if (!data) {
-                    data = await tryFetchWithProxies(term);
-                }
-
-                // 处理结果
-                if (data) {
-                    renderResults(data, term);
-                    showStatus(`找到 ${data.data?.length || 0} 个结果`);
+                if (currentSource === 'baidu') {
+                    // 只调用百度网盘 API
+                    const data = await fetchSearchApi(BAIDU_API, term);
+                    if (data && data.code === 200 && data.data) {
+                        results = data.data.map(item => ({
+                            ...item,
+                            source: 'baidu'
+                        }));
+                    }
+                } else if (currentSource === 'quark') {
+                    // 只调用夸克网盘 API
+                    const data = await fetchSearchApi(QUARK_API, term);
+                    if (data && data.code === 200 && data.data) {
+                        results = data.data.map(item => ({
+                            ...item,
+                            source: 'quark'
+                        }));
+                    }
                 } else {
-                    showError('搜索失败：网络连接错误或 API 暂时不可用。');
+                    // 全局搜索：并发调用两个 API，合并结果
+                    const [baiduData, quarkData] = await Promise.all([
+                        fetchSearchApi(BAIDU_API, term),
+                        fetchSearchApi(QUARK_API, term)
+                    ]);
+
+                    if (baiduData && baiduData.code === 200 && baiduData.data) {
+                        const baiduResults = baiduData.data.map(item => ({
+                            ...item,
+                            source: 'baidu'
+                        }));
+                        results = results.concat(baiduResults);
+                    }
+
+                    if (quarkData && quarkData.code === 200 && quarkData.data) {
+                        const quarkResults = quarkData.data.map(item => ({
+                            ...item,
+                            source: 'quark'
+                        }));
+                        results = results.concat(quarkResults);
+                    }
                 }
+
+                // 按时间倒序排序（最新的在前）
+                results.sort((a, b) => {
+                    const timeA = a.addtime ? new Date(a.addtime).getTime() : 0;
+                    const timeB = b.addtime ? new Date(b.addtime).getTime() : 0;
+                    return timeB - timeA;
+                });
+
+                renderResults(results, term);
+                showStatus(`找到 ${results.length} 个结果`);
+
             } catch (error) {
                 console.error('搜索出错:', error);
                 showError('搜索过程中发生错误，请重试。');
@@ -556,9 +640,20 @@
             }
         }
 
-        async function tryFetchDirect(term) {
+        // === 通用 API 请求函数 ===
+        async function fetchSearchApi(baseUrl, term) {
+            // 尝试直接请求
+            let data = await tryFetchDirect(baseUrl, term);
+            if (!data) {
+                // 尝试通过代理请求
+                data = await tryFetchWithProxies(baseUrl, term);
+            }
+            return data;
+        }
+
+        async function tryFetchDirect(baseUrl, term) {
             try {
-                const res = await fetch(`${SEARCH_API}?text=${encodeURIComponent(term)}`);
+                const res = await fetch(`${baseUrl}?text=${encodeURIComponent(term)}`);
                 if (res.ok) return await res.json();
             } catch (e) {
                 console.log('直接请求受阻，切换代理...');
@@ -566,8 +661,8 @@
             return null;
         }
 
-        async function tryFetchWithProxies(term) {
-            const targetUrl = `${SEARCH_API}?text=${encodeURIComponent(term)}`;
+        async function tryFetchWithProxies(baseUrl, term) {
+            const targetUrl = `${baseUrl}?text=${encodeURIComponent(term)}`;
 
             for (let proxy of CORS_PROXIES) {
                 try {
@@ -593,38 +688,52 @@
         }
 
         // === UI 渲染 ===
-        function renderResults(data, term) {
-            if (data.code === 200 && data.data && data.data.length > 0) {
-                const count = data.data.length;
-                let html = `<div class="result-stats">找到 <span>${count}</span> 个 "${escapeHtml(term)}" 的相关结果</div>`;
-                html += '<div class="result-list">';
-
-                data.data.forEach((item, index) => {
-                    html += createResultItem(item, index);
-                });
-
-                html += '</div>';
-                resultsArea.innerHTML = html;
-            } else {
+        function renderResults(results, term) {
+            if (!results || results.length === 0) {
                 resultsArea.innerHTML = `<div class="status-message">未找到相关结果</div>`;
+                return;
             }
+
+            const count = results.length;
+            let html = `<div class="result-stats">找到 <span>${count}</span> 个 "${escapeHtml(term)}" 的相关结果</div>`;
+            html += '<div class="result-list">';
+
+            results.forEach((item, index) => {
+                html += createResultItem(item, index);
+            });
+
+            html += '</div>';
+            resultsArea.innerHTML = html;
         }
 
         function createResultItem(item, index) {
             const name = item.name || '未知短剧';
             const link = item.viewlink || item.url || '#';
             const time = item.addtime || '未知时间';
+            const sourceType = item.source || (link.includes('quark.cn') ? 'quark' : 'baidu');
 
             const domain = extractDomain(link);
             const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
 
             const delay = index * 0.05;
 
+            // 根据来源显示不同标签
+            let sourceLabel = '来源未知';
+            if (sourceType === 'baidu') {
+                sourceLabel = '百度网盘';
+            } else if (sourceType === 'quark') {
+                sourceLabel = '夸克网盘';
+            }
+
             return `
                 <div class="result-item" style="animation-delay: ${delay}s">
                     <div class="drama-title">${escapeHtml(name)}</div>
                     
                     <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">来源:</span>
+                            <span style="color: #aaa;">${sourceLabel}</span>
+                        </div>
                         <div class="info-item">
                             <span class="info-label">更新时间:</span>
                             <span>${escapeHtml(time)}</span>
@@ -646,7 +755,9 @@
             if (!url) return '';
             try {
                 return new URL(url).hostname;
-            } catch (e) { return ''; }
+            } catch (e) {
+                return '';
+            }
         }
 
         function escapeHtml(text) {
