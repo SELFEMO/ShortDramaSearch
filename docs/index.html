@@ -5,14 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>短剧搜索</title>
-    <!-- 动态 Favicon，初始为空，由 JS 填充 -->
-    <link rel="icon" type="image/x-icon"
-        href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAAAAAAAAA vividlywAAAGQAAACRAAAAkAAAAJEAAACQAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACPAAAAjwAAAI8AAACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
+
+    <!-- 网站标识图标：直接调用酷乐 API 获取 kuleu.com 的 ico -->
+    <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
+
+    <!-- 预连接字体服务 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;800&family=ZCOOL+KuaiLe&display=swap"
         rel="stylesheet">
+
     <style>
         :root {
             --bg: #0a0a0f;
@@ -23,7 +26,6 @@
             --accent-glow: rgba(255, 107, 53, 0.4);
             --card: #1a1a24;
             --border: #2a2a3a;
-            --success: #22c55e;
             --error: #ef4444;
         }
 
@@ -45,7 +47,7 @@
             font-family: 'ZCOOL KuaiLe', cursive;
         }
 
-        /* 背景效果 */
+        /* --- 背景动效 --- */
         .bg-pattern {
             position: fixed;
             inset: 0;
@@ -99,6 +101,7 @@
             }
         }
 
+        /* --- 布局容器 --- */
         .main-content {
             position: relative;
             z-index: 10;
@@ -108,7 +111,7 @@
             margin: 0 auto;
         }
 
-        /* 标题区域 */
+        /* --- 标题区域 --- */
         .header {
             text-align: center;
             margin-bottom: 2.5rem;
@@ -125,6 +128,7 @@
             margin-bottom: 0.5rem;
         }
 
+        /* 主页 Logo 样式 */
         .title-logo {
             width: 40px;
             height: 40px;
@@ -132,6 +136,8 @@
             object-fit: contain;
             background: rgba(255, 255, 255, 0.05);
             padding: 2px;
+            /* 防止图标加载抖动 */
+            image-rendering: -webkit-optimize-contrast;
         }
 
         .header h1 {
@@ -143,9 +149,10 @@
         .header p {
             font-size: 1rem;
             color: var(--muted);
+            margin-top: 0.5rem;
         }
 
-        /* 搜索区域 */
+        /* --- 搜索框 --- */
         .search-box {
             position: relative;
             background: var(--card);
@@ -202,7 +209,7 @@
             color: white;
         }
 
-        /* 热门标签 */
+        /* --- 标签 --- */
         .tags-container {
             display: flex;
             flex-wrap: wrap;
@@ -227,7 +234,7 @@
             color: var(--accent);
         }
 
-        /* 结果列表样式 */
+        /* --- 结果列表样式 --- */
         .result-stats {
             margin-bottom: 1rem;
             color: var(--muted);
@@ -324,7 +331,7 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* 状态 */
+        /* --- 状态提示 --- */
         .status-message {
             text-align: center;
             padding: 40px 20px;
@@ -365,7 +372,9 @@
         <!-- 标题区域 -->
         <header class="header">
             <div class="header-top">
-                <img id="titleLogo" class="title-logo" src="" alt="Logo">
+                <!-- 主页 Logo：使用酷乐 API 获取 -->
+                <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/"
+                    alt="Logo">
                 <h1 class="font-display">短剧搜索</h1>
             </div>
             <p>发现精彩短剧，聚合全网资源</p>
@@ -401,16 +410,14 @@
 
     <script>
         // === 配置部分 ===
-        // 搜索 API (原接口)
+        // 搜索 API
         const SEARCH_API = 'https://api.kuleu.com/api/bddj';
         // 图标 API (酷乐)
         const ICO_API = 'https://api.kuleu.com/api/ico';
-        // 备用图标 API (Google 服务，防备酷乐 API 无图)
-        const ICO_BACKUP = 'https://www.google.com/s2/favicons?domain=';
 
         // 公共 CORS 代理列表 (优先级从高到低)
         const CORS_PROXIES = [
-            'https://cors.sh/', // 专用 CORS 代理，通常较稳定
+            'https://cors.sh/', // 专用 CORS 代理
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?'
         ];
@@ -422,38 +429,13 @@
         const hotTags = document.getElementById('hotTags');
         const titleLogo = document.getElementById('titleLogo');
 
-        // === 1. Logo 与 Favicon 处理 ===
-        function initLogo() {
-            // 获取当前页面域名，如果没有则使用默认
-            const domain = window.location.hostname || 'github.com';
-            const pageUrl = 'https://' + domain;
-
-            // 构建酷乐 API URL
-            const kuleUrl = `${ICO_API}?url=${encodeURIComponent(pageUrl)}`;
-
-            // 1. 设置标题旁的 Logo
-            titleLogo.src = kuleUrl;
-
-            // 2. 设置浏览器标签页 Favicon
-            changeFavicon(kuleUrl);
-
-            // 3. 容错处理：如果酷乐 API 加载失败，尝试备用 API
+        // === 1. Logo 容错处理 ===
+        // 如果主页 Logo 加载失败（例如 API 超时），隐藏图片以免显示破损图标
+        if (titleLogo) {
             titleLogo.onerror = function () {
-                console.warn('酷乐 Logo API 加载失败，尝试备用方案');
-                const backupUrl = ICO_BACKUP + domain;
-                this.src = backupUrl;
-                changeFavicon(backupUrl);
+                console.warn('主页 Logo 加载失败，已隐藏');
+                this.style.display = 'none';
             };
-        }
-
-        function changeFavicon(src) {
-            let favicon = document.querySelector('link[rel="icon"]');
-            if (!favicon) {
-                favicon = document.createElement('link');
-                favicon.rel = 'icon';
-                document.head.appendChild(favicon);
-            }
-            favicon.href = src;
         }
 
         // === 2. 搜索逻辑 ===
@@ -541,6 +523,7 @@
 
             // 从链接提取域名用于显示图标
             const domain = extractDomain(link);
+            // 使用酷乐 API 获取来源网站的图标
             const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
 
             // 每一项依次延迟显示
@@ -605,9 +588,6 @@
                 performSearch(e.target.dataset.keyword);
             }
         });
-
-        // 初始化
-        initLogo();
     </script>
 </body>
 
