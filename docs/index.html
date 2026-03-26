@@ -42,7 +42,7 @@
       font-family: 'ZCOOL KuaiLe', cursive;
     }
 
-    /* === 布局工具类（替代 Tailwind） === */
+    /* === 布局工具类 === */
     .container {
       max-width: 56rem;
       margin-left: auto;
@@ -156,6 +156,50 @@
       }
     }
 
+    /* === 标题区域 === */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .title-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      margin: 0;
+      letter-spacing: 0.05em;
+    }
+
+    @media (min-width: 768px) {
+      .header h1 {
+        font-size: 3.5rem;
+      }
+    }
+
+    .header p {
+      font-size: 1.125rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
     /* === 搜索区域 === */
     .search-container {
       margin-bottom: 2rem;
@@ -252,29 +296,6 @@
       width: 22px;
       height: 22px;
       color: white;
-    }
-
-    /* === 标题区域 === */
-    .header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-
-    .header h1 {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      letter-spacing: 0.05em;
-    }
-
-    @media (min-width: 768px) {
-      .header h1 {
-        font-size: 3.5rem;
-      }
-    }
-
-    .header p {
-      font-size: 1.125rem;
-      color: var(--muted);
     }
 
     /* === 热门标签 === */
@@ -403,6 +424,17 @@
     .card-link:hover {
       background: var(--accent);
       color: white;
+    }
+
+    /* 来源站点小 logo */
+    .source-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      object-fit: contain;
+      vertical-align: middle;
+      margin-right: 4px;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     /* === 状态提示 === */
@@ -542,7 +574,12 @@
     <div class="container">
       <!-- 标题区域 -->
       <header class="header animate-in">
-        <h1 class="font-display" style="color: var(--fg);">短剧搜索</h1>
+        <div class="header-title-row">
+          <!-- 通过酷乐 API 获取标题 logo -->
+          <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://github.com/"
+            alt="短剧搜索 logo">
+          <h1 class="font-display" style="color: var(--fg);">短剧搜索</h1>
+        </div>
         <p>发现精彩短剧，随时随地观看</p>
       </header>
 
@@ -594,18 +631,27 @@
     var resultsArea = document.getElementById('resultsArea');
     var hotTags = document.getElementById('hotTags');
 
-    // API 配置 - 使用 CORS 代理
-    var API_BASE = 'https://api.kuleu.com/api/bddj';
-    // CORS 代理列表
+    // 短剧搜索 API
+    var DRAMA_API = 'https://api.kuleu.com/api/action';
+    // CORS 代理
     var CORS_PROXIES = [
       'https://corsproxy.io/?',
       'https://api.allorigins.win/raw?url='
     ];
 
-    // 日志函数
-    function log(msg, type) {
-      type = type || 'info';
-      console.log('[' + type.toUpperCase() + ']', msg);
+    // 根据网址获取酷乐 ico 接口 URL
+    function getKuleIcoUrl(pageUrl) {
+      return 'https://api.kuleu.com/api/ico?url=' + encodeURIComponent(pageUrl);
+    }
+
+    // 从 URL 中提取域名
+    function extractDomain(url) {
+      try {
+        var u = new URL(url);
+        return u.hostname; // 如 pan.quark.cn
+      } catch (e) {
+        return '';
+      }
     }
 
     // 搜索函数
@@ -617,42 +663,42 @@
       }
 
       showLoading();
-      log('开始搜索: ' + searchTerm);
+      console.log('[INFO] 开始搜索: ' + searchTerm);
 
-      // 尝试直接请求
+      // 直接请求短剧搜索 API
       try {
-        log('尝试直接请求 API...');
-        var response = await fetch(API_BASE + '?text=' + encodeURIComponent(searchTerm), {
+        console.log('[INFO] 尝试直接请求短剧 API...');
+        var response = await fetch(DRAMA_API + '?text=' + encodeURIComponent(searchTerm), {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
 
         if (response.ok) {
           var data = await response.json();
-          log('直接请求成功', 'success');
+          console.log('[SUCCESS] 直接请求成功');
           handleApiResponse(data, searchTerm);
           return;
         }
       } catch (directError) {
-        log('直接请求失败: ' + directError.message, 'error');
+        console.log('[ERROR] 直接请求失败: ' + directError.message);
       }
 
       // 尝试 CORS 代理
       for (var i = 0; i < CORS_PROXIES.length; i++) {
         var proxy = CORS_PROXIES[i];
         try {
-          log('尝试代理: ' + proxy);
-          var proxyUrl = proxy + encodeURIComponent(API_BASE + '?text=' + encodeURIComponent(searchTerm));
+          console.log('[INFO] 尝试代理: ' + proxy);
+          var proxyUrl = proxy + encodeURIComponent(DRAMA_API + '?text=' + encodeURIComponent(searchTerm));
           var proxyResponse = await fetch(proxyUrl);
 
           if (proxyResponse.ok) {
             var proxyData = await proxyResponse.json();
-            log('代理请求成功: ' + proxy, 'success');
+            console.log('[SUCCESS] 代理请求成功: ' + proxy);
             handleApiResponse(proxyData, searchTerm);
             return;
           }
         } catch (proxyError) {
-          log('代理失败: ' + proxyError.message, 'error');
+          console.log('[ERROR] 代理失败: ' + proxyError.message);
         }
       }
 
@@ -663,7 +709,7 @@
     function handleApiResponse(data, searchTerm) {
       if (data.code === 200) {
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          log('找到 ' + data.data.length + ' 条结果', 'success');
+          console.log('[SUCCESS] 找到 ' + data.data.length + ' 条结果');
           renderResults(data.data, searchTerm);
         } else {
           showEmpty(searchTerm);
@@ -737,34 +783,39 @@
 
     // 创建结果卡片
     function createResultCard(item) {
-      var title = item.name || item.title || item.vod_name || '未知短剧';
-      var image = item.pic || item.image || item.cover || item.vod_pic || '';
-      var url = item.url || item.link || item.vod_url || '';
-      var desc = item.desc || item.description || item.vod_blurb || '';
-      var type = item.type || item.category || item.vod_class || '';
-      var note = item.note || item.vod_remarks || '';
+      var title = item.name || '未知短剧';
+      var url = item.viewlink || '';
+      var time = item.addtime || '';
+
+      var domain = extractDomain(url);
+      var iconUrl = url ? getKuleIcoUrl('https://' + domain) : '';
 
       var cardHtml = '<article class="result-card">';
 
-      if (image) {
-        cardHtml += '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(title) + '" class="card-image" loading="lazy" onerror="this.style.display=\'none\'">';
+      if (url) {
+        cardHtml += '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" style="display:block;">';
       }
-
-      cardHtml += '<div class="card-content">' +
-        '<h3 class="card-title">' + escapeHtml(title) + '</h3>';
-
-      if (desc) {
-        cardHtml += '<p class="card-desc">' + escapeHtml(desc) + '</p>';
-      }
-
-      cardHtml += '<div class="card-meta">';
-      if (type) {
-        cardHtml += '<span class="tag small">' + escapeHtml(type) + '</span>';
-      }
-      if (note) {
-        cardHtml += '<span class="tag small" style="color: var(--accent); border-color: rgba(255,107,53,0.3);">' + escapeHtml(note) + '</span>';
-      }
+      cardHtml += '<div style="padding: 16px;">';
+      cardHtml += '<h3 class="card-title">' + escapeHtml(title) + '</h3>';
       cardHtml += '</div>';
+      if (url) {
+        cardHtml += '</a>';
+      }
+
+      cardHtml += '<div class="card-content">';
+
+      if (domain) {
+        cardHtml += '<div class="card-meta">' +
+          '<img src="' + escapeHtml(iconUrl) + '" alt="站点图标" class="source-icon" onerror="this.style.display=\'none\'">' +
+          '<span class="tag small">' + escapeHtml(domain) + '</span>' +
+          '</div>';
+      }
+
+      if (time) {
+        cardHtml += '<div class="card-meta">' +
+          '<span class="tag small">更新于 ' + escapeHtml(time) + '</span>' +
+          '</div>';
+      }
 
       if (url) {
         cardHtml += '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" class="card-link">' +
@@ -805,6 +856,17 @@
         performSearch(tag.dataset.keyword);
       }
     });
+
+    // 根据 GitHub Pages 地址自动设置标题 logo
+    function updateTitleLogo() {
+      var titleLogo = document.getElementById('titleLogo');
+      if (titleLogo) {
+        // 使用当前页面地址作为 ico 的 url 参数
+        var pageUrl = window.location.href || 'https://github.com/';
+        titleLogo.src = getKuleIcoUrl(pageUrl);
+      }
+    }
+    updateTitleLogo();
   </script>
 </body>
 
