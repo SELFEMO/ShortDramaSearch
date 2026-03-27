@@ -746,6 +746,29 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        /* --- 【新增】热度榜搜索按钮样式 --- */
+        .rank-to-search-btn {
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .rank-to-search-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
         /* --- 全局二维码弹窗样式 --- */
         .qr-modal-overlay {
             position: fixed;
@@ -1015,12 +1038,6 @@
                 width: 100%;
                 justify-content: center;
             }
-
-            /* 移动端二维码图片略小 */
-            .qr-image {
-                max-width: 140px;
-                max-height: 140px;
-            }
         }
     </style>
 </head>
@@ -1046,12 +1063,10 @@
 
     <!-- 顶部导航 -->
     <nav class="app-nav">
-        <!-- 【修改】标题增加ID，用于动态切换 -->
         <div id="appTitle" class="app-title font-display">酷乐短剧 / 影视资源 · <span>聚合搜索</span></div>
         <div class="app-nav-links">
             <div class="nav-link active" data-page="search">短剧搜索</div>
             <div class="nav-link" data-page="daily">每日影视</div>
-            <!-- 【新增】热度榜入口 -->
             <div class="nav-link" data-page="rank">热度榜</div>
         </div>
     </nav>
@@ -1112,7 +1127,6 @@
 
                 <div class="vtquark-section" id="vtquarkSection" style="display:none;">
                     <div class="vtquark-header">
-                        <!-- 【修改】标题改为夸克热搜榜 -->
                         <div class="vtquark-title">🎬 <strong>夸克热搜榜</strong></div>
                         <div class="vtquark-toggle" id="toggleVtquark">展开查看 <svg width="12" height="12"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1155,12 +1169,12 @@
             </div>
         </section>
 
-        <!-- 【新增】页面3：热度榜 -->
+        <!-- 页面3：热度榜 -->
         <section id="page-rank" class="page">
             <div class="rank-page">
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <h2 class="font-display" style="font-size: 2rem;">福利热度榜</h2>
-                    <p style="margin-top: 0.5rem;">实时更新短剧与夸克热搜榜单，点击即可跳转搜索</p>
+                    <p style="margin-top: 0.5rem;">实时更新短剧与夸克热搜榜单，双击或点击按钮可跳转搜索</p>
                 </div>
 
                 <!-- 切换标签 -->
@@ -1248,8 +1262,6 @@
             // 特定页面逻辑
             if (pageName === 'daily') loadDailyResources();
             if (pageName === 'rank') {
-                // 如果没有加载过数据，则加载；或者直接渲染空状态等待输入
-                // 由于数据在启动时已加载，这里直接初始化显示
                 initRankPage();
             }
         }
@@ -1434,7 +1446,7 @@
         searchBtn.addEventListener('click', () => performSearch(searchInput.value));
         searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performSearch(searchInput.value); });
 
-        // ==================== 主页热度榜逻辑（保持不变，仅修改名称） ====================
+        // ==================== 主页热度榜逻辑 ====================
         let rankData = []; let vtquarkData = []; let showAllRank = false; let showVtquark = false;
 
         async function loadRankTags() { try { const res = await fetch(SHORTDRAMA_RANK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { rankData = json.data; renderRankTags(); } } catch (e) { } }
@@ -1457,27 +1469,24 @@
         document.getElementById('rankTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; const keyword = tag.dataset.keyword; searchInput.value = keyword; performSearch(keyword); });
         document.getElementById('vtquarkTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; const keyword = tag.dataset.keyword; searchInput.value = keyword; performSearch(keyword); });
 
-        // ==================== 【新增】热度榜页面逻辑 ====================
-        let currentRankSource = 'drama'; // 默认显示短剧榜
+        // ==================== 热度榜页面逻辑 ====================
+        let currentRankSource = 'drama';
 
         function initRankPage() {
-            // 绑定切换事件
             document.querySelectorAll('.rank-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     document.querySelector('.rank-tab.active').classList.remove('active');
                     tab.classList.add('active');
                     currentRankSource = tab.dataset.source;
-                    renderRankList(); // 切换时重新渲染
+                    renderRankList();
                 });
             });
 
-            // 绑定搜索事件
             rankSearchInput.addEventListener('input', renderRankList);
-
-            // 首次渲染
             renderRankList();
         }
 
+        // 【修改】增加双击和按钮跳转逻辑
         function renderRankList() {
             const keyword = rankSearchInput.value.trim().toLowerCase();
             let sourceData = [];
@@ -1488,7 +1497,6 @@
                 sourceData = vtquarkData;
             }
 
-            // 过滤
             let filtered = sourceData;
             if (keyword) {
                 filtered = sourceData.filter(item => {
@@ -1497,7 +1505,6 @@
                 });
             }
 
-            // 渲染
             if (filtered.length === 0) {
                 rankListContainer.innerHTML = `<div class="status-message"><p>没有找到相关内容</p></div>`;
                 return;
@@ -1509,13 +1516,14 @@
                 const hot = item.hots || item.hot || '0';
                 const rank = item.ranking || item.content_rank || (index + 1);
 
-                // 点击标签自动跳转到搜索页并搜索
-                // 注意：这里我们直接构建一个点击事件，将其值填入搜索框并触发搜索，然后跳转
-                const searchKeyword = title;
+                // 双击事件
+                const dblClickEvent = `ondblclick="handleRankItemClick('${escapeHtml(title)}')"`;
+                // 按钮点击事件
+                const btnClickEvent = `onclick="event.stopPropagation(); handleRankItemClick('${escapeHtml(title)}')"`;
 
                 html += `
-                <div class="result-item" style="animation-delay: ${index * 0.03}s">
-                    <div class="drama-title" style="cursor: pointer;" onclick="handleRankItemClick('${escapeHtml(searchKeyword)}')">
+                <div class="result-item" style="animation-delay: ${index * 0.03}s" ${dblClickEvent}>
+                    <div class="drama-title" style="cursor: pointer;">
                         <span class="tag-rank" style="margin-right: 5px; font-size: 14px; color: ${rank <= 3 ? 'var(--accent)' : '#888'};">${rank}.</span>
                         ${escapeHtml(title)}
                     </div>
@@ -1525,20 +1533,39 @@
                             <span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span>
                         </div>
                     </div>
+                    <!-- 新增跳转按钮 -->
+                    <div style="text-align: right; margin-top: 5px;">
+                        <button class="rank-to-search-btn" ${btnClickEvent}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                            </svg>
+                            全局搜索资源
+                        </button>
+                    </div>
                 </div>`;
             });
             html += `</div>`;
             rankListContainer.innerHTML = html;
         }
 
-        // 处理榜单点击：跳转搜索页并搜索
+        // 【修改】增强跳转逻辑：强制使用全局聚合
         function handleRankItemClick(keyword) {
-            searchInput.value = keyword;
-            window.location.hash = '#/'; // 跳转回搜索页
-            // 跳转后需要稍微延迟一下确保页面切换完成再触发搜索
+            // 1. 切换到搜索页
+            window.location.hash = '#/';
+
+            // 2. 延迟执行，确保页面切换DOM加载完毕
             setTimeout(() => {
+                // 强制选择“全局聚合”
+                const typeSelect = document.getElementById('typeSelect');
+                if (typeSelect) typeSelect.value = 'all';
+
+                // 填入关键词
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.value = keyword;
+
+                // 触发搜索
                 performSearch(keyword);
-            }, 100);
+            }, 150);
         }
 
         // ==================== 每日影视 ====================
