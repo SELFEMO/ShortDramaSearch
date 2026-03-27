@@ -544,20 +544,33 @@
             font-weight: 600;
         }
 
-        /* --- 结果卡片 --- */
+        /* --- 结果卡片容器 --- */
         .result-section {
             margin-bottom: 1.5rem;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.01);
         }
 
+        /* 折叠头部样式 */
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
             gap: 0.5rem;
             color: var(--fg);
             font-size: 15px;
             font-weight: 600;
+            padding: 12px 16px;
+            background: var(--card);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .section-label {
@@ -627,10 +640,37 @@
             color: #3f51b5;
         }
 
+        .toggle-icon {
+            color: var(--muted);
+            transition: transform 0.3s ease;
+            margin-right: 5px;
+            font-size: 12px;
+        }
+
+        /* 折叠状态控制 */
+        .result-section.collapsed .result-list {
+            display: none;
+        }
+
+        .result-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .result-section:not(.collapsed) .toggle-icon {
+            transform: rotate(0deg);
+        }
+
+        /* 【修复优化】结果列表样式 */
         .result-list {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            /* 修改点1：增加四周内边距，解决粘边问题 */
+            padding: 12px;
+            /* 修改点2：加深背景色，增强“包围”感 */
+            background: rgba(0, 0, 0, 0.2);
+            /* 修改点3：增加顶部分割线，层次更清晰 */
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .result-item {
@@ -746,7 +786,7 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* --- 【新增】热度榜搜索按钮样式 --- */
+        /* --- 热度榜搜索按钮样式 --- */
         .rank-to-search-btn {
             margin-top: 10px;
             display: inline-flex;
@@ -855,7 +895,6 @@
 
         .qr-modal-error {
             display: none;
-            /* 默认隐藏 */
             width: 200px;
             height: 200px;
             background: #f5f5f5;
@@ -1050,7 +1089,7 @@
     <!-- 搜索状态通知 -->
     <div id="searchStatus" class="search-status"></div>
 
-    <!-- 【新增】全局二维码弹窗 -->
+    <!-- 全局二维码弹窗 -->
     <div id="qrModalOverlay" class="qr-modal-overlay">
         <div class="qr-modal-box">
             <button class="qr-modal-close" onclick="closeQrModal()">×</button>
@@ -1422,14 +1461,76 @@
 
         function handleError(error, term) { const errorType = error.errorType || 'unknown'; let title = '发生错误'; let message = '请稍后重试'; switch (errorType) { case 'timeout': title = '请求超时'; break; case 'network': title = '网络连接失败'; break; } resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">${title}</p></div>`; }
 
-        function renderGroupedResults(mergedByType, typeList, term, total) { let html = `<div class="result-stats"><span>关键词：${escapeHtml(term)}</span><span>共 ${total} 条</span></div>`; typeList.forEach(type => { const items = mergedByType[type]; if (!items.length) return; const typeLabel = TYPE_LABEL[type] || type; const safeType = type.replace(/\s+/g, '_'); html += `<div class="result-section"><div class="section-header"><span class="section-label ${safeType}">${escapeHtml(typeLabel)}</span><span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span></div><div class="result-list">`; items.forEach((item, index) => { html += createResultItem(item, type, index); }); html += `</div></div>`; }); resultsArea.innerHTML = html; }
+        // 渲染逻辑：支持排序和折叠
+        function renderGroupedResults(mergedByType, typeList, term, total) {
+            let html = `<div class="result-stats"><span>关键词：${escapeHtml(term)}</span><span>共 ${total} 条</span></div>`;
+
+            // 1. 排序逻辑：百度 > 夸克 > 其他
+            let sortedTypes = [];
+            const priority = ['baidu', 'quark'];
+
+            // 先添加优先项
+            priority.forEach(p => {
+                if (typeList.includes(p)) {
+                    sortedTypes.push(p);
+                }
+            });
+
+            // 再添加剩余项
+            typeList.forEach(t => {
+                if (!sortedTypes.includes(t)) {
+                    sortedTypes.push(t);
+                }
+            });
+
+            // 2. 渲染循环
+            sortedTypes.forEach(type => {
+                const items = mergedByType[type];
+                if (!items || items.length === 0) return;
+
+                const typeLabel = TYPE_LABEL[type] || type;
+                const safeType = type.replace(/\s+/g, '_');
+
+                // 折叠逻辑：百度和夸克默认展开，其他默认折叠
+                const isCollapsed = (type !== 'baidu' && type !== 'quark');
+                const collapsedClass = isCollapsed ? 'collapsed' : '';
+                const iconHtml = `<span class="toggle-icon">▼</span>`;
+
+                html += `
+                <div class="result-section ${collapsedClass}" data-type="${safeType}">
+                    <div class="section-header">
+                        <div>
+                            ${iconHtml}
+                            <span class="section-label ${safeType}">${escapeHtml(typeLabel)}</span>
+                            <span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span>
+                        </div>
+                    </div>
+                    <div class="result-list">`;
+
+                items.forEach((item, index) => {
+                    html += createResultItem(item, type, index);
+                });
+
+                html += `</div></div>`;
+            });
+
+            resultsArea.innerHTML = html;
+
+            // 3. 绑定折叠点击事件
+            document.querySelectorAll('.result-section .section-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const section = header.closest('.result-section');
+                    section.classList.toggle('collapsed');
+                });
+            });
+        }
 
         function createResultItem(item, type, index) {
             const name = item.name || '未知资源'; const link = item.url || '#'; const pwd = item.pwd || ''; const typeLabel = TYPE_LABEL[type] || type;
             const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : ''; const delay = index * 0.05;
             return `
                 <div class="result-item" style="animation-delay: ${delay}s" data-link="${escapeHtml(link)}">
-                    <button class="qr-toggle-btn" title="分享二维码" onclick="openQrModal('${escapeHtml(link)}')">
+                    <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                     </button>
                     <div class="drama-title">${escapeHtml(name)}</div>
@@ -1486,7 +1587,6 @@
             renderRankList();
         }
 
-        // 【修改】增加双击和按钮跳转逻辑
         function renderRankList() {
             const keyword = rankSearchInput.value.trim().toLowerCase();
             let sourceData = [];
@@ -1516,9 +1616,7 @@
                 const hot = item.hots || item.hot || '0';
                 const rank = item.ranking || item.content_rank || (index + 1);
 
-                // 双击事件
                 const dblClickEvent = `ondblclick="handleRankItemClick('${escapeHtml(title)}')"`;
-                // 按钮点击事件
                 const btnClickEvent = `onclick="event.stopPropagation(); handleRankItemClick('${escapeHtml(title)}')"`;
 
                 html += `
@@ -1533,7 +1631,6 @@
                             <span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span>
                         </div>
                     </div>
-                    <!-- 新增跳转按钮 -->
                     <div style="text-align: right; margin-top: 5px;">
                         <button class="rank-to-search-btn" ${btnClickEvent}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1548,22 +1645,13 @@
             rankListContainer.innerHTML = html;
         }
 
-        // 【修改】增强跳转逻辑：强制使用全局聚合
         function handleRankItemClick(keyword) {
-            // 1. 切换到搜索页
             window.location.hash = '#/';
-
-            // 2. 延迟执行，确保页面切换DOM加载完毕
             setTimeout(() => {
-                // 强制选择“全局聚合”
                 const typeSelect = document.getElementById('typeSelect');
                 if (typeSelect) typeSelect.value = 'all';
-
-                // 填入关键词
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) searchInput.value = keyword;
-
-                // 触发搜索
                 performSearch(keyword);
             }, 150);
         }
@@ -1597,7 +1685,7 @@
                 const delay = index * 0.03;
                 html += `
                 <div class="result-item" style="animation-delay: ${delay}s">
-                    <button class="qr-toggle-btn" title="分享二维码" onclick="openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                    <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
                     <div class="drama-title">${escapeHtml(name)}</div>
                     <div class="info-list">
                         <div class="info-item"><span class="info-label">来源:</span><span style="color: ${source === 'baidu' ? '#06a7ff' : '#ff9500'};">${source === 'baidu' ? '百度网盘' : '夸克网盘'}</span></div>
