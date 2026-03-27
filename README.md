@@ -1,4 +1,4 @@
-# 🎬 [***百度网盘*** · 短剧搜索系统](https://github.com/SELFEMO/ShortDramaSearch)
+# 🎬 [短剧/影视资源聚合搜索](https://github.com/SELFEMO/ShortDramaSearch)
 
 一个多版本的短剧搜索应用，提供Flask、Streamlit、Desktop和在线网页（Online-Webpage）四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
 
