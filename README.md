@@ -32,6 +32,10 @@ $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版
 - **多代理容错** - 内置多个CORS代理，提高API调用成功率
 - **GitHub Pages 部署** - 支持一键部署到 GitHub Pages
 
+$^*$ *此外，该网站支持键入指定URL参数直接搜索（例如：
+`https://selfemo.github.io/ShortDramaSearch/?q=短剧名称`
+），即可使用 `q`、`name`、`s`、`search`、`keyword`多种参数名进行搜索，参数值为短剧名称（需要注意的是，“短剧名称”字符串**不需要添加引号**）*
+
 ---
 
 ## 🚀 [Flask 版本](https://github.com/SELFEMO/ShortDramaSearch/tree/master/flask_version)
