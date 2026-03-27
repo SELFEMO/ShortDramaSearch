@@ -35,7 +35,7 @@
 
 ## 🚀 [Flask 版本](https://github.com/SELFEMO/ShortDramaSearch/tree/master/flask_version)
 
-$^*$**注意：当前Flask版本处于开发阶段，功能可能不稳定且界面并未完善，同时存在一些暂时无法修改的问题（Bug），欢迎贡献修复代码！**
+$^*$***注意：当前Flask版本处于开发阶段，功能可能不稳定且界面并未完善，同时存在一些暂时无法修改的问题（Bug），欢迎贡献修复代码！***
 
 ### 主要功能
 
