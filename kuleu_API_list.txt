@@ -16,5 +16,8 @@ https://api.kuleu.com/api/vtquark?tag=短剧
 短剧热度榜:
 https://api.kuleu.com/api/shortdramarank
 
-ico图标获取
+ico图标获取:
 https://api.kuleu.com/api/ico?url=https://www.kuleu.com/
+
+二维码生成:
+https://api.kuleu.com/api/qrcode?frame=1&e=L&text=https://api.kuleu.com/&size=200

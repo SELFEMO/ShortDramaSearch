@@ -1,6 +1,6 @@
 # 🎬 [***百度网盘*** · 短剧搜索系统](https://github.com/SELFEMO/ShortDramaSearch)
 
-一个多版本的短剧搜索应用，提供Flask、Streamlit、Desktop和Web在线版本四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
+一个多版本的短剧搜索应用，提供Flask、Streamlit、Desktop和在线网页（Online-Webpage）四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
 
 $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版本为：Web在线版本），功能可能不稳定且界面并未完善，同时存在一些暂时无法修改的问题（Bug），欢迎贡献修复代码！***
 
@@ -19,7 +19,7 @@ $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版
 
 ---
 
-## 🚩 [Github 直接访问版本（Online-Website版本）](https://github.com/SELFEMO/ShortDramaSearch/tree/master/docs/index.html)
+## 🚩 [Github 在线访问版本（Online-Webpage版本）](https://github.com/SELFEMO/ShortDramaSearch/tree/master/docs/index.html)
 
 ***🔗 Github Page 访问链接：[https://selfemo.github.io/ShortDramaSearch/](https://selfemo.github.io/ShortDramaSearch/)***
 
@@ -138,7 +138,25 @@ streamlit run streamlit_version/app.py
 
 #### 3. 访问应用
 
-打开浏览器访问 `http://localhost:8501`
+打开浏览器访问 `http://localhost:8501`or `http://localhost:7777`（根据Streamlit版本不同可能端口不同）。
+
+或者，通过命令指定端口：
+```bash
+streamlit run streamlit_version/app.py --server.port 7777
+```
+
+或者，通过配置文件指定端口：
+```bash
+# 在 .streamlit/config.toml 中添加以下内容
+
+[server]
+port = 7777
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+```
 
 ### 使用说明
 
@@ -408,14 +426,14 @@ python build.py
 **Q: 如何选择使用哪个版本？**
 
 - A:
-    -- **Online-Website版本**：适合无需安装、即时访问、分享链接或部署在 GitHub Pages 的场景
+    - **Online-Webpage版本**：适合无需安装、即时访问、分享链接或部署在 *GitHub Pages* 的场景
     -  **Flask版本**：适合需要高度自定义界面的场景
     - **Streamlit版本**：适合快速开发和数据展示场景
     - **Desktop版本**：适合需要本地运行和跨平台支持的用户🚩
 
 **Q: 可以同时运行多个版本吗？**
 
-- A: 可以，但需要修改端口号避免冲突（*Flask*默认5000，*Streamlit*默认8501），Desktop版本不受影响
+- A: 可以，但需要修改端口号避免冲突（*Flask* 默认 *5000*，*Streamlit* 默认 *8501* / *7777*），*Desktop* 版本和 *Online-Webpage* 版本不受影响
 
 ## 🙏 感谢
 
@@ -425,9 +443,15 @@ python build.py
 - [Flask](https://flask.palletsprojects.com/)、[Streamlit](https://streamlit.io/)、[Requests](https://docs.python-requests.org/)、[Pandas](https://pandas.pydata.org/) 等*Python*库，使项目得以实现
 - [菜鸟图标](https://icon.sucai999.com/) 提供的图标资源
 
-## 📄 许可证
+## 📄 许可证 & 声明
 
-本项目仅用于学习和演示目的，请遵守相关法律法规，合理使用搜索功能。
+- **【项目声明】** 本项目为作者本人所设计，但部分代码由[AI](https://chatglm.cn)生成，复用时请认真辨别安全性后再使用，一切后果由使用者自行承担。
+- **【使用声明】** 本项目仅用于学习和演示目的，请遵守相关法律法规，合理使用搜索功能，一切后果由使用者自行承担。
+- **【其他信息与声明】**
+  - **【关于 酷乐API】** 酷乐API是免费提供API数据接口调用服务平台 - 我们致力于为用户提供稳定、快速的免费API数据接口服务。
+    - **【酷乐API - 免责声明】** 本网站提供的 API 为个人兴趣开发，仅供学习交流使用。所有数据均来源于公开渠道， 本站不对站点内容承担任何责任。任何单位或个人因使用本 API 所引发的任何问题， 本网站均不承担任何法律责任，一切后果由使用者自行承担。
+    - **【网站】**酷乐API - 免费API数据接口调用服务平台*，访问链接：[https://api.kuleu.com/](https://api.kuleu.com/)
+      - **【API接口】** 酷乐API提供的API接口，见项目文件 [kuleu_API_list.txt](kuleu_API_list.txt)
 
 ---
 
