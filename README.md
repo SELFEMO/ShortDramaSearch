@@ -401,6 +401,8 @@ ShortDramaSearch/
     - **desktop_version/resources/icons/** - 存放应用图标的目录，包含多种格式
     - **desktop_version/build.py** - 简化的打包脚本，使用PyInstaller进行打包
     - **desktop_version/build.spec** - PyInstaller的构建规范文件，定义打包配置
+- **docs** - Github Pages 官方设置的除 /(root) 目录下的默认二级目录，为了避免 Github Pages 设置为 /(root) 目录时默认网页为 README.md文件
+    - **index.html** - Github Pages 官方默认 html 入口文件，Online-Webpages 版本利用单文件（HTML、CSS 和 JS 内联开发）实现
 - **requirements.txt** - 项目依赖包列表
 - **README.md** - 项目详细说明文档
 
