@@ -1,0 +1,6 @@
+[server]
+port = 7777
+headless = true
+
+[browser]
+gatherUsageStats = false
