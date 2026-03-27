@@ -1,79 +1,70 @@
-import json
 import os
-from datetime import datetime
-
-# 修改缓存过期时间（秒）
-CACHE_EXPIRE_TIME = 3600  # 1小时
+import json
+from typing import Dict, List, Any
 
 
 class DataManager:
     def __init__(self):
-        self.data_dir = self.get_data_dir()
-        self.history_file = os.path.join(self.data_dir, "search_history.json")
-        self.cache_file = os.path.join(self.data_dir, "search_cache.json")
+        self.app_data_dir = os.path.join(os.path.expanduser("~"), ".short_drama_search")
+        os.makedirs(self.app_data_dir, exist_ok=True)
 
-        # 确保数据目录存在
-        os.makedirs(self.data_dir, exist_ok=True)
+        self.history_file = os.path.join(self.app_data_dir, "history.json")
+        self.cache_file = os.path.join(self.app_data_dir, "cache.json")
 
-    def get_data_dir(self):
-        """获取数据存储目录"""
-        if os.name == 'nt':  # Windows
-            base_dir = os.environ.get('APPDATA', os.path.expanduser('~'))
-            return os.path.join(base_dir, 'ShortDramaSearch')
-        else:  # macOS/Linux
-            return os.path.join(os.path.expanduser('~'), '.shortdramasearch')
-
-    def save_search_history(self, keyword, results):
+    def save_search_history(self, keyword: str, results: List[Dict]):
         """保存搜索历史"""
         history = self.load_search_history()
 
-        entry = {
-            "keyword": keyword,
-            "timestamp": datetime.now().isoformat(),
-            "result_count": len(results.get("data", [])),
-            "results": results
-        }
+        # 去重并添加新记录
+        history = [h for h in history if h["keyword"] != keyword]
+        history.insert(
+            0,
+            {
+                "keyword": keyword,
+                "count": len(results),
+                "timestamp": (
+                    str(os.path.getmtime(self.history_file))
+                    if os.path.exists(self.history_file)
+                    else "0"
+                ),
+            },
+        )
 
-        history.insert(0, entry)
-        # 只保留最近50条记录
+        # 只保留最近50条
         history = history[:50]
 
-        with open(self.history_file, 'w', encoding='utf-8') as f:
+        with open(self.history_file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
 
-    def load_search_history(self):
+    def load_search_history(self) -> List[Dict]:
         """加载搜索历史"""
-        try:
-            with open(self.history_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                return []
+        return []
 
-    def cache_results(self, keyword, results):
+    def cache_results(self, key: str, results: List[Dict]):
         """缓存搜索结果"""
         cache = self.load_cache()
-        cache[keyword] = {
-            "timestamp": datetime.now().isoformat(),
-            "results": results
-        }
+        cache[key] = results
 
-        with open(self.cache_file, 'w', encoding='utf-8') as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
+        with open(self.cache_file, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False)
 
-    def load_cache(self):
-        """加载缓存"""
-        try:
-            with open(self.cache_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {}
-
-    def get_cached_results(self, keyword):
-        """获取缓存的搜索结果"""
+    def get_cached_results(self, key: str) -> List[Dict]:
+        """获取缓存的结果"""
         cache = self.load_cache()
-        if keyword in cache:
-            # 检查缓存是否过期（1小时）
-            cached_time = datetime.fromisoformat(cache[keyword]["timestamp"])
-            if (datetime.now() - cached_time).total_seconds() < 3600:
-                return cache[keyword]["results"]
-        return None
+        return cache.get(key, [])
+
+    def load_cache(self) -> Dict[str, List[Dict]]:
+        """加载缓存"""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
