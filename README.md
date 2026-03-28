@@ -37,31 +37,102 @@ $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版
 | 参数名 | 别名 | 是否必填 | 说明 | 默认值 | 备注                                                   |
 | :--- | :--- |:-----| :--- | :--- |:-----------------------------------------------------|
 | **search** | `s`、`q`、`name`、`keyword` | 否    | **搜索关键词**。支持中英文，支持空格拆分关键词以提高命中率。 | 无 | 参数值为短剧名称（需要注意的是，“短剧名称”字符串**不需要添加引号**                 |
-| **from** | 无 | 否    | **搜索来源**。指定搜索的网盘类型。 | `all` | 请严格按照指定的来源名称传入参数值$^2$，例如：`from=netdisk` |
-| **format** | 无 | 否    | **输出格式**。设为 `json` 时，页面将直接输出纯 JSON 数据，不渲染 UI 界面。 | 网页模式 (HTML) | 如果不传此参数或值不为 json，页面将渲染正常的搜索界面并自动开始搜索。                |
+| **from** | 无 | 否    | **搜索来源**。指定搜索的网盘类型。 | `all` | 请严格按照指定的来源名称传入参数值 $^2$，例如：`from=netdisk` |
+| **format** | 无 | 否    | **输出格式**。设为 `json` 时，页面将直接输出纯 JSON 数据 $^3$，不渲染 UI 界面。 | 网页模式 (HTML) | 如果不传此参数或值不为 json，页面将渲染正常的搜索界面并自动开始搜索。                |
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 $^1$ 多个参数可以组合使用，需要使用`&`符号连接，例如：```https://selfemo.github.io/ShortDramaSearch/?q=熊出没&from=netdisk```
 
-$^2$`from` 参数指定搜索的网盘来源，如下所示：
-- **聚合类：**
-  - `all`: 全局聚合（默认）
-  - `netdisk`: 网盘聚合（仅包含各大网盘）
-- **网盘类：**
-  - `baidu`: 百度网盘
-  - `quark`: 夸克网盘
-  - `aliyun`: 阿里云盘
-  - `tianyi`: 天翼云盘
-  - `uc`: UC网盘
-  - `mobile`: 移动云盘
-  - `115`: 115网盘
-  - `pikpak`: PikPak
-  - `xunlei`: 迅雷网盘
-  - `123`: 123网盘
-- **链接类：**
-  - `magnet`: 磁力链接
-  - `ed2k`: 电驴链接
+$^2$ 参数 `from` 指定搜索的网盘来源，如下所示：
+  - **聚合类：**
+    - `all`: 全局聚合（默认）
+    - `netdisk`: 网盘聚合（仅包含各大网盘）
+  - **网盘类：**
+    - `baidu`: 百度网盘
+    - `quark`: 夸克网盘
+    - `aliyun`: 阿里云盘
+    - `tianyi`: 天翼云盘
+    - `uc`: UC网盘
+    - `mobile`: 移动云盘
+    - `115`: 115网盘
+    - `pikpak`: PikPak
+    - `xunlei`: 迅雷网盘
+    - `123`: 123网盘
+  - **链接类：**
+    - `magnet`: 磁力链接
+    - `ed2k`: 电驴链接
+
+$^3$ 当键入网址（请求示例）类似于 ```https://selfemo.github.io/ShortDramaSearch/?q=飞驰人生3&from=netdisk&format=json``` 时，网站就变成了一个 ***API 接口***，用户能够通过该 API 接口地址获取到一个相关搜索结果的 JSON 数据，支持用户获取该 JSON 数据进行二次开发。API 接口的返回示例（JSON 数据结果示例）如下：
+  ```json
+  {
+    "code": 0,
+    "msg": "success",
+    "keyword": "飞驰人生3",
+    "type": "netdisk",
+    "total": 6,
+    "data": {
+      "quark": [
+        {
+          "url": "https://pan.quark.cn/s/b0042dadeb1f",
+          "images": [
+            "https://by1.430520.xyz/t/?id=1&url=xinlangtupian.com/cover/c68667d17d70ec51a68fb4d047df6fb8.jpg"
+          ],
+          "pwd": "",
+          "name": "飞驰人生3",
+          "_searchTerm": "飞驰人生3"
+        },
+        {
+          "url": "https://pan.quark.cn/s/9c863f8c3933",
+          "images": [
+            "https://image.baidu.com/search/down?url=https://img9.doubanio.com/view/photo/m_ratio_poster/public/p2929427346.jpg"
+          ],
+          "pwd": "",
+          "name": "飞驰人生3",
+          "_searchTerm": "飞驰人生3"
+        }
+      ],
+      "baidu": [
+        {
+          "url": "https://pan.baidu.com/s/1j4rVw-halXSEiK_-MzXgwQ?pwd=wogg",
+          "images": [
+            "https://cdn5.telesco.pe/file/cFmb7wshi8Z2nkTHh8g6JGoebBtsh78ZO2DV-E0XvubBxVdRJLkXP69r1b6KJTwq4ljSIKcdvrjUIgPoCcta6dlYH3TmsaUgp7jG7CZ_iSU5ILJZ_1-_dcB4AqJkQ1t16IvvDoiIB8-Y2YBDo1a82bfEDUrgssrX87m1LuTAOrXINbRxDUGidKjK_GyGp_S9MIpBq0c4cB6Txd4NWNLe9vRbNEOTUf3IoLbHMVCH6LLGbQzK6rzjy7RA6aD_3PCB1jeCvOANTjUhSPelPcVVlzgJf5uPz6mKN-nswzXj8QzZOlhSjJ8Wpr3VX1qh6HGfKPxlShAeHpbw61vxfkQe_A.jpg"
+          ],
+          "pwd": "wogg",
+          "name": "2026年春节档电影[镖人：风起大漠][飞驰人生3][惊蛰无声][熊出没：年年有熊]",
+          "_searchTerm": "飞驰人生3"
+        },
+        {
+          "url": "https://pan.baidu.com/s/1WOiUTWG-0KBGDI3zopQ7Zg?pwd=w594",
+          "images": [
+            "https://cdn1.telesco.pe/file/njiCz8lmhq3596KnCvv0AMzkIm2pLukTZ0I8s6Leemq3X3d9H-KPN7144k0zqJQu2x2KaXxxrFfu6n2ejg6nI8CZW2fZvlSONClY7QIPWbsFpBZtlqbCOFDpu-58F7_p_kBbHjCdxO1bj-SpMKB6-IkfoYvzhqPgrwRgqfFfp6ZpcisBBMoTD9ALrcZcanfy6OitusuN2CMhRYrfN97GiSPkvSLB_3bryCk8SZfIiS9pENqYLYyiUxIrfSX_iWqiQgY0AMCvtJwuClNr-4lWTvIVEyE3LvAmh70h5hRdDEy6RcPWpWOUxtQThWsElZLGqy2ChQO0KppWkg4HK1lAdQ.jpg"
+          ],
+          "pwd": "w594",
+          "name": "2026春节档上映电影合集，《惊蛰无声》《镖人：风起大漠》《飞驰人生3》等",
+          "_searchTerm": "飞驰人生3"
+        },
+        {
+          "url": "https://pan.baidu.com/s/1aYb_zOSGHwfcBoSrLFcD5g?pwd=yyds",
+          "images": [
+            "https://cdn5.telesco.pe/file/KgD-ib05j1MgP2VR2MEe9e0DzOspqNSrf3ncJ70wI2Uxd8BG90Z2adMMvIPkYHr5HHRecv9aQ7UWd7l2VQtHwfUG7VqmYapTuGHLXv0F1sug-oFiTBUGV6wRg1ls-IuVeoI8SSotIgXmNbyiF2qaIi_MbmlpX6jNhiZDCvnqmpomZ1sSFo0jDxTn6OxZn9QNSxDhzwj-AFQMNLNy7JsDtTCH3tAj0msNLaEploD4kXUsHLKVzL8T7SilWd9XzvCiotVrCX61zb1XNfvBM1V5LkC_bi3C31KURbtJRtBDnOUEnr3dqNB4ML-7blRyvx0bknRf2SDAFefPAVc3UxmO5A.jpg"
+          ],
+          "pwd": "yyds",
+          "name": "飞驰人生3 (2026)  抢先版",
+          "_searchTerm": "飞驰人生3"
+        },
+        {
+          "url": "https://pan.baidu.com/s/1Hjw6nUihfcD1ZBVzVmcBkg?pwd=8888",
+          "images": [
+            "https://by1.430520.xyz/t/?id=1&url=xinlangtupian.com/cover/c68667d17d70ec51a68fb4d047df6fb8.jpg"
+          ],
+          "pwd": "8888",
+          "name": "飞驰人生3",
+          "_searchTerm": "飞驰人生3"
+        }
+      ]
+    }
+  }
+  ```
 
 ---
 
