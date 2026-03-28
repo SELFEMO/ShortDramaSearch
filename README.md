@@ -42,7 +42,7 @@ $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-$^1$ 多个参数可以组合使用，需要使用`&`符号连接，例如：```https://selfemo.github.io/ShortDramaSearch/?q=熊出没&from=netdisk```
+$^1$ 多个参数可以组合使用，需要使用`&`符号连接，例如：```https://selfemo.github.io/ShortDramaSearch/?q=飞驰人生3&from=netdisk&format=json```
 
 $^2$ 参数 `from` 指定搜索的网盘来源，如下所示：
   - **聚合类：**
