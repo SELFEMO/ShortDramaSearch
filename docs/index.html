@@ -1,1065 +1,235 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>酷乐短剧 / 影视资源聚合搜索</title>
-
-    <!-- 解决图片防盗链问题 -->
+    
     <meta name="referrer" content="no-referrer">
-
-    <!-- 网站标识图标 -->
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
-
-    <!-- 预连接字体服务 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;800&family=ZCOOL+KuaiLe&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 
     <style>
-        /* CSS样式保持不变 */
         :root {
-            --bg: #0a0a0f;
-            --bg-secondary: #12121a;
-            --fg: #f0f0f5;
-            --muted: #6b6b80;
-            --accent: #ff6b35;
-            --accent-glow: rgba(255, 107, 53, 0.4);
-            --card: #1a1a24;
-            --border: #2a2a3a;
-            --error: #ef4444;
+            --bg: #0a0a0f; --bg-secondary: #12121a; --fg: #f0f0f5; --muted: #6b6b80;
+            --accent: #ff6b35; --accent-glow: rgba(255, 107, 53, 0.4);
+            --card: #1a1a24; --border: #2a2a3a; --error: #ef4444;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .font-display {
-            font-family: 'ZCOOL KuaiLe', cursive;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; overflow-x: hidden; }
+        .font-display { font-family: 'ZCOOL KuaiLe', cursive; }
         .bg-pattern {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
+            position: fixed; inset: 0; z-index: 0;
             background:
                 radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 107, 53, 0.15), transparent),
                 radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.1), transparent),
                 linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
         }
-
         .floating-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 20s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
+            position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.4;
+            animation: float 20s ease-in-out infinite; z-index: 0; pointer-events: none;
         }
-
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--accent);
-            top: -100px;
-            right: -100px;
-        }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: #8b5cf6;
-            bottom: -50px;
-            left: -50px;
-            animation-delay: -10s;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translate(0, 0) scale(1);
-            }
-
-            33% {
-                transform: translate(30px, -30px) scale(1.05);
-            }
-
-            66% {
-                transform: translate(-20px, 20px) scale(0.95);
-            }
-        }
+        .orb-1 { width: 400px; height: 400px; background: var(--accent); top: -100px; right: -100px; }
+        .orb-2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -50px; left: -50px; animation-delay: -10s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -30px) scale(1.05); } 66% { transform: translate(-20px, 20px) scale(0.95); } }
 
         .app-nav {
-            position: relative;
-            z-index: 20;
-            padding: 12px 16px;
-            background: rgba(10, 10, 15, 0.9);
-            border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: relative; z-index: 20; padding: 12px 16px;
+            background: rgba(10, 10, 15, 0.9); border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between;
         }
-
-        .app-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .app-title span {
-            color: var(--accent);
-        }
-
-        .app-nav-links {
-            display: flex;
-            gap: 10px;
-        }
-
+        .app-title { font-size: 18px; font-weight: 600; }
+        .app-title span { color: var(--accent); }
+        .app-nav-links { display: flex; gap: 10px; }
         .nav-link {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: var(--muted);
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
+            padding: 6px 12px; border-radius: 6px; font-size: 14px; color: var(--muted);
+            cursor: pointer; border: 1px solid transparent; transition: all 0.2s ease;
         }
+        .nav-link:hover { border-color: var(--accent); color: var(--accent); }
+        .nav-link.active { background: rgba(255, 107, 53, 0.1); border-color: var(--accent); color: var(--accent); }
 
-        .nav-link:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .main-content { position: relative; z-index: 10; min-height: 100vh; padding: 2rem 1rem; max-width: 900px; margin: 0 auto; }
+        .page { display: none; }
+        .page.active { display: block; }
 
-        .nav-link.active {
-            background: rgba(255, 107, 53, 0.1);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .header { text-align: center; margin-bottom: 2.5rem; display: flex; flex-direction: column; align-items: center; }
+        .header-top { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem; }
+        .title-logo { width: 40px; height: 40px; border-radius: 8px; object-fit: contain; background: rgba(255,255,255,0.05); padding: 2px; }
+        .header h1 { font-size: 2.5rem; letter-spacing: 0.05em; color: var(--fg); }
+        .header p { font-size: 1rem; color: var(--muted); margin-top: 0.5rem; }
 
-        .main-content {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .search-box { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 12px; transition: all 0.3s ease; overflow: hidden; margin-bottom: 1.5rem; }
+        .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .search-input { width: 100%; padding: 18px 170px 18px 20px; background: transparent; border: none; outline: none; color: var(--fg); font-size: 16px; }
+        .search-input::placeholder { color: var(--muted); }
+        .search-tools { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; }
+        .type-select { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); padding: 6px 8px; font-size: 13px; outline: none; cursor: pointer; max-width: 180px; min-width: 150px; }
+        .type-select option { background: #1a1a24; color: var(--fg); }
+        .search-btn { width: 42px; height: 42px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0; }
+        .search-btn:hover { background: #ff8555; }
+        .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .search-btn svg { width: 20px; height: 20px; color: white; }
 
-        .page {
-            display: none;
-        }
+        .tags-container { margin-bottom: 2rem; }
+        .tags-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem; }
+        .tags-title { font-size: 14px; color: var(--muted); }
+        .tags-title strong { color: var(--accent); font-weight: 600; }
+        .tags-toggle { font-size: 13px; color: var(--accent); cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .tags-toggle:hover { text-decoration: underline; }
+        .tags-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .tag { padding: 5px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 16px; font-size: 13px; color: var(--muted); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
+        .tag:hover { border-color: var(--accent); color: var(--accent); }
+        .tag.disabled { opacity: 0.5; cursor: not-allowed; }
+        .tag-rank { font-size: 12px; color: #888; }
+        .tag-hot { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: #ff9500; }
+        .tags-more { margin-top: 0.5rem; font-size: 13px; color: #888; text-align: center; }
+        .vtquark-section { margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 0.75rem; }
+        .vtquark-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+        .vtquark-title { font-size: 14px; color: var(--muted); }
+        .vtquark-title strong { color: #ff9500; }
+        .vtquark-toggle { font-size: 13px; color: var(--accent); cursor: pointer; user-select: none; }
+        .vtquark-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-        .page.active {
-            display: block;
-        }
+        .daily-page { padding-top: 1rem; }
+        .daily-toolbar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+        .daily-search-input { flex: 1; min-width: 200px; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+        .daily-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .daily-refresh-btn { padding: 9px 14px; background: var(--accent); color: #fff; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .daily-refresh-btn:hover { background: #ff8555; }
+        .daily-refresh-btn svg { width: 16px; height: 16px; }
+        .daily-stats { font-size: 13px; color: var(--muted); margin-bottom: 0.75rem; }
 
-        /* 这里的样式是压缩版，实际使用时请使用您原文件的完整样式，这里为了节省篇幅省略了中间部分 */
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .rank-page { padding-top: 1rem; }
+        .rank-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .rank-tab { padding: 6px 16px; background: transparent; border: 1px solid transparent; border-radius: 20px; color: var(--muted); cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .rank-tab:hover { color: var(--fg); }
+        .rank-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .rank-search-box { margin-bottom: 1rem; }
+        .rank-search-input { width: 100%; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 14px; outline: none; }
 
-        .header-top {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .title-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: contain;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 2px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            letter-spacing: 0.05em;
-            color: var(--fg);
-        }
-
-        .header p {
-            font-size: 1rem;
-            color: var(--muted);
-            margin-top: 0.5rem;
-        }
-
-        .search-box {
-            position: relative;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .search-box:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 18px 170px 18px 20px;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--fg);
-            font-size: 16px;
-        }
-
-        .search-input::placeholder {
-            color: var(--muted);
-        }
-
-        .search-tools {
-            position: absolute;
-            right: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .type-select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--fg);
-            padding: 6px 8px;
-            font-size: 13px;
-            outline: none;
-            cursor: pointer;
-            max-width: 180px;
-            min-width: 150px;
-        }
-
-        .type-select option {
-            background: #1a1a24;
-            color: var(--fg);
-        }
-
-        .search-btn {
-            width: 42px;
-            height: 42px;
-            background: var(--accent);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .search-btn:hover {
-            background: #ff8555;
-        }
-
-        .search-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .search-btn svg {
-            width: 20px;
-            height: 20px;
-            color: white;
-        }
-
-        .tags-container {
-            margin-bottom: 2rem;
-        }
-
-        .tags-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            gap: 0.5rem;
-        }
-
-        .tags-title {
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        .tags-title strong {
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        .tags-toggle {
-            font-size: 13px;
-            color: var(--accent);
-            cursor: pointer;
-            user-select: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-
-        .tags-toggle:hover {
-            text-decoration: underline;
-        }
-
-        .tags-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .tag {
-            padding: 5px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            font-size: 13px;
-            color: var(--muted);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .tag:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .tag.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .tag-rank {
-            font-size: 12px;
-            color: #888;
-        }
-
-        .tag-hot {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 12px;
-            color: #ff9500;
-        }
-
-        .tags-more {
-            margin-top: 0.5rem;
-            font-size: 13px;
-            color: #888;
-            text-align: center;
-        }
-
-        .vtquark-section {
-            margin-top: 1rem;
-            border-top: 1px dashed var(--border);
-            padding-top: 0.75rem;
-        }
-
-        .vtquark-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-
-        .vtquark-title {
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        .vtquark-title strong {
-            color: #ff9500;
-        }
-
-        .vtquark-toggle {
-            font-size: 13px;
-            color: var(--accent);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .vtquark-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .daily-page {
-            padding-top: 1rem;
-        }
-
-        .daily-toolbar {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .daily-search-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 14px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--fg);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .daily-search-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-
-        .daily-refresh-btn {
-            padding: 9px 14px;
-            background: var(--accent);
-            color: #fff;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-
-        .daily-refresh-btn:hover {
-            background: #ff8555;
-        }
-
-        .daily-refresh-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .daily-stats {
-            font-size: 13px;
-            color: var(--muted);
-            margin-bottom: 0.75rem;
-        }
-
-        .rank-page {
-            padding-top: 1rem;
-        }
-
-        .rank-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-        }
-
-        .rank-tab {
-            padding: 6px 16px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 20px;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .rank-tab:hover {
-            color: var(--fg);
-        }
-
-        .rank-tab.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        .rank-search-box {
-            margin-bottom: 1rem;
-        }
-
-        .rank-search-input {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--fg);
-            font-size: 14px;
-            outline: none;
-        }
-
-        .result-stats {
-            margin-bottom: 0.75rem;
-            color: var(--muted);
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .result-stats span {
-            color: var(--accent);
-            font-weight: 600;
-        }
+        .result-stats { margin-bottom: 0.75rem; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .result-stats span { color: var(--accent); font-size: 15px; }
 
         .result-section {
-            margin-bottom: 1.5rem;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.01);
+            margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.01);
+            scroll-margin-top: 20px; /* 锚点滚动偏移 */
         }
-
         .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            color: var(--fg);
-            font-size: 15px;
-            font-weight: 600;
-            padding: 12px 16px;
-            background: var(--card);
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.2s;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 0.5rem; color: var(--fg); font-size: 15px; font-weight: 600;
+            padding: 12px 16px; background: var(--card);
+            cursor: pointer; user-select: none; transition: background 0.2s;
         }
+        .section-header:hover { background: rgba(255, 255, 255, 0.08); }
+        .section-label { padding: 2px 8px; border-radius: 4px; font-size: 12px; background: rgba(255,255,255,0.05); }
+        .section-label.baidu { background: rgba(6, 167, 255, 0.15); color: #06a7ff; }
+        .section-label.quark { background: rgba(255, 149, 0, 0.15); color: #ff9500; }
+        .section-label.aliyun { background: rgba(255, 204, 0, 0.15); color: #ffc400; }
+        .section-label.tianyi { background: rgba(0, 153, 255, 0.15); color: #0099ff; }
+        .section-label.uc { background: rgba(255, 87, 34, 0.15); color: #ff5722; }
+        .section-label.mobile { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+        .section-label['115'] { background: rgba(103, 58, 183, 0.15); color: #673ab7; }
+        .section-label.pikpak { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+        .section-label.xunlei { background: rgba(0, 150, 136, 0.15); color: #009688; }
+        .section-label['123'] { background: rgba(255, 87, 34, 0.15); color: #ff5722; }
+        .section-label.magnet { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+        .section-label.ed2k { background: rgba(63, 81, 181, 0.15); color: #3f51b5; }
 
-        .section-header:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .section-label {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .section-label.baidu {
-            background: rgba(6, 167, 255, 0.15);
-            color: #06a7ff;
-        }
-
-        .section-label.quark {
-            background: rgba(255, 149, 0, 0.15);
-            color: #ff9500;
-        }
-
-        .section-label.aliyun {
-            background: rgba(255, 204, 0, 0.15);
-            color: #ffc400;
-        }
-
-        .section-label.tianyi {
-            background: rgba(0, 153, 255, 0.15);
-            color: #0099ff;
-        }
-
-        .section-label.uc {
-            background: rgba(255, 87, 34, 0.15);
-            color: #ff5722;
-        }
-
-        .section-label.mobile {
-            background: rgba(76, 175, 80, 0.15);
-            color: #4caf50;
-        }
-
-        .section-label['115'] {
-            background: rgba(103, 58, 183, 0.15);
-            color: #673ab7;
-        }
-
-        .section-label.pikpak {
-            background: rgba(33, 150, 243, 0.15);
-            color: #2196f3;
-        }
-
-        .section-label.xunlei {
-            background: rgba(0, 150, 136, 0.15);
-            color: #009688;
-        }
-
-        .section-label['123'] {
-            background: rgba(255, 87, 34, 0.15);
-            color: #ff5722;
-        }
-
-        .section-label.magnet {
-            background: rgba(156, 39, 176, 0.15);
-            color: #9c27b0;
-        }
-
-        .section-label.ed2k {
-            background: rgba(63, 81, 181, 0.15);
-            color: #3f51b5;
-        }
-
-        .toggle-icon {
-            color: var(--muted);
-            transition: transform 0.3s ease;
-            margin-right: 5px;
-            font-size: 12px;
-        }
-
-        .result-section.collapsed .result-list {
-            display: none;
-        }
-
-        .result-section.collapsed .toggle-icon {
-            transform: rotate(-90deg);
-        }
-
-        .result-section:not(.collapsed) .toggle-icon {
-            transform: rotate(0deg);
-        }
+        .toggle-icon { color: var(--muted); transition: transform 0.3s ease; margin-right: 5px; font-size: 12px; }
+        .result-section.collapsed .result-list { display: none; }
+        .result-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .result-section:not(.collapsed) .toggle-icon { transform: rotate(0deg); }
 
         .result-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.2);
+            display: flex; flex-direction: column; gap: 0.75rem;
+            padding: 12px; background: rgba(0, 0, 0, 0.2);
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .result-item {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 18px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeIn 0.5s ease forwards;
-            position: relative;
-            overflow: hidden;
+            background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 14px 18px; transition: border-color 0.2s, box-shadow 0.2s;
+            opacity: 0; transform: translateY(20px); animation: fadeIn 0.5s ease forwards;
+            position: relative; overflow: hidden;
         }
-
-        .result-item:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
+        .result-item:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
         .qr-toggle-btn {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--muted);
-            z-index: 5;
-            transition: all 0.2s;
+            position: absolute; right: 8px; top: 8px; width: 28px; height: 28px;
+            border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: var(--muted); z-index: 5; transition: all 0.2s;
         }
-
-        .qr-toggle-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .qr-toggle-btn svg {
-            width: 16px;
-            height: 16px;
-        }
+        .qr-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .qr-toggle-btn svg { width: 16px; height: 16px; }
 
         .drama-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--fg);
-            margin-bottom: 8px;
-            display: block;
-            line-height: 1.4;
-            word-break: break-all;
-            padding-right: 32px;
+            font-size: 16px; font-weight: 700; color: var(--fg); margin-bottom: 8px;
+            display: block; line-height: 1.4; word-break: break-all; padding-right: 32px;
         }
+        .drama-title::before { content: '▶'; color: var(--accent); margin-right: 8px; font-size: 14px; display: inline-block; }
 
-        .drama-title::before {
-            content: '▶';
-            color: var(--accent);
-            margin-right: 8px;
-            font-size: 14px;
-            display: inline-block;
-        }
-
-        .info-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 6px;
-            padding-left: 22px;
-            border-left: 2px solid var(--border);
-            margin-left: 4px;
-        }
-
-        .info-item {
-            font-size: 13px;
-            color: var(--muted);
-            display: flex;
-            align-items: flex-start;
-            gap: 6px;
-        }
-
-        .info-label {
-            color: #888;
-            min-width: 60px;
-            flex-shrink: 0;
-        }
-
-        .info-link {
-            color: var(--accent);
-            text-decoration: none;
-            word-break: break-all;
-            transition: opacity 0.2s;
-        }
-
-        .info-link:hover {
-            text-decoration: underline;
-            opacity: 0.8;
-        }
-
-        .source-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            object-fit: contain;
-            vertical-align: middle;
-            background: rgba(255, 255, 255, 0.1);
-        }
+        .info-list { display: grid; grid-template-columns: 1fr; gap: 6px; padding-left: 22px; border-left: 2px solid var(--border); margin-left: 4px; }
+        .info-item { font-size: 13px; color: var(--muted); display: flex; align-items: flex-start; gap: 6px; }
+        .info-label { color: #888; min-width: 60px; flex-shrink: 0; }
+        .info-link { color: var(--accent); text-decoration: none; word-break: break-all; transition: opacity 0.2s; }
+        .info-link:hover { text-decoration: underline; opacity: 0.8; }
+        .source-icon { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; vertical-align: middle; background: rgba(255,255,255,0.1); }
 
         .rank-to-search-btn {
-            margin-top: 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 12px;
-            background: rgba(255, 107, 53, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
+            margin-top: 10px; display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 12px; background: rgba(255, 107, 53, 0.15); color: var(--accent);
+            border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 4px; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; user-select: none;
         }
+        .rank-to-search-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-        .rank-to-search-btn:hover {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
+        .qr-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .qr-modal-overlay.show { display: flex; }
+        .qr-modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 300px; height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes modalPopIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .qr-modal-close { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: #f0f0f0; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; font-size: 16px; }
+        .qr-modal-close:hover { background: #e0e0e0; }
+        .qr-modal-title { font-size: 16px; font-weight: 600; color: #333; margin-top: 10px; }
+        .qr-modal-image { width: 200px; height: 200px; background: #eee; object-fit: contain; }
+        .qr-modal-hint { font-size: 13px; color: #888; margin-bottom: 5px; }
+        .qr-modal-error { display: none; width: 200px; height: 200px; background: #f5f5f5; align-items: center; justify-content: center; text-align: center; color: #ff6b35; font-size: 14px; padding: 10px; }
 
-        .qr-modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-        }
+        .status-message { text-align: center; padding: 40px 20px; color: var(--muted); }
+        .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-        .qr-modal-overlay.show {
-            display: flex;
-        }
-
-        .qr-modal-box {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            width: 300px;
-            height: 340px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            position: relative;
-            animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes modalPopIn {
-            0% {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .qr-modal-close {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 24px;
-            height: 24px;
-            background: #f0f0f0;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 16px;
-        }
-
-        .qr-modal-close:hover {
-            background: #e0e0e0;
-        }
-
-        .qr-modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            margin-top: 10px;
-        }
-
-        .qr-modal-image {
-            width: 200px;
-            height: 200px;
-            background: #eee;
-            object-fit: contain;
-        }
-
-        .qr-modal-hint {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .qr-modal-error {
-            display: none;
-            width: 200px;
-            height: 200px;
-            background: #f5f5f5;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #ff6b35;
-            font-size: 14px;
-            padding: 10px;
-        }
-
-        .status-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--muted);
-        }
-
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .search-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 1001;
-            display: none;
-            max-width: 80%;
-        }
-
-        .search-status.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+        .search-status { position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: rgba(0, 0, 0, 0.8); color: white; border-radius: 8px; font-size: 14px; z-index: 1001; display: none; max-width: 80%; }
+        .search-status.show { display: block; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         @media (max-width: 768px) {
-            .main-content {
-                padding: 1.5rem 0.8rem;
-            }
-
-            .app-nav {
-                flex-direction: column;
-                gap: 8px;
-                padding: 10px;
-            }
-
-            .app-title {
-                font-size: 1.1rem;
-            }
-
-            .nav-link {
-                padding: 4px 10px;
-                font-size: 13px;
-            }
-
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .header p {
-                font-size: 0.9rem;
-                padding: 0 10px;
-            }
-
-            .header-top {
-                gap: 0.5rem;
-            }
-
-            .title-logo {
-                width: 30px;
-                height: 30px;
-            }
-
-            .search-input {
-                padding: 14px 110px 14px 12px;
-                font-size: 16px;
-            }
-
-            .search-tools {
-                right: 4px;
-                gap: 4px;
-            }
-
-            .type-select {
-                min-width: 70px;
-                max-width: 80px;
-                font-size: 12px;
-                padding: 4px;
-                text-overflow: ellipsis;
-            }
-
-            .search-btn {
-                width: 36px;
-                height: 36px;
-            }
-
-            .tags-title {
-                font-size: 13px;
-            }
-
-            .tag {
-                padding: 4px 8px;
-                font-size: 12px;
-                margin-bottom: 4px;
-            }
-
-            .tag-rank {
-                display: none;
-            }
-
-            .tag-hot {
-                font-size: 11px;
-            }
-
-            .result-item {
-                padding: 12px;
-            }
-
-            .drama-title {
-                font-size: 15px;
-            }
-
-            .info-item {
-                font-size: 12px;
-            }
-
-            .info-label {
-                min-width: 50px;
-            }
-
-            .daily-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .daily-search-input {
-                width: 100%;
-                margin-bottom: 8px;
-            }
-
-            .daily-refresh-btn {
-                width: 100%;
-                justify-content: center;
-            }
+            .main-content { padding: 1.5rem 0.8rem; }
+            .app-nav { flex-direction: column; gap: 8px; padding: 10px; }
+            .app-title { font-size: 1.1rem; }
+            .nav-link { padding: 4px 10px; font-size: 13px; }
+            .header h1 { font-size: 1.8rem; }
+            .header p { font-size: 0.9rem; padding: 0 10px; }
+            .header-top { gap: 0.5rem; }
+            .title-logo { width: 30px; height: 30px; }
+            .search-input { padding: 14px 110px 14px 12px; font-size: 16px; }
+            .search-tools { right: 4px; gap: 4px; }
+            .type-select { min-width: 70px; max-width: 80px; font-size: 12px; padding: 4px; text-overflow: ellipsis; }
+            .search-btn { width: 36px; height: 36px; }
+            .result-item { padding: 12px; }
+            .drama-title { font-size: 15px; }
+            .info-item { font-size: 12px; }
+            .info-label { min-width: 50px; }
+            .daily-toolbar { flex-direction: column; align-items: stretch; }
+            .daily-search-input { width: 100%; margin-bottom: 8px; }
+            .daily-refresh-btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
-
 <body>
     <div class="bg-pattern"></div>
     <div class="floating-orb orb-1"></div>
@@ -1090,17 +260,14 @@
         <section id="page-search" class="page active">
             <div class="header">
                 <div class="header-top">
-                    <img id="titleLogo" class="title-logo"
-                        src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                    <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
                     <h1 class="font-display">短剧 / 资源聚合搜索</h1>
                 </div>
                 <p>基于酷乐API聚合资源搜索接口，支持多种网盘与磁力链接</p>
                 <p style="margin-top: 6px; font-size: 13px; color: #888;">提示：关键词之间的空格会被用于拆分搜索，以提高命中率，无需使用引号。</p>
             </div>
-
             <div class="search-box">
-                <input type="text" id="searchInput" class="search-input" placeholder="输入短剧 / 资源名称搜索..."
-                    autocomplete="off">
+                <input type="text" id="searchInput" class="search-input" placeholder="输入短剧 / 资源名称搜索..." autocomplete="off">
                 <div class="search-tools">
                     <select id="typeSelect" class="type-select">
                         <option value="all">全局聚合</option>
@@ -1119,32 +286,21 @@
                         <option value="ed2k">电驴链接</option>
                     </select>
                     <button class="search-btn" id="searchBtn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.3-4.3" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     </button>
                 </div>
             </div>
-
             <div class="tags-container" id="hotTagsContainer">
                 <div class="tags-header">
                     <div class="tags-title">🔥 <strong>短剧热度榜</strong></div>
-                    <div class="tags-toggle" id="toggleMoreRank">展开更多 <svg width="12" height="12" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6" />
-                        </svg></div>
+                    <div class="tags-toggle" id="toggleMoreRank">展开更多 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
                 </div>
                 <div class="tags-list" id="rankTagsList"></div>
                 <div class="tags-more" id="rankMoreHint">仅展示前 10 条，点击可展开前 20 条</div>
-
                 <div class="vtquark-section" id="vtquarkSection" style="display:none;">
                     <div class="vtquark-header">
                         <div class="vtquark-title">🎬 <strong>夸克热搜榜</strong></div>
-                        <div class="vtquark-toggle" id="toggleVtquark">展开查看 <svg width="12" height="12"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M6 9l6 6 6-6" />
-                            </svg></div>
+                        <div class="vtquark-toggle" id="toggleVtquark">展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
                     </div>
                     <div class="vtquark-list" id="vtquarkTagsList"></div>
                 </div>
@@ -1153,8 +309,6 @@
                 <div class="status-message" id="initialState">
                     <p>已适配酷乐聚合资源搜索接口所有网盘类型与磁力/电驴链接。</p>
                     <p>选择"全局聚合"将一次性查询所有支持类型。</p>
-                    <p style="margin-top: 10px; font-size: 13px; color: #888;">提示：输入“关键词
-                        2024”这样的形式，系统会自动拆分搜索以提高命中率，无需使用引号。</p>
                 </div>
             </div>
         </section>
@@ -1166,13 +320,9 @@
                     <p style="margin-top: 0.5rem;">仅更新每日最新影视资源和一些热门资源（短剧除外，短剧有单独的接口）</p>
                 </div>
                 <div class="daily-toolbar">
-                    <input type="text" id="dailySearchInput" class="daily-search-input"
-                        placeholder="在今日影视资源中检索（名称 / 链接）..." autocomplete="off">
+                    <input type="text" id="dailySearchInput" class="daily-search-input" placeholder="在今日影视资源中检索..." autocomplete="off">
                     <button id="dailyRefreshBtn" class="daily-refresh-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 4v6h-6M1 20v-6h6" />
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                        </svg> 刷新
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 刷新
                     </button>
                 </div>
                 <div id="dailyStats" class="daily-stats"></div>
@@ -1191,8 +341,7 @@
                     <button class="rank-tab" data-source="vtquark">夸克热搜榜</button>
                 </div>
                 <div class="rank-search-box">
-                    <input type="text" id="rankSearchInput" class="rank-search-input" placeholder="在当前榜单中检索关键词..."
-                        autocomplete="off">
+                    <input type="text" id="rankSearchInput" class="rank-search-input" placeholder="在当前榜单中检索关键词..." autocomplete="off">
                 </div>
                 <div id="rankListContainer"></div>
             </div>
@@ -1207,23 +356,10 @@
         const VTQUARK_API = 'https://api.kuleu.com/api/vtquark?tag=短剧';
         const ICO_API = 'https://api.kuleu.com/api/ico';
         const QRCODE_API = 'https://api.kuleu.com/api/qrcode';
-
         const CORS_PROXIES = ['https://cors.sh/', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?'];
         const SEARCH_TIMEOUT = 15000;
-
-        const TYPE_LABEL = {
-            baidu: '百度网盘', aliyun: '阿里云盘', quark: '夸克网盘', tianyi: '天翼云盘',
-            uc: 'UC网盘', mobile: '移动云盘', '115': '115网盘', pikpak: 'PikPak',
-            xunlei: '迅雷网盘', '123': '123网盘', magnet: '磁力链接', ed2k: '电驴链接'
-        };
-
-        const TYPE_PRESETS = {
-            all: ['baidu', 'aliyun', 'quark', 'tianyi', 'uc', 'mobile', '115', 'pikpak', 'xunlei', '123', 'magnet', 'ed2k'],
-            netdisk: ['baidu', 'aliyun', 'quark', 'tianyi', 'uc', 'mobile', '115', 'pikpak', 'xunlei', '123'],
-            baidu: ['baidu'], quark: ['quark'], aliyun: ['aliyun'], tianyi: ['tianyi'],
-            uc: ['uc'], mobile: ['mobile'], '115': ['115'], pikpak: ['pikpak'],
-            xunlei: ['xunlei'], '123': ['123'], magnet: ['magnet'], ed2k: ['ed2k']
-        };
+        const TYPE_LABEL = { baidu: '百度网盘', aliyun: '阿里云盘', quark: '夸克网盘', tianyi: '天翼云盘', uc: 'UC网盘', mobile: '移动云盘', '115': '115网盘', pikpak: 'PikPak', xunlei: '迅雷网盘', '123': '123网盘', magnet: '磁力链接', ed2k: '电驴链接' };
+        const TYPE_PRESETS = { all: ['baidu','aliyun','quark','tianyi','uc','mobile','115','pikpak','xunlei','123','magnet','ed2k'], netdisk: ['baidu','aliyun','quark','tianyi','uc','mobile','115','pikpak','xunlei','123'], baidu: ['baidu'], quark: ['quark'], aliyun: ['aliyun'], tianyi: ['tianyi'], uc: ['uc'], mobile: ['mobile'], '115': ['115'], pikpak: ['pikpak'], xunlei: ['xunlei'], '123': ['123'], magnet: ['magnet'], ed2k: ['ed2k'] };
 
         // ==================== DOM ====================
         const searchInput = document.getElementById('searchInput');
@@ -1249,7 +385,7 @@
             document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
             appTitleEl.innerHTML = titles[pageName] || titles.search;
             if (pageName === 'daily') loadDailyResources();
-            if (pageName === 'rank') initRankPage();
+            if (pageName === 'rank') initRankPage(); 
         }
 
         function initRouter() {
@@ -1275,46 +411,24 @@
             });
         }
 
-        function showStatus(message, duration = 2000) {
-            searchStatus.textContent = message;
-            searchStatus.classList.add('show');
-            setTimeout(() => searchStatus.classList.remove('show'), duration);
-        }
-        function escapeHtml(text) {
-            if (!text) return '';
-            return String(text).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s]));
-        }
+        function showStatus(message, duration = 2000) { searchStatus.textContent = message; searchStatus.classList.add('show'); setTimeout(() => searchStatus.classList.remove('show'), duration); }
+        function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s])); }
         function extractDomain(url) { if (!url) return ''; try { return new URL(url).hostname; } catch (e) { return ''; } }
         if (titleLogo) titleLogo.onerror = function () { this.style.display = 'none'; };
         let timeoutId = null;
         function clearTimeouts() { if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; } }
-        function buildQrCodeUrl(text, size) {
-            const params = new URLSearchParams({ frame: 1, e: 'L', text: text || '', size: size || 200 });
-            return `${QRCODE_API}?${params.toString()}`;
-        }
+        function buildQrCodeUrl(text, size) { const params = new URLSearchParams({ frame: 1, e: 'L', text: text || '', size: size || 200 }); return `${QRCODE_API}?${params.toString()}`; }
 
         // ==================== 二维码弹窗逻辑 ====================
         const qrModalOverlay = document.getElementById('qrModalOverlay');
         const qrModalImage = document.getElementById('qrModalImage');
         const qrModalError = document.getElementById('qrModalError');
-        function openQrModal(link) {
-            if (!link) return;
-            const qrUrl = buildQrCodeUrl(link, 260);
-            qrModalImage.style.display = 'none';
-            qrModalError.style.display = 'none';
-            qrModalImage.src = qrUrl;
-            qrModalImage.onload = () => { qrModalImage.style.display = 'block'; };
-            qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; };
-            qrModalOverlay.classList.add('show');
-        }
+        function openQrModal(link) { if (!link) return; qrModalImage.style.display = 'none'; qrModalError.style.display = 'none'; qrModalImage.src = buildQrCodeUrl(link, 260); qrModalImage.onload = () => { qrModalImage.style.display = 'block'; }; qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; }; qrModalOverlay.classList.add('show'); }
         function closeQrModal() { qrModalOverlay.classList.remove('show'); }
         qrModalOverlay.addEventListener('click', (e) => { if (e.target === qrModalOverlay) closeQrModal(); });
 
-        // ==================== 核心搜索逻辑 (抽离数据层) ====================
-        let isSearching = false;
-        let searchTimer = null;
-        let currentPreset = 'all';
-
+        // ==================== 核心搜索逻辑 ====================
+        let isSearching = false; let searchTimer = null; let currentPreset = 'all';
         typeSelect.addEventListener('change', () => { currentPreset = typeSelect.value; if (searchInput.value.trim()) performSearch(searchInput.value.trim()); });
         searchBtn.addEventListener('click', () => performSearch(searchInput.value));
         searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performSearch(searchInput.value); });
@@ -1324,52 +438,9 @@
             const parts = input.split(/\s+/).filter(Boolean);
             const terms = new Set([input]);
             if (parts.length > 1) parts.forEach(p => terms.add(p));
-            return Array.from(terms).sort((a, b) => {
-                if (a === input) return -1; if (b === input) return 1;
-                return b.length - a.length;
-            });
+            return Array.from(terms).sort((a, b) => { if (a === input) return -1; if (b === input) return 1; return b.length - a.length; });
         }
 
-        // 纯数据获取函数，供 UI 和 API 模式共用
-        async function fetchAndMergeData(term, presetName) {
-            const types = TYPE_PRESETS[presetName] || TYPE_PRESETS.all;
-            const typeParam = types.join(',');
-            const searchTerms = buildSearchTerms(term);
-            const mergedByType = {}; const urlSet = new Set(); let total = 0;
-
-            for (const st of searchTerms) {
-                const fullUrl = `${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`;
-                let data;
-                try { data = await fetchSearchApi(fullUrl); } catch (e) { console.warn('搜索失败:', st, e); continue; }
-
-                if (data && data.code === 0 && data.data && data.data.merged_by_type) {
-                    const merged = data.data.merged_by_type;
-                    Object.keys(merged).forEach(type => {
-                        if (!mergedByType[type]) mergedByType[type] = [];
-                        merged[type].forEach(item => {
-                            if (!item.url || urlSet.has(item.url)) return;
-                            urlSet.add(item.url);
-                            mergedByType[type].push({ ...item, _searchTerm: st });
-                            total++;
-                        });
-                    });
-                }
-                if (total >= 200) break;
-            }
-
-            // 排序逻辑
-            Object.keys(mergedByType).forEach(type => {
-                mergedByType[type].sort((a, b) => {
-                    const aIsWhole = a._searchTerm === term ? 1 : 0; const bIsWhole = b._searchTerm === term ? 1 : 0;
-                    if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole;
-                    return (b.name?.length || 0) - (a.name?.length || 0);
-                });
-            });
-
-            return { mergedByType, total, typeList: Object.keys(mergedByType) };
-        }
-
-        // UI 模式专用：包装数据获取并渲染
         async function performSearch(keyword) {
             const term = keyword.trim();
             if (!term) { showStatus('请输入搜索关键词'); return; }
@@ -1382,138 +453,191 @@
             isSearching = true; searchBtn.disabled = true;
             document.querySelectorAll('.tag').forEach(tag => tag.classList.add('disabled'));
             clearTimeouts(); showLoading(); showStatus(`正在搜索: ${term}...`);
-
             try {
                 const { mergedByType, total, typeList } = await fetchAndMergeData(term, currentPreset);
-
-                if (typeList.length === 0 || total === 0) {
-                    resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`;
-                    showStatus('未找到相关结果');
-                    return;
-                }
+                if (typeList.length === 0 || total === 0) { resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`; showStatus('未找到相关结果'); return; }
                 renderGroupedResults(mergedByType, typeList, term, total);
                 showStatus(`共找到 ${total} 条结果`);
-            } catch (error) {
-                console.error(error);
-                const errorType = error.errorType || 'unknown';
-                let title = '发生错误';
-                switch (errorType) { case 'timeout': title = '请求超时'; break; case 'network': title = '网络连接失败'; break; }
-                resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">${title}</p></div>`;
-            }
+            } catch (error) { console.error(error); resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">发生错误</p></div>`; }
             finally { clearTimeouts(); isSearching = false; searchBtn.disabled = false; document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled')); }
         }
 
-        async function fetchSearchApi(fullUrl) { try { let data = await tryFetchDirect(fullUrl); if (!data) data = await tryFetchWithProxies(fullUrl); if (!data) throw { errorType: 'network' }; return data; } catch (error) { if (error.errorType) throw error; throw { errorType: 'unknown', message: error.message }; } }
-        async function tryFetchDirect(url) { const controller = new AbortController(); const signal = controller.signal; const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const fetchPromise = fetch(url, { signal }); const response = await Promise.race([fetchPromise, timeoutPromise]); if (!response.ok) throw { errorType: 'server', status: response.status }; return await response.json(); } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; if (error.errorType) throw error; return null; } finally { clearTimeouts(); } }
-        async function tryFetchWithProxies(url) { let lastError = null; for (let proxy of CORS_PROXIES) { const controller = new AbortController(); const signal = controller.signal; const proxyUrl = proxy.includes('cors.sh') ? `${proxy}${encodeURIComponent(url)}` : `${proxy}${encodeURIComponent(url)}`; const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const fetchPromise = fetch(proxyUrl, { signal }); const res = await Promise.race([fetchPromise, timeoutPromise]); if (!res.ok) throw { errorType: 'server', status: res.status }; const json = await res.json(); if (json && (json.code !== undefined || json.data)) return json; throw { errorType: 'parse' }; } catch (error) { if (error.name === 'AbortError') lastError = { errorType: 'timeout' }; else lastError = error; continue; } finally { clearTimeouts(); } } if (lastError) throw lastError; throw { errorType: 'cors' }; }
+        async function fetchAndMergeData(term, presetName) {
+            const types = TYPE_PRESETS[presetName] || TYPE_PRESETS.all;
+            const typeParam = types.join(',');
+            const searchTerms = buildSearchTerms(term);
+            const mergedByType = {}; const urlSet = new Set(); let total = 0;
+            for (const st of searchTerms) {
+                let data; try { data = await fetchSearchApi(`${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`); } catch (e) { continue; }
+                if (data && data.code === 0 && data.data && data.data.merged_by_type) {
+                    Object.keys(data.data.merged_by_type).forEach(type => {
+                        if (!mergedByType[type]) mergedByType[type] = [];
+                        data.data.merged_by_type[type].forEach(item => { if (!item.url || urlSet.has(item.url)) return; urlSet.add(item.url); mergedByType[type].push({ ...item, _searchTerm: st }); total++; });
+                    });
+                }
+                if (total >= 200) break;
+            }
+            Object.keys(mergedByType).forEach(type => { mergedByType[type].sort((a, b) => { const aIsWhole = a._searchTerm === term ? 1 : 0; const bIsWhole = b._searchTerm === term ? 1 : 0; if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole; return (b.name?.length || 0) - (a.name?.length || 0); }); });
+            return { mergedByType, total, typeList: Object.keys(mergedByType) };
+        }
 
-        function renderGroupedResults(mergedByType, typeList, term, total) {
+        async function fetchSearchApi(fullUrl) { try { let data = await tryFetchDirect(fullUrl); if (!data) data = await tryFetchWithProxies(fullUrl); if (!data) throw { errorType: 'network' }; return data; } catch (error) { if (error.errorType) throw error; throw { errorType: 'unknown' }; } }
+        async function tryFetchDirect(url) { const controller = new AbortController(); const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const response = await Promise.race([fetch(url, { signal: controller.signal }), timeoutPromise]); if (!response.ok) throw { errorType: 'server' }; return await response.json(); } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; if (error.errorType) throw error; return null; } finally { clearTimeouts(); } }
+        async function tryFetchWithProxies(url) { let lastError = null; for (let proxy of CORS_PROXIES) { const controller = new AbortController(); const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const res = await Promise.race([fetch(`${proxy}${encodeURIComponent(url)}`, { signal: controller.signal }), timeoutPromise]); if (!res.ok) throw { errorType: 'server' }; const json = await res.json(); if (json && (json.code !== undefined || json.data)) return json; throw { errorType: 'parse' }; } catch (error) { if (error.name === 'AbortError') lastError = { errorType: 'timeout' }; else lastError = error; continue; } finally { clearTimeouts(); } } if (lastError) throw lastError; throw { errorType: 'cors' }; }
+
+        // 公共分块折叠逻辑
+        function bindSectionToggleEvents() {
+            document.querySelectorAll('.result-section .section-header').forEach(header => {
+                header.onclick = () => {
+                    const section = header.closest('.result-section');
+                    section.classList.toggle('collapsed');
+                    if (!section.classList.contains('collapsed') && section.id) {
+                        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                    }
+                };
+            });
+        }
+
+        function renderGroupedResults(mergedByType, typeList, term, total) { 
             let html = `<div class="result-stats"><span>关键词：${escapeHtml(term)}</span><span>共 ${total} 条</span></div>`;
             let sortedTypes = [];
-            const priority = ['baidu', 'quark'];
-            priority.forEach(p => { if (typeList.includes(p)) { sortedTypes.push(p); } });
-            typeList.forEach(t => { if (!sortedTypes.includes(t)) { sortedTypes.push(t); } });
+            ['baidu', 'quark'].forEach(p => { if (typeList.includes(p)) sortedTypes.push(p); });
+            typeList.forEach(t => { if (!sortedTypes.includes(t)) sortedTypes.push(t); });
 
             sortedTypes.forEach(type => {
-                const items = mergedByType[type];
-                if (!items || items.length === 0) return;
-                const typeLabel = TYPE_LABEL[type] || type;
+                const items = mergedByType[type]; if (!items || items.length === 0) return;
                 const safeType = type.replace(/\s+/g, '_');
                 const isCollapsed = (type !== 'baidu' && type !== 'quark');
-                const collapsedClass = isCollapsed ? 'collapsed' : '';
-                const iconHtml = `<span class="toggle-icon">▼</span>`;
-
-                html += `<div class="result-section ${collapsedClass}" data-type="${safeType}"><div class="section-header"><div>${iconHtml}<span class="section-label ${safeType}">${escapeHtml(typeLabel)}</span><span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span></div></div><div class="result-list">`;
-                items.forEach((item, index) => { html += createResultItem(item, type, index); });
-                html += `</div></div>`;
-            });
-            resultsArea.innerHTML = html;
-            document.querySelectorAll('.result-section .section-header').forEach(header => { header.addEventListener('click', () => { const section = header.closest('.result-section'); section.classList.toggle('collapsed'); }); });
+                html += `<div class="result-section ${isCollapsed ? 'collapsed' : ''}" id="search-${safeType}"><div class="section-header"><div><span class="toggle-icon">▼</span><span class="section-label ${safeType}">${escapeHtml(TYPE_LABEL[type] || type)}</span><span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span></div></div><div class="result-list">`;
+                items.forEach((item, index) => { html += createResultItem(item, type, index); }); 
+                html += `</div></div>`; 
+            }); 
+            resultsArea.innerHTML = html; 
+            bindSectionToggleEvents();
         }
 
         function createResultItem(item, type, index) {
-            const name = item.name || '未知资源'; const link = item.url || '#'; const pwd = item.pwd || ''; const typeLabel = TYPE_LABEL[type] || type;
-            const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : ''; const delay = index * 0.05;
-            return `<div class="result-item" style="animation-delay: ${delay}s" data-link="${escapeHtml(link)}"><button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button><div class="drama-title">${escapeHtml(name)}</div><div class="info-list"><div class="info-item"><span class="info-label">来源:</span><span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">${escapeHtml(typeLabel)}</span></div><div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>${pwd ? `<div class="info-item"><span class="info-label">密码:</span><span style="color: #f59e0b;">${escapeHtml(pwd)}</span></div>` : ''}</div></div>`;
+            const name = item.name || '未知资源'; const link = item.url || '#'; const pwd = item.pwd || '';
+            const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+            return `<div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}"><button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button><div class="drama-title">${escapeHtml(name)}</div><div class="info-list"><div class="info-item"><span class="info-label">来源:</span><span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">${escapeHtml(TYPE_LABEL[type] || type)}</span></div><div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>${pwd ? `<div class="info-item"><span class="info-label">密码:</span><span style="color: #f59e0b;">${escapeHtml(pwd)}</span></div>` : ''}</div></div>`;
         }
 
         function showLoading() { resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`; }
 
         // ==================== 主页热度榜逻辑 ====================
         let rankData = []; let vtquarkData = []; let showAllRank = false; let showVtquark = false;
-        async function loadRankTags() { try { const res = await fetch(SHORTDRAMA_RANK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { rankData = json.data; renderRankTags(); } } catch (e) { } }
-        async function loadVtquarkTags() { try { const res = await fetch(VTQUARK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { vtquarkData = json.data; if (vtquarkData.length > 0) document.getElementById('vtquarkSection').style.display = 'block'; } } catch (e) { } }
-        function renderRankTags() { const list = document.getElementById('rankTagsList'); const hint = document.getElementById('rankMoreHint'); const displayCount = showAllRank ? 20 : 10; let html = ''; rankData.slice(0, displayCount).forEach((item, idx) => { html += `<span class="tag" data-keyword="${escapeHtml(item.title)}"><span class="tag-rank">${item.ranking || idx + 1}</span>${escapeHtml(item.title)}<span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span></span>`; }); list.innerHTML = html; hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none'; }
+        async function loadRankTags() { try { const res = await fetch(SHORTDRAMA_RANK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { rankData = json.data; renderRankTags(); } } catch (e) {} }
+        async function loadVtquarkTags() { try { const res = await fetch(VTQUARK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { vtquarkData = json.data; if (vtquarkData.length > 0) document.getElementById('vtquarkSection').style.display = 'block'; } } catch (e) {} }
+        function renderRankTags() { const list = document.getElementById('rankTagsList'); const hint = document.getElementById('rankMoreHint'); let html = ''; rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => { html += `<span class="tag" data-keyword="${escapeHtml(item.title)}"><span class="tag-rank">${item.ranking || idx + 1}</span>${escapeHtml(item.title)}<span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span></span>`; }); list.innerHTML = html; hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none'; }
         function renderVtquarkTags() { const list = document.getElementById('vtquarkTagsList'); let html = ''; vtquarkData.slice(0, 10).forEach((item, idx) => { html += `<span class="tag" data-keyword="${escapeHtml(item.content_title)}"><span class="tag-rank">${item.content_rank || idx + 1}</span>${escapeHtml(item.content_title)}<span class="tag-hot">🔥 ${item.hot}</span></span>`; }); list.innerHTML = html; }
         document.getElementById('toggleMoreRank').addEventListener('click', () => { showAllRank = !showAllRank; renderRankTags(); });
         document.getElementById('toggleVtquark').addEventListener('click', () => { showVtquark = !showVtquark; if (showVtquark) renderVtquarkTags(); else document.getElementById('vtquarkTagsList').innerHTML = ''; });
-        document.getElementById('rankTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; const keyword = tag.dataset.keyword; searchInput.value = keyword; performSearch(keyword); });
-        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; const keyword = tag.dataset.keyword; searchInput.value = keyword; performSearch(keyword); });
+        document.getElementById('rankTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; searchInput.value = tag.dataset.keyword; performSearch(tag.dataset.keyword); });
+        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; searchInput.value = tag.dataset.keyword; performSearch(tag.dataset.keyword); });
 
         // ==================== 热度榜页面逻辑 ====================
         let currentRankSource = 'drama';
-        function initRankPage() { document.querySelectorAll('.rank-tab').forEach(tab => { tab.addEventListener('click', () => { document.querySelector('.rank-tab.active').classList.remove('active'); tab.classList.add('active'); currentRankSource = tab.dataset.source; renderRankList(); }); }); rankSearchInput.addEventListener('input', renderRankList); renderRankList(); }
-        function renderRankList() { const keyword = rankSearchInput.value.trim().toLowerCase(); let sourceData = currentRankSource === 'drama' ? rankData : vtquarkData; let filtered = sourceData; if (keyword) { filtered = sourceData.filter(item => (item.title || item.content_title || '').toLowerCase().includes(keyword)); } if (filtered.length === 0) { rankListContainer.innerHTML = `<div class="status-message"><p>没有找到相关内容</p></div>`; return; } let html = `<div class="result-list">`; filtered.forEach((item, index) => { const title = item.title || item.content_title || '未知'; const hot = item.hots || item.hot || '0'; const rank = item.ranking || item.content_rank || (index + 1); const dblClickEvent = `ondblclick="handleRankItemClick('${escapeHtml(title)}')"`; const btnClickEvent = `onclick="event.stopPropagation(); handleRankItemClick('${escapeHtml(title)}')"`; html += `<div class="result-item" style="animation-delay: ${index * 0.03}s" ${dblClickEvent}><div class="drama-title" style="cursor: pointer;"><span class="tag-rank" style="margin-right: 5px; font-size: 14px; color: ${rank <= 3 ? 'var(--accent)' : '#888'};">${rank}.</span>${escapeHtml(title)}</div><div class="info-list"><div class="info-item"><span class="info-label">热度:</span><span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span></div></div><div style="text-align: right; margin-top: 5px;"><button class="rank-to-search-btn" ${btnClickEvent}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> 全局搜索资源</button></div></div>`; }); html += `</div>`; rankListContainer.innerHTML = html; }
-        function handleRankItemClick(keyword) { window.location.hash = '#/'; setTimeout(() => { const typeSelect = document.getElementById('typeSelect'); if (typeSelect) typeSelect.value = 'all'; const searchInput = document.getElementById('searchInput'); if (searchInput) searchInput.value = keyword; performSearch(keyword); }, 150); }
+        function initRankPage() { document.querySelectorAll('.rank-tab').forEach(tab => { tab.onclick = () => { document.querySelector('.rank-tab.active').classList.remove('active'); tab.classList.add('active'); currentRankSource = tab.dataset.source; renderRankList(); }; }); rankSearchInput.oninput = renderRankList; renderRankList(); }
+        function renderRankList() { const keyword = rankSearchInput.value.trim().toLowerCase(); let sourceData = currentRankSource === 'drama' ? rankData : vtquarkData; let filtered = sourceData; if (keyword) { filtered = sourceData.filter(item => (item.title || item.content_title || '').toLowerCase().includes(keyword)); } if (filtered.length === 0) { rankListContainer.innerHTML = `<div class="status-message"><p>没有找到相关内容</p></div>`; return; } let html = `<div class="result-list">`; filtered.forEach((item, index) => { const title = item.title || item.content_title || '未知'; const hot = item.hots || item.hot || '0'; const rank = item.ranking || item.content_rank || (index + 1); html += `<div class="result-item" style="animation-delay: ${index * 0.03}s" ondblclick="handleRankItemClick('${escapeHtml(title)}')"><div class="drama-title" style="cursor: pointer;"><span class="tag-rank" style="margin-right: 5px; font-size: 14px; color: ${rank <= 3 ? 'var(--accent)' : '#888'};">${rank}.</span>${escapeHtml(title)}</div><div class="info-list"><div class="info-item"><span class="info-label">热度:</span><span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span></div></div><div style="text-align: right; margin-top: 5px;"><button class="rank-to-search-btn" onclick="event.stopPropagation(); handleRankItemClick('${escapeHtml(title)}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> 全局搜索资源</button></div></div>`; }); html += `</div>`; rankListContainer.innerHTML = html; }
+        function handleRankItemClick(keyword) { window.location.hash = '#/'; setTimeout(() => { typeSelect.value = 'all'; searchInput.value = keyword; performSearch(keyword); }, 150); }
 
         // ==================== 每日影视 ====================
         let dailyData = []; let filteredDaily = [];
-        async function loadDailyResources() { dailyStats.textContent = '正在加载...'; dailyResultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在加载今日影视资源...</p></div>`; try { const [baiduData, quarkData] = await Promise.all([fetchDailyApi('baidu'), fetchDailyApi('quark')]); dailyData = [...(baiduData || []), ...(quarkData || [])]; dailyData.sort((a, b) => (new Date(b.addtime).getTime() || 0) - (new Date(a.addtime).getTime() || 0)); filteredDaily = dailyData; renderDailyResults(filteredDaily); showStatus(`已加载 ${dailyData.length} 条资源`); } catch (error) { dailyResultsArea.innerHTML = `<div class="status-message" style="color: var(--error);"><p>加载失败</p></div>`; } }
-        async function fetchDailyApi(source) { const url = `${YINGSHI_API}?${source}`; const controller = new AbortController(); const signal = controller.signal; const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const fetchPromise = fetch(url, { signal }); const response = await Promise.race([fetchPromise, timeoutPromise]); if (!response.ok) throw { errorType: 'server' }; const json = await response.json(); if (json && json.code === 1 && Array.isArray(json.data)) return json.data.map(item => ({ ...item, _source: source })); return []; } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; throw error; } finally { clearTimeouts(); } }
-        function renderDailyResults(data) { if (!data || data.length === 0) { dailyStats.textContent = '未获取到今日影视资源。'; dailyResultsArea.innerHTML = `<div class="status-message"><p>未获取到今日影视资源。</p></div>`; return; } dailyStats.textContent = `共 ${data.length} 条资源`; let html = '<div class="result-list">'; data.forEach((item, index) => { const name = item.name || '未知'; const link = item.viewlink || '#'; const addtime = item.addtime || ''; const source = item._source || 'baidu'; const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : ''; const delay = index * 0.03; html += `<div class="result-item" style="animation-delay: ${delay}s"><button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button><div class="drama-title">${escapeHtml(name)}</div><div class="info-list"><div class="info-item"><span class="info-label">来源:</span><span style="color: ${source === 'baidu' ? '#06a7ff' : '#ff9500'};">${source === 'baidu' ? '百度网盘' : '夸克网盘'}</span></div><div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>${addtime ? `<div class="info-item"><span class="info-label">更新:</span><span>${escapeHtml(addtime)}</span></div>` : ''}</div></div>`; }); html += '</div>'; dailyResultsArea.innerHTML = html; }
+
+        async function loadDailyResources() { 
+            dailyStats.textContent = '正在加载...'; 
+            dailyResultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在加载今日影视资源...</p></div>`; 
+            try { 
+                const [baiduData, quarkData] = await Promise.all([fetchDailyApi('baidu'), fetchDailyApi('quark')]); 
+                dailyData = [...(baiduData || []), ...(quarkData || [])]; 
+                dailyData.sort((a, b) => (new Date(b.addtime).getTime() || 0) - (new Date(a.addtime).getTime() || 0)); 
+                filteredDaily = dailyData; 
+                renderDailyResults(filteredDaily); 
+            } catch (error) { dailyResultsArea.innerHTML = `<div class="status-message" style="color: var(--error);"><p>加载失败</p></div>`; } 
+        }
+
+        async function fetchDailyApi(source) { 
+            const controller = new AbortController(); 
+            const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); 
+            try { 
+                const response = await Promise.race([fetch(`${YINGSHI_API}?${source}`, { signal: controller.signal }), timeoutPromise]); 
+                if (!response.ok) throw { errorType: 'server' }; 
+                const json = await response.json(); 
+                if (json && json.code === 1 && Array.isArray(json.data)) return json.data.map(item => ({ ...item, _source: source })); 
+                return []; 
+            } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; throw error; } finally { clearTimeouts(); } 
+        }
+
+        function renderDailyResults(data) { 
+            if (!data || data.length === 0) { dailyStats.textContent = '未获取到今日影视资源。'; dailyResultsArea.innerHTML = `<div class="status-message"><p>未获取到今日影视资源。</p></div>`; return; } 
+
+            // 1. 按来源分组
+            const grouped = {};
+            data.forEach(item => { const source = item._source || 'baidu'; if (!grouped[source]) grouped[source] = []; grouped[source].push(item); });
+
+            // 2. 排序：百度第一，夸克第二
+            let sortedSources = [];
+            ['baidu', 'quark'].forEach(p => { if (grouped[p]) sortedSources.push(p); });
+            Object.keys(grouped).forEach(s => { if (!sortedSources.includes(s)) sortedSources.push(s); });
+
+            dailyStats.textContent = `共 ${data.length} 条影视资源`;
+            let html = '';
+            
+            sortedSources.forEach((source) => {
+                const items = grouped[source]; if (!items || items.length === 0) return;
+                const sourceName = source === 'baidu' ? '百度网盘' : '夸克网盘';
+                const safeSource = source.replace(/\s+/g, '_');
+
+                html += `<div class="result-section" id="daily-${safeSource}">
+                    <div class="section-header">
+                        <div>
+                            <span class="toggle-icon">▼</span>
+                            <span class="section-label ${safeSource}">${sourceName}</span>
+                            <span style="margin-left: 6px; font-size: 13px; color: #888;">${items.length} 条</span>
+                        </div>
+                    </div>
+                    <div class="result-list">`;
+
+                items.forEach((item, index) => {
+                    const name = item.name || '未知'; const link = item.viewlink || '#'; const addtime = item.addtime || '';
+                    const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+                    html += `<div class="result-item" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(link)}">
+                        <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                        <div class="drama-title">${escapeHtml(name)}</div>
+                        <div class="info-list">
+                            <div class="info-item"><span class="info-label">更新:</span><span>${escapeHtml(addtime)}</span></div>
+                            <div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>
+                        </div>
+                    </div>`;
+                });
+
+                html += `</div></div>`;
+            });
+
+            dailyResultsArea.innerHTML = html;
+            bindSectionToggleEvents(); // 绑定折叠事件
+        }
+
         dailySearchInput.addEventListener('input', () => { const k = dailySearchInput.value.trim().toLowerCase(); filteredDaily = k ? dailyData.filter(i => (i.name || '').toLowerCase().includes(k) || (i.viewlink || '').toLowerCase().includes(k)) : dailyData; renderDailyResults(filteredDaily); });
         dailyRefreshBtn.addEventListener('click', () => { window.location.hash = '#/daily'; window.location.reload(); });
 
-        // ==================== 新增：URL 参数自动搜索与 API 模式 ====================
+        // ==================== URL 参数自动搜索与 API 模式 ====================
         async function checkUrlParams() {
             const params = new URLSearchParams(window.location.search);
-            const query = params.get('q') || params.get('name') || params.get('s') || params.get('search') || params.get('keyword'); // 支持多种参数名
-            const from = params.get('from') || 'all'; // 获取 from 参数，默认为 all
-            const format = params.get('format'); // 获取 format 参数
-
+            const query = params.get('q') || params.get('name') || params.get('s');
+            const from = params.get('from') || 'all';
+            const format = params.get('format');
             if (query) {
                 const decodedQuery = decodeURIComponent(query);
-
-                // 检查是否是 API 模式
                 if (format === 'json') {
-                    console.log('API 模式启动: ', decodedQuery, '来源:', from);
-                    document.body.innerHTML = 'Loading...';
-                    document.body.style.cssText = 'background:#fff;color:#000;font-family:monospace;white-space:pre;padding:20px;';
-
-                    try {
-                        // 直接调用数据层函数
-                        const { mergedByType, total, typeList } = await fetchAndMergeData(decodedQuery, from);
-                        const result = {
-                            code: 0,
-                            msg: "success",
-                            keyword: decodedQuery,
-                            type: from,
-                            total: total,
-                            data: mergedByType
-                        };
-                        document.body.innerText = JSON.stringify(result, null, 2);
-                    } catch (error) {
-                        const errMsg = error.message || (error.errorType ? `Error: ${error.errorType}` : 'Unknown error');
-                        document.body.innerText = JSON.stringify({ code: -1, msg: errMsg, keyword: decodedQuery }, null, 2);
-                    }
+                    document.body.innerHTML = 'Loading...'; document.body.style.cssText = 'background:#fff; color:#000; font-family: monospace; white-space: pre; padding:20px;';
+                    try { const { mergedByType, total } = await fetchAndMergeData(decodedQuery, from); document.body.innerText = JSON.stringify({ code: 0, msg: "success", keyword: decodedQuery, type: from, total: total, data: mergedByType }, null, 2); } catch (error) { document.body.innerText = JSON.stringify({ code: -1, msg: error.message || 'Error' }, null, 2); }
                 } else {
-                    // 网页 UI 模式
-                    // 如果当前不在搜索页，先跳转
-                    if (window.location.hash !== '#/' && window.location.hash !== '') {
-                        window.location.hash = '#/';
-                    }
-
+                    if (window.location.hash !== '#/' && window.location.hash !== '') window.location.hash = '#/';
                     setTimeout(() => {
-                        // 根据 from 参数设置下拉框
                         const validTypes = Object.keys(TYPE_PRESETS);
-                        if (validTypes.includes(from)) {
-                            typeSelect.value = from;
-                            currentPreset = from;
-                        } else {
-                            typeSelect.value = 'all';
-                            currentPreset = 'all';
-                        }
-
+                        typeSelect.value = validTypes.includes(from) ? from : 'all';
+                        currentPreset = typeSelect.value;
                         searchInput.value = decodedQuery;
                         performSearch(decodedQuery);
                     }, 300);
@@ -1528,5 +652,4 @@
         checkUrlParams();
     </script>
 </body>
-
 </html>
