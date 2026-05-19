@@ -85,11 +85,31 @@
         .tag-rank { font-size: 12px; color: #888; }
         .tag-hot { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: #ff9500; }
         .tags-more { margin-top: 0.5rem; font-size: 13px; color: #888; text-align: center; }
+
         .vtquark-section { margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 0.75rem; }
-        .vtquark-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-        .vtquark-title { font-size: 14px; color: var(--muted); }
+        .vtquark-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.75rem; }
+        .vtquark-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; flex-wrap: wrap; }
+        .vtquark-title { font-size: 14px; color: var(--muted); flex-shrink: 0; }
         .vtquark-title strong { color: #ff9500; }
-        .vtquark-toggle { font-size: 13px; color: var(--accent); cursor: pointer; user-select: none; }
+        .vtquark-status {
+            display: inline-flex;
+            align-items: center;
+            max-width: 100%;
+            padding: 2px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            color: #777;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+        .vtquark-status.is-ready { color: #888; }
+        .vtquark-status.is-loading { color: #777; }
+        .vtquark-status.is-cache { color: #8a8a95; }
+        .vtquark-status.is-error { color: #9a6b6b; }
+        .vtquark-toggle { font-size: 13px; color: var(--accent); cursor: pointer; user-select: none; flex-shrink: 0; }
         .vtquark-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
         .daily-page { padding-top: 1rem; }
@@ -299,7 +319,10 @@
                 <div class="tags-more" id="rankMoreHint">仅展示前 10 条，点击可展开前 20 条</div>
                 <div class="vtquark-section" id="vtquarkSection">
                     <div class="vtquark-header">
-                        <div class="vtquark-title">🎬 <strong>夸克热搜榜</strong></div>
+                        <div class="vtquark-title-row">
+                            <div class="vtquark-title">🎬 <strong>夸克热搜榜</strong></div>
+                            <span id="vtquarkStatus" class="vtquark-status is-loading">加载中...</span>
+                        </div>
                         <div class="vtquark-toggle" id="toggleVtquark">展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
                     </div>
                     <div class="vtquark-list" id="vtquarkTagsList"></div>
@@ -1005,6 +1028,25 @@
             return Math.min(data.length, 10);
         }
 
+        /**
+         * 更新夸克热搜榜标题右侧的弱提示状态。
+         */
+        function setVtquarkStatus(text, type = 'ready') {
+            const status = document.getElementById('vtquarkStatus');
+            if (!status) return;
+
+            const finalText = String(text || '').trim();
+
+            status.textContent = finalText;
+            status.className = `vtquark-status is-${type}`;
+            status.style.display = finalText ? 'inline-flex' : 'none';
+        }
+
+        function getVtquarkLoadedStatusText(data) {
+            const displayCount = getVtquarkDisplayCount(data);
+            return displayCount > 0 ? `已加载 ${displayCount} 条` : '';
+        }
+
         async function loadRankTags() {
             try {
                 const json = await fetchJsonWithRetry(SHORTDRAMA_RANK_API, {
@@ -1030,8 +1072,10 @@
             if (section) section.style.display = 'block';
             if (toggle) toggle.innerHTML = '展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
 
-            if (list) {
-                list.innerHTML = `<span class="tag disabled">夸克热搜榜加载中...</span>`;
+            setVtquarkStatus('加载中...', 'loading');
+
+            if (list && !showVtquark) {
+                list.innerHTML = '';
             }
 
             try {
@@ -1045,9 +1089,10 @@
                     vtquarkData = json.data;
                     saveVtquarkCache(vtquarkData);
 
-                    if (list) {
-                        const displayCount = getVtquarkDisplayCount(vtquarkData);
-                        list.innerHTML = `<span class="tag disabled">已加载 ${displayCount} 条，点击右侧展开查看</span>`;
+                    setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
+
+                    if (list && !showVtquark) {
+                        list.innerHTML = '';
                     }
 
                     // 如果用户之前已经点了展开，数据回来后自动渲染
@@ -1067,9 +1112,11 @@
                 if (cached.length > 0) {
                     vtquarkData = cached;
 
-                    if (list) {
-                        const displayCount = getVtquarkDisplayCount(cached);
-                        list.innerHTML = `<span class="tag disabled">接口暂时不稳定，已使用本地缓存 ${displayCount} 条</span>`;
+                    const displayCount = getVtquarkDisplayCount(cached);
+                    setVtquarkStatus(`缓存 ${displayCount} 条`, 'cache');
+
+                    if (list && !showVtquark) {
+                        list.innerHTML = '';
                     }
 
                     if (showVtquark) {
@@ -1081,8 +1128,10 @@
 
                 vtquarkData = [];
 
-                if (list) {
-                    list.innerHTML = `<span class="tag disabled">夸克热搜榜暂时加载失败，稍后会自动重试</span>`;
+                setVtquarkStatus('加载失败，重试中', 'error');
+
+                if (list && !showVtquark) {
+                    list.innerHTML = '';
                 }
 
                 // 自动延迟重试一次，不影响页面其它功能
@@ -1189,11 +1238,13 @@
                 renderVtquarkTags();
             } else {
                 if (list) {
-                    const displayCount = getVtquarkDisplayCount(vtquarkData);
+                    list.innerHTML = '';
+                }
 
-                    list.innerHTML = vtquarkData.length > 0
-                        ? `<span class="tag disabled">已加载 ${displayCount} 条，点击右侧展开查看</span>`
-                        : `<span class="tag disabled">夸克热搜榜加载中...</span>`;
+                if (vtquarkData.length > 0) {
+                    setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
+                } else {
+                    setVtquarkStatus('加载中...', 'loading');
                 }
 
                 if (toggle) {
