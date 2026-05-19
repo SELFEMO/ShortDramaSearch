@@ -40,7 +40,20 @@
             background: rgba(10, 10, 15, 0.9); border-bottom: 1px solid var(--border);
             backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between;
         }
-        .app-title { font-size: 18px; font-weight: 600; }
+        /*.app-title { font-size: 18px; font-weight: 600; }*/
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .app-title:hover {
+            opacity: 0.85;
+        }
+        .app-title:active {
+            transform: scale(0.98);
+        }
         .app-title span { color: var(--accent); }
         .app-nav-links { display: flex; gap: 10px; }
         .nav-link {
@@ -465,6 +478,28 @@
                     else if (target === 'daily') window.location.hash = '#/daily';
                     else if (target === 'rank') window.location.hash = '#/rank';
                 });
+            });
+        }
+
+        /**
+         * 点击顶部“酷乐短剧 / 影视资源”标题刷新网页。
+         */
+        function bindAppTitleRefresh() {
+            if (!appTitleEl) return;
+
+            appTitleEl.title = '点击刷新网页';
+            appTitleEl.setAttribute('role', 'button');
+            appTitleEl.setAttribute('tabindex', '0');
+
+            appTitleEl.addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            appTitleEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.reload();
+                }
             });
         }
 
@@ -1514,6 +1549,7 @@
 
         // ==================== 初始化 ====================
         initRouter();
+        bindAppTitleRefresh();
         loadRankTags();
         loadVtquarkTags();
         checkUrlParams();
