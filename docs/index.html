@@ -476,6 +476,27 @@
         }
 
         /**
+         * 解码 HTML 实体，避免榜单标题里出现 &amp;、&#039; 等内容影响搜索。
+         */
+        function decodeHtmlEntities(text) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = String(text || '');
+            return textarea.value;
+        }
+
+        /**
+         * 统一清洗搜索关键词。
+         * 解决榜单标题中可能存在的隐藏字符、换行、HTML实体、连续空格等问题。
+         */
+        function normalizeSearchKeyword(keyword) {
+            return decodeHtmlEntities(keyword)
+                .replace(/[\u200B-\u200D\uFEFF]/g, '')
+                .replace(/\u00A0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        /**
          * 对单条资源做密码修正。
          * 优先级：
          * 1. 链接 url / viewlink / link 里的 ?pwd=xxxx
@@ -557,38 +578,152 @@
         qrModalOverlay.addEventListener('click', (e) => { if (e.target === qrModalOverlay) closeQrModal(); });
 
         // ==================== 核心搜索逻辑 ====================
-        let isSearching = false; let searchTimer = null; let currentPreset = 'all';
-        typeSelect.addEventListener('change', () => { currentPreset = typeSelect.value; if (searchInput.value.trim()) performSearch(searchInput.value.trim()); });
-        searchBtn.addEventListener('click', () => performSearch(searchInput.value));
-        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performSearch(searchInput.value); });
+        let isSearching = false;
+        let searchTimer = null;
+        let currentPreset = 'all';
+
+        /**
+         * 搜索序号。
+         * 用来避免旧搜索结果覆盖新搜索结果。
+         */
+        let searchSequence = 0;
+
+        typeSelect.addEventListener('change', () => {
+            currentPreset = typeSelect.value;
+            const keyword = normalizeSearchKeyword(searchInput.value);
+            if (keyword) performSearch(keyword, { immediate: true });
+        });
+
+        searchBtn.addEventListener('click', () => {
+            performSearch(searchInput.value, { immediate: true });
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(searchInput.value, { immediate: true });
+            }
+        });
 
         function buildSearchTerms(rawInput) {
-            const input = rawInput.trim(); if (!input) return [];
+            const input = normalizeSearchKeyword(rawInput);
+            if (!input) return [];
+
             const parts = input.split(/\s+/).filter(Boolean);
             const terms = new Set([input]);
-            if (parts.length > 1) parts.forEach(p => terms.add(p));
-            return Array.from(terms).sort((a, b) => { if (a === input) return -1; if (b === input) return 1; return b.length - a.length; });
+
+            if (parts.length > 1) {
+                parts.forEach(p => terms.add(p));
+            }
+
+            return Array.from(terms).sort((a, b) => {
+                if (a === input) return -1;
+                if (b === input) return 1;
+                return b.length - a.length;
+            });
         }
 
-        async function performSearch(keyword) {
-            const term = keyword.trim();
-            if (!term) { showStatus('请输入搜索关键词'); return; }
-            if (isSearching) { showStatus('正在搜索中...'); return; }
+        /**
+         * 统一搜索入口。
+         *
+         * options.immediate:
+         * - true：立即搜索，适合榜单点击、按钮点击、回车。
+         * - false：防抖搜索。
+         *
+         * options.forceAll:
+         * - true：强制使用全局聚合，适合热度榜跳转搜索。
+         *
+         * options.retryIfEmpty:
+         * - true：如果第一次返回空结果，自动重试一次，解决接口偶发空返回。
+         */
+        async function performSearch(keyword, options = {}) {
+            const term = normalizeSearchKeyword(keyword);
+
+            if (!term) {
+                showStatus('请输入搜索关键词');
+                return;
+            }
+
+            if (options.forceAll) {
+                typeSelect.value = 'all';
+                currentPreset = 'all';
+            }
+
+            searchInput.value = term;
+
             clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => executeSearchUI(term), 300);
+
+            const currentSearchId = ++searchSequence;
+            const delay = options.immediate ? 0 : 300;
+
+            searchTimer = setTimeout(() => {
+                executeSearchUI(term, {
+                    searchId: currentSearchId,
+                    retryIfEmpty: !!options.retryIfEmpty
+                });
+            }, delay);
         }
 
-        async function executeSearchUI(term) {
-            isSearching = true; searchBtn.disabled = true;
+        async function executeSearchUI(term, options = {}) {
+            const searchId = options.searchId || ++searchSequence;
+
+            isSearching = true;
+            searchBtn.disabled = true;
+
             document.querySelectorAll('.tag').forEach(tag => tag.classList.add('disabled'));
-            clearTimeouts(); showLoading(); showStatus(`正在搜索: ${term}...`);
+
+            clearTimeouts();
+            showLoading();
+            showStatus(`正在搜索: ${term}...`);
+
             try {
-                const { mergedByType, total, typeList } = await fetchAndMergeData(term, currentPreset);
-                if (typeList.length === 0 || total === 0) { resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`; showStatus('未找到相关结果'); return; }
+                let result = await fetchAndMergeData(term, currentPreset);
+
+                /**
+                 * 如果这是旧搜索返回的结果，直接丢弃。
+                 * 这样可以避免：
+                 * A 搜索较慢，B 搜索较快，最后 A 的“未找到”覆盖 B 的正常结果。
+                 */
+                if (searchId !== searchSequence) return;
+
+                /**
+                 * 榜单点击时，接口偶尔会第一次空返回。
+                 * 自动重试一次，避免用户看到“未找到”，但手动再搜又正常。
+                 */
+                if (
+                    options.retryIfEmpty &&
+                    (!result || result.total === 0 || result.typeList.length === 0)
+                ) {
+                    showStatus('首次未命中，正在自动重试...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    result = await fetchAndMergeData(term, currentPreset);
+
+                    if (searchId !== searchSequence) return;
+                }
+
+                const { mergedByType, total, typeList } = result;
+
+                if (typeList.length === 0 || total === 0) {
+                    resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`;
+                    showStatus('未找到相关结果');
+                    return;
+                }
+
                 renderGroupedResults(mergedByType, typeList, term, total);
                 showStatus(`共找到 ${total} 条结果`);
-            } catch (error) { console.error(error); resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">发生错误</p></div>`; }
-            finally { clearTimeouts(); isSearching = false; searchBtn.disabled = false; document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled')); }
+            } catch (error) {
+                if (searchId !== searchSequence) return;
+
+                console.error(error);
+                resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">发生错误</p></div>`;
+            } finally {
+                if (searchId === searchSequence) {
+                    clearTimeouts();
+                    isSearching = false;
+                    searchBtn.disabled = false;
+                    document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled'));
+                }
+            }
         }
 
         async function fetchAndMergeData(term, presetName) {
@@ -779,21 +914,246 @@
         function showLoading() { resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`; }
 
         // ==================== 主页热度榜逻辑 ====================
-        let rankData = []; let vtquarkData = []; let showAllRank = false; let showVtquark = false;
-        async function loadRankTags() { try { const res = await fetch(SHORTDRAMA_RANK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { rankData = json.data; renderRankTags(); } } catch (e) {} }
-        async function loadVtquarkTags() { try { const res = await fetch(VTQUARK_API); const json = await res.json(); if (json && json.code === 200 && Array.isArray(json.data)) { vtquarkData = json.data; if (vtquarkData.length > 0) document.getElementById('vtquarkSection').style.display = 'block'; } } catch (e) {} }
-        function renderRankTags() { const list = document.getElementById('rankTagsList'); const hint = document.getElementById('rankMoreHint'); let html = ''; rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => { html += `<span class="tag" data-keyword="${escapeHtml(item.title)}"><span class="tag-rank">${item.ranking || idx + 1}</span>${escapeHtml(item.title)}<span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span></span>`; }); list.innerHTML = html; hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none'; }
-        function renderVtquarkTags() { const list = document.getElementById('vtquarkTagsList'); let html = ''; vtquarkData.slice(0, 10).forEach((item, idx) => { html += `<span class="tag" data-keyword="${escapeHtml(item.content_title)}"><span class="tag-rank">${item.content_rank || idx + 1}</span>${escapeHtml(item.content_title)}<span class="tag-hot">🔥 ${item.hot}</span></span>`; }); list.innerHTML = html; }
-        document.getElementById('toggleMoreRank').addEventListener('click', () => { showAllRank = !showAllRank; renderRankTags(); });
-        document.getElementById('toggleVtquark').addEventListener('click', () => { showVtquark = !showVtquark; if (showVtquark) renderVtquarkTags(); else document.getElementById('vtquarkTagsList').innerHTML = ''; });
-        document.getElementById('rankTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; searchInput.value = tag.dataset.keyword; performSearch(tag.dataset.keyword); });
-        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => { const tag = e.target.closest('.tag'); if (!tag || tag.classList.contains('disabled')) return; searchInput.value = tag.dataset.keyword; performSearch(tag.dataset.keyword); });
+        let rankData = [];
+        let vtquarkData = [];
+        let showAllRank = false;
+        let showVtquark = false;
+
+        async function loadRankTags() {
+            try {
+                const res = await fetch(SHORTDRAMA_RANK_API);
+                const json = await res.json();
+
+                if (json && json.code === 200 && Array.isArray(json.data)) {
+                    rankData = json.data;
+                    renderRankTags();
+                }
+            } catch (e) {}
+        }
+
+        async function loadVtquarkTags() {
+            try {
+                const res = await fetch(VTQUARK_API);
+                const json = await res.json();
+
+                if (json && json.code === 200 && Array.isArray(json.data)) {
+                    vtquarkData = json.data;
+
+                    if (vtquarkData.length > 0) {
+                        document.getElementById('vtquarkSection').style.display = 'block';
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function renderRankTags() {
+            const list = document.getElementById('rankTagsList');
+            const hint = document.getElementById('rankMoreHint');
+
+            let html = '';
+
+            rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => {
+                const title = normalizeSearchKeyword(item.title || '');
+
+                if (!title) return;
+
+                html += `<span class="tag" data-keyword="${escapeHtml(title)}">
+                    <span class="tag-rank">${item.ranking || idx + 1}</span>
+                    ${escapeHtml(title)}
+                    <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
+                </span>`;
+            });
+
+            list.innerHTML = html;
+            hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none';
+        }
+
+        function renderVtquarkTags() {
+            const list = document.getElementById('vtquarkTagsList');
+
+            let html = '';
+
+            vtquarkData.slice(0, 10).forEach((item, idx) => {
+                const title = normalizeSearchKeyword(item.content_title || '');
+
+                if (!title) return;
+
+                html += `<span class="tag" data-keyword="${escapeHtml(title)}">
+                    <span class="tag-rank">${item.content_rank || idx + 1}</span>
+                    ${escapeHtml(title)}
+                    <span class="tag-hot">🔥 ${escapeHtml(item.hot)}</span>
+                </span>`;
+            });
+
+            list.innerHTML = html;
+        }
+
+        function searchFromRankKeyword(keyword) {
+            const term = normalizeSearchKeyword(keyword);
+
+            if (!term) {
+                showStatus('榜单关键词为空');
+                return;
+            }
+
+            if (window.location.hash !== '#/' && window.location.hash !== '') {
+                window.location.hash = '#/';
+            } else {
+                navigateTo('search');
+            }
+
+            typeSelect.value = 'all';
+            currentPreset = 'all';
+            searchInput.value = term;
+
+            /**
+             * 使用 setTimeout 0 等待页面切换完成。
+             * 同时 forceAll + retryIfEmpty 可以避免榜单点击偶发空结果。
+             */
+            setTimeout(() => {
+                performSearch(term, {
+                    immediate: true,
+                    forceAll: true,
+                    retryIfEmpty: true
+                });
+            }, 0);
+        }
+
+        document.getElementById('toggleMoreRank').addEventListener('click', () => {
+            showAllRank = !showAllRank;
+            renderRankTags();
+        });
+
+        document.getElementById('toggleVtquark').addEventListener('click', () => {
+            showVtquark = !showVtquark;
+
+            if (showVtquark) {
+                renderVtquarkTags();
+            } else {
+                document.getElementById('vtquarkTagsList').innerHTML = '';
+            }
+        });
+
+        document.getElementById('rankTagsList').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag || tag.classList.contains('disabled')) return;
+
+            searchFromRankKeyword(tag.dataset.keyword);
+        });
+
+        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag || tag.classList.contains('disabled')) return;
+
+            searchFromRankKeyword(tag.dataset.keyword);
+        });
 
         // ==================== 热度榜页面逻辑 ====================
         let currentRankSource = 'drama';
-        function initRankPage() { document.querySelectorAll('.rank-tab').forEach(tab => { tab.onclick = () => { document.querySelector('.rank-tab.active').classList.remove('active'); tab.classList.add('active'); currentRankSource = tab.dataset.source; renderRankList(); }; }); rankSearchInput.oninput = renderRankList; renderRankList(); }
-        function renderRankList() { const keyword = rankSearchInput.value.trim().toLowerCase(); let sourceData = currentRankSource === 'drama' ? rankData : vtquarkData; let filtered = sourceData; if (keyword) { filtered = sourceData.filter(item => (item.title || item.content_title || '').toLowerCase().includes(keyword)); } if (filtered.length === 0) { rankListContainer.innerHTML = `<div class="status-message"><p>没有找到相关内容</p></div>`; return; } let html = `<div class="result-list">`; filtered.forEach((item, index) => { const title = item.title || item.content_title || '未知'; const hot = item.hots || item.hot || '0'; const rank = item.ranking || item.content_rank || (index + 1); html += `<div class="result-item" style="animation-delay: ${index * 0.03}s" ondblclick="handleRankItemClick('${escapeHtml(title)}')"><div class="drama-title" style="cursor: pointer;"><span class="tag-rank" style="margin-right: 5px; font-size: 14px; color: ${rank <= 3 ? 'var(--accent)' : '#888'};">${rank}.</span>${escapeHtml(title)}</div><div class="info-list"><div class="info-item"><span class="info-label">热度:</span><span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span></div></div><div style="text-align: right; margin-top: 5px;"><button class="rank-to-search-btn" onclick="event.stopPropagation(); handleRankItemClick('${escapeHtml(title)}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> 全局搜索资源</button></div></div>`; }); html += `</div>`; rankListContainer.innerHTML = html; }
-        function handleRankItemClick(keyword) { window.location.hash = '#/'; setTimeout(() => { typeSelect.value = 'all'; searchInput.value = keyword; performSearch(keyword); }, 150); }
+
+        function initRankPage() {
+            document.querySelectorAll('.rank-tab').forEach(tab => {
+                tab.onclick = () => {
+                    const activeTab = document.querySelector('.rank-tab.active');
+                    if (activeTab) activeTab.classList.remove('active');
+
+                    tab.classList.add('active');
+                    currentRankSource = tab.dataset.source;
+                    renderRankList();
+                };
+            });
+
+            rankSearchInput.oninput = renderRankList;
+
+            /**
+             * 不再使用内联 onclick / ondblclick。
+             * 原因：
+             * 标题里如果有引号、HTML实体、特殊符号，内联 JS 容易出问题。
+             */
+            rankListContainer.onclick = (e) => {
+                const btn = e.target.closest('.rank-to-search-btn');
+                if (!btn) return;
+
+                const item = btn.closest('.rank-result-item');
+                const keyword = btn.dataset.keyword || item?.dataset.keyword || '';
+
+                handleRankItemClick(keyword);
+            };
+
+            rankListContainer.ondblclick = (e) => {
+                const item = e.target.closest('.rank-result-item');
+                if (!item) return;
+
+                handleRankItemClick(item.dataset.keyword);
+            };
+
+            renderRankList();
+        }
+
+        function renderRankList() {
+            const keyword = normalizeSearchKeyword(rankSearchInput.value).toLowerCase();
+
+            let sourceData = currentRankSource === 'drama' ? rankData : vtquarkData;
+            let filtered = sourceData;
+
+            if (keyword) {
+                filtered = sourceData.filter(item => {
+                    const title = normalizeSearchKeyword(item.title || item.content_title || '').toLowerCase();
+                    return title.includes(keyword);
+                });
+            }
+
+            if (filtered.length === 0) {
+                rankListContainer.innerHTML = `<div class="status-message"><p>没有找到相关内容</p></div>`;
+                return;
+            }
+
+            let html = `<div class="result-list">`;
+
+            filtered.forEach((item, index) => {
+                const title = normalizeSearchKeyword(item.title || item.content_title || '未知');
+                const hot = item.hots || item.hot || '0';
+                const rank = item.ranking || item.content_rank || (index + 1);
+
+                html += `<div class="result-item rank-result-item"
+                    data-keyword="${escapeHtml(title)}"
+                    style="animation-delay: ${index * 0.03}s">
+
+                    <div class="drama-title" style="cursor: pointer;">
+                        <span class="tag-rank" style="margin-right: 5px; font-size: 14px; color: ${rank <= 3 ? 'var(--accent)' : '#888'};">
+                            ${rank}.
+                        </span>
+                        ${escapeHtml(title)}
+                    </div>
+
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">热度:</span>
+                            <span style="color: #ff9500;">🔥 ${escapeHtml(hot)}</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; margin-top: 5px;">
+                        <button class="rank-to-search-btn"
+                            data-keyword="${escapeHtml(title)}"
+                            type="button">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.3-4.3"/>
+                            </svg>
+                            全局搜索资源
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
+            rankListContainer.innerHTML = html;
+        }
+
+        function handleRankItemClick(keyword) {
+            searchFromRankKeyword(keyword);
+        }
 
         // ==================== 每日影视 ====================
         let dailyData = []; let filteredDaily = [];
