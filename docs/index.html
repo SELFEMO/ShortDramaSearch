@@ -413,6 +413,135 @@
 
         function showStatus(message, duration = 2000) { searchStatus.textContent = message; searchStatus.classList.add('show'); setTimeout(() => searchStatus.classList.remove('show'), duration); }
         function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s])); }
+
+        /**
+         * 在 JSON.parse 之前保护网盘提取码。
+         *
+         * 处理接口返回这种情况：
+         * "pwd":32e7  =>  "pwd":"32e7"
+         */
+        function protectPwdInJsonText(text) {
+            if (typeof text !== 'string') return text;
+
+            return text.replace(
+                /("pwd"\s*:\s*)(?!")(?!(?:null|true|false)\b)([A-Za-z0-9+\-.]{1,32})(?=\s*[,}\]])/gi,
+                (match, prefix, value) => `${prefix}"${value}"`
+            );
+        }
+
+        /**
+         * 从百度网盘链接中提取真实 pwd。
+         *
+         * 例如：
+         * https://pan.baidu.com/s/xxx?pwd=32e7
+         * 返回：
+         * 32e7
+         *
+         * 这是本次修复的关键。
+         * 因为有些接口返回的 item.pwd 已经被服务端或解析过程变成了 320000000，
+         * 但 item.url 里的 ?pwd=32e7 仍然是正确的。
+         */
+        function extractPwdFromLink(link) {
+            if (!link) return '';
+
+            const text = String(link).trim();
+
+            try {
+                const url = new URL(text, window.location.origin);
+                const pwd = url.searchParams.get('pwd');
+                if (pwd !== null && pwd !== undefined && String(pwd).trim() !== '') {
+                    return String(pwd).trim();
+                }
+            } catch (e) {}
+
+            const match = text.match(/[?&]pwd=([^&#]+)/i);
+            if (match && match[1]) {
+                try {
+                    return decodeURIComponent(match[1].replace(/\+/g, '%20')).trim();
+                } catch (e) {
+                    return match[1].trim();
+                }
+            }
+
+            return '';
+        }
+
+        /**
+         * 统一格式化提取码。
+         * 注意：这里绝对不能 Number()，否则 32e7 会再次变成 320000000。
+         */
+        function formatPwd(pwd) {
+            if (pwd === null || pwd === undefined) return '';
+            return String(pwd).trim();
+        }
+
+        /**
+         * 对单条资源做密码修正。
+         * 优先级：
+         * 1. 链接 url / viewlink / link 里的 ?pwd=xxxx
+         * 2. 接口返回的 item.pwd
+         */
+        function normalizeResourceItem(item) {
+            if (!item || typeof item !== 'object') return item;
+
+            const fixed = { ...item };
+            const link = fixed.url || fixed.viewlink || fixed.link || fixed.share_url || fixed.shareUrl || '';
+            const pwdFromLink = extractPwdFromLink(link);
+
+            if (pwdFromLink) {
+                fixed.pwd = pwdFromLink;
+            } else {
+                fixed.pwd = formatPwd(fixed.pwd);
+            }
+
+            return fixed;
+        }
+
+        /**
+         * 深度修正接口返回数据。
+         * 这样不仅页面显示正确，format=json 模式输出的数据也会被修正。
+         */
+        function normalizePwdFieldsDeep(value) {
+            if (Array.isArray(value)) {
+                return value.map(normalizePwdFieldsDeep);
+            }
+
+            if (value && typeof value === 'object') {
+                Object.keys(value).forEach(key => {
+                    value[key] = normalizePwdFieldsDeep(value[key]);
+                });
+
+                const link = value.url || value.viewlink || value.link || value.share_url || value.shareUrl || '';
+                const pwdFromLink = extractPwdFromLink(link);
+
+                if (pwdFromLink) {
+                    value.pwd = pwdFromLink;
+                } else if (Object.prototype.hasOwnProperty.call(value, 'pwd')) {
+                    value.pwd = formatPwd(value.pwd);
+                }
+            }
+
+            return value;
+        }
+
+        /**
+         * 安全解析接口 JSON。
+         * 第一步：在 JSON.parse 之前保护裸 pwd。
+         * 第二步：JSON.parse 后再从链接中恢复真实 pwd。
+         */
+        function parseApiJsonSafely(text) {
+            const safeText = protectPwdInJsonText(text);
+
+            const parsed = JSON.parse(safeText, (key, value) => {
+                if (key === 'pwd' && value !== null && value !== undefined) {
+                    return String(value);
+                }
+                return value;
+            });
+
+            return normalizePwdFieldsDeep(parsed);
+        }
+
         function extractDomain(url) { if (!url) return ''; try { return new URL(url).hostname; } catch (e) { return ''; } }
         if (titleLogo) titleLogo.onerror = function () { this.style.display = 'none'; };
         let timeoutId = null;
@@ -472,7 +601,12 @@
                 if (data && data.code === 0 && data.data && data.data.merged_by_type) {
                     Object.keys(data.data.merged_by_type).forEach(type => {
                         if (!mergedByType[type]) mergedByType[type] = [];
-                        data.data.merged_by_type[type].forEach(item => { if (!item.url || urlSet.has(item.url)) return; urlSet.add(item.url); mergedByType[type].push({ ...item, _searchTerm: st }); total++; });
+                        data.data.merged_by_type[type].forEach(item => {
+                            if (!item.url || urlSet.has(item.url)) return;
+                            urlSet.add(item.url);
+                            mergedByType[type].push({ ...normalizeResourceItem(item), _searchTerm: st });
+                            total++;
+                        });
                     });
                 }
                 if (total >= 200) break;
@@ -481,9 +615,93 @@
             return { mergedByType, total, typeList: Object.keys(mergedByType) };
         }
 
-        async function fetchSearchApi(fullUrl) { try { let data = await tryFetchDirect(fullUrl); if (!data) data = await tryFetchWithProxies(fullUrl); if (!data) throw { errorType: 'network' }; return data; } catch (error) { if (error.errorType) throw error; throw { errorType: 'unknown' }; } }
-        async function tryFetchDirect(url) { const controller = new AbortController(); const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const response = await Promise.race([fetch(url, { signal: controller.signal }), timeoutPromise]); if (!response.ok) throw { errorType: 'server' }; return await response.json(); } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; if (error.errorType) throw error; return null; } finally { clearTimeouts(); } }
-        async function tryFetchWithProxies(url) { let lastError = null; for (let proxy of CORS_PROXIES) { const controller = new AbortController(); const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); try { const res = await Promise.race([fetch(`${proxy}${encodeURIComponent(url)}`, { signal: controller.signal }), timeoutPromise]); if (!res.ok) throw { errorType: 'server' }; const json = await res.json(); if (json && (json.code !== undefined || json.data)) return json; throw { errorType: 'parse' }; } catch (error) { if (error.name === 'AbortError') lastError = { errorType: 'timeout' }; else lastError = error; continue; } finally { clearTimeouts(); } } if (lastError) throw lastError; throw { errorType: 'cors' }; }
+        async function fetchSearchApi(fullUrl) {
+            try {
+                let data = await tryFetchDirect(fullUrl);
+                if (!data) data = await tryFetchWithProxies(fullUrl);
+                if (!data) throw { errorType: 'network' };
+                return data;
+            } catch (error) {
+                if (error.errorType) throw error;
+                throw { errorType: 'unknown' };
+            }
+        }
+
+        async function tryFetchDirect(url) {
+            const controller = new AbortController();
+
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    controller.abort();
+                    reject({ errorType: 'timeout' });
+                }, SEARCH_TIMEOUT);
+            });
+
+            try {
+                const response = await Promise.race([
+                    fetch(url, { signal: controller.signal }),
+                    timeoutPromise
+                ]);
+
+                if (!response.ok) throw { errorType: 'server' };
+
+                // 关键修改：不能用 response.json()
+                // 必须先拿原始文本，保护 pwd 后再 JSON.parse
+                const text = await response.text();
+                return parseApiJsonSafely(text);
+            } catch (error) {
+                if (error.name === 'AbortError') throw { errorType: 'timeout' };
+                if (error.errorType) throw error;
+                return null;
+            } finally {
+                clearTimeouts();
+            }
+        }
+
+        async function tryFetchWithProxies(url) {
+            let lastError = null;
+
+            for (let proxy of CORS_PROXIES) {
+                const controller = new AbortController();
+
+                const timeoutPromise = new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        controller.abort();
+                        reject({ errorType: 'timeout' });
+                    }, SEARCH_TIMEOUT);
+                });
+
+                try {
+                    const res = await Promise.race([
+                        fetch(`${proxy}${encodeURIComponent(url)}`, { signal: controller.signal }),
+                        timeoutPromise
+                    ]);
+
+                    if (!res.ok) throw { errorType: 'server' };
+
+                    // 关键修改：不能用 res.json()
+                    // 代理返回的数据也要先按文本处理，防止 pwd 被科学计数法解析
+                    const text = await res.text();
+                    const json = parseApiJsonSafely(text);
+
+                    if (json && (json.code !== undefined || json.data)) return json;
+
+                    throw { errorType: 'parse' };
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        lastError = { errorType: 'timeout' };
+                    } else {
+                        lastError = error;
+                    }
+                    continue;
+                } finally {
+                    clearTimeouts();
+                }
+            }
+
+            if (lastError) throw lastError;
+            throw { errorType: 'cors' };
+        }
 
         // 公共分块折叠逻辑
         function bindSectionToggleEvents() {
@@ -517,9 +735,45 @@
         }
 
         function createResultItem(item, type, index) {
-            const name = item.name || '未知资源'; const link = item.url || '#'; const pwd = item.pwd || '';
-            const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
-            return `<div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}"><button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button><div class="drama-title">${escapeHtml(name)}</div><div class="info-list"><div class="info-item"><span class="info-label">来源:</span><span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">${escapeHtml(TYPE_LABEL[type] || type)}</span></div><div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>${pwd ? `<div class="info-item"><span class="info-label">密码:</span><span style="color: #f59e0b;">${escapeHtml(pwd)}</span></div>` : ''}</div></div>`;
+            const name = item.name || '未知资源';
+            const link = item.url || '#';
+
+            // 关键修改：提取码必须始终作为字符串处理，不能参与数字转换
+            const pwd = extractPwdFromLink(link) || formatPwd(item.pwd);
+
+            const domain = extractDomain(link);
+            const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+
+            return `<div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
+                <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                </button>
+                <div class="drama-title">${escapeHtml(name)}</div>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">来源:</span>
+                        <span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">
+                            ${escapeHtml(TYPE_LABEL[type] || type)}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">链接:</span>
+                        <a href="${escapeHtml(link)}" target="_blank" class="info-link">
+                            ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}
+                            ${escapeHtml(link)}
+                        </a>
+                    </div>
+                    ${pwd ? `<div class="info-item">
+                        <span class="info-label">密码:</span>
+                        <span style="color: #f59e0b;">${escapeHtml(pwd)}</span>
+                    </div>` : ''}
+                </div>
+            </div>`;
         }
 
         function showLoading() { resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`; }
