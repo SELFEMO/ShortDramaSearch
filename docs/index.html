@@ -297,7 +297,7 @@
                 </div>
                 <div class="tags-list" id="rankTagsList"></div>
                 <div class="tags-more" id="rankMoreHint">仅展示前 10 条，点击可展开前 20 条</div>
-                <div class="vtquark-section" id="vtquarkSection" style="display:none;">
+                <div class="vtquark-section" id="vtquarkSection">
                     <div class="vtquark-header">
                         <div class="vtquark-title">🎬 <strong>夸克热搜榜</strong></div>
                         <div class="vtquark-toggle" id="toggleVtquark">展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
@@ -919,31 +919,177 @@
         let showAllRank = false;
         let showVtquark = false;
 
+        const VTQUARK_CACHE_KEY = 'kuleu_vtquark_cache_v1';
+        const RANK_API_TIMEOUT = 10000;
+
+        async function fetchJsonWithTimeout(url, timeout = RANK_API_TIMEOUT) {
+            const controller = new AbortController();
+
+            const timer = setTimeout(() => {
+                controller.abort();
+            }, timeout);
+
+            try {
+                const res = await fetch(url, {
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                return await res.json();
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function fetchJsonWithRetry(url, options = {}) {
+            const retries = options.retries ?? 2;
+            const delay = options.delay ?? 600;
+            let lastError = null;
+
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    return await fetchJsonWithTimeout(url, options.timeout || RANK_API_TIMEOUT);
+                } catch (error) {
+                    lastError = error;
+
+                    if (i < retries) {
+                        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+                    }
+                }
+            }
+
+            throw lastError;
+        }
+
+        function saveVtquarkCache(data) {
+            try {
+                if (!Array.isArray(data) || data.length === 0) return;
+
+                localStorage.setItem(VTQUARK_CACHE_KEY, JSON.stringify({
+                    time: Date.now(),
+                    data
+                }));
+            } catch (e) {}
+        }
+
+        function readVtquarkCache() {
+            try {
+                const raw = localStorage.getItem(VTQUARK_CACHE_KEY);
+                if (!raw) return [];
+
+                const cache = JSON.parse(raw);
+                if (!cache || !Array.isArray(cache.data)) return [];
+
+                // 缓存保留 24 小时
+                const maxAge = 24 * 60 * 60 * 1000;
+                if (Date.now() - Number(cache.time || 0) > maxAge) return [];
+
+                return cache.data;
+            } catch (e) {
+                return [];
+            }
+        }
+
+        /**
+         * 夸克热搜榜实际展示数量。
+         * 页面只展示前 10 条：
+         * - 如果接口返回 10 条或更多，提示显示 10 条；
+         * - 如果不足 10 条，提示显示实际数量。
+         */
+        function getVtquarkDisplayCount(data) {
+            if (!Array.isArray(data)) return 0;
+            return Math.min(data.length, 10);
+        }
+
         async function loadRankTags() {
             try {
-                const res = await fetch(SHORTDRAMA_RANK_API);
-                const json = await res.json();
+                const json = await fetchJsonWithRetry(SHORTDRAMA_RANK_API, {
+                    retries: 2,
+                    timeout: RANK_API_TIMEOUT
+                });
 
                 if (json && json.code === 200 && Array.isArray(json.data)) {
                     rankData = json.data;
                     renderRankTags();
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.warn('短剧热度榜加载失败:', e);
+            }
         }
 
         async function loadVtquarkTags() {
+            const section = document.getElementById('vtquarkSection');
+            const list = document.getElementById('vtquarkTagsList');
+            const toggle = document.getElementById('toggleVtquark');
+
+            // 关键修改：模块永远显示，不再因为接口失败隐藏整个模块
+            if (section) section.style.display = 'block';
+            if (toggle) toggle.innerHTML = '展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+
+            if (list) {
+                list.innerHTML = `<span class="tag disabled">夸克热搜榜加载中...</span>`;
+            }
+
             try {
-                const res = await fetch(VTQUARK_API);
-                const json = await res.json();
+                const json = await fetchJsonWithRetry(VTQUARK_API, {
+                    retries: 3,
+                    delay: 700,
+                    timeout: RANK_API_TIMEOUT
+                });
 
-                if (json && json.code === 200 && Array.isArray(json.data)) {
+                if (json && json.code === 200 && Array.isArray(json.data) && json.data.length > 0) {
                     vtquarkData = json.data;
+                    saveVtquarkCache(vtquarkData);
 
-                    if (vtquarkData.length > 0) {
-                        document.getElementById('vtquarkSection').style.display = 'block';
+                    if (list) {
+                        const displayCount = getVtquarkDisplayCount(vtquarkData);
+                        list.innerHTML = `<span class="tag disabled">已加载 ${displayCount} 条，点击右侧展开查看</span>`;
                     }
+
+                    // 如果用户之前已经点了展开，数据回来后自动渲染
+                    if (showVtquark) {
+                        renderVtquarkTags();
+                    }
+
+                    return;
                 }
-            } catch (e) {}
+
+                throw new Error('接口返回为空或格式异常');
+            } catch (e) {
+                console.warn('夸克热搜榜加载失败，尝试读取缓存:', e);
+
+                const cached = readVtquarkCache();
+
+                if (cached.length > 0) {
+                    vtquarkData = cached;
+
+                    if (list) {
+                        const displayCount = getVtquarkDisplayCount(cached);
+                        list.innerHTML = `<span class="tag disabled">接口暂时不稳定，已使用本地缓存 ${displayCount} 条</span>`;
+                    }
+
+                    if (showVtquark) {
+                        renderVtquarkTags();
+                    }
+
+                    return;
+                }
+
+                vtquarkData = [];
+
+                if (list) {
+                    list.innerHTML = `<span class="tag disabled">夸克热搜榜暂时加载失败，稍后会自动重试</span>`;
+                }
+
+                // 自动延迟重试一次，不影响页面其它功能
+                setTimeout(() => {
+                    loadVtquarkTags();
+                }, 5000);
+            }
         }
 
         function renderRankTags() {
@@ -970,6 +1116,15 @@
 
         function renderVtquarkTags() {
             const list = document.getElementById('vtquarkTagsList');
+            const toggle = document.getElementById('toggleVtquark');
+
+            if (!list) return;
+
+            if (!vtquarkData || vtquarkData.length === 0) {
+                list.innerHTML = `<span class="tag disabled">夸克热搜榜暂无数据，正在尝试重新加载...</span>`;
+                loadVtquarkTags();
+                return;
+            }
 
             let html = '';
 
@@ -986,6 +1141,10 @@
             });
 
             list.innerHTML = html;
+
+            if (toggle) {
+                toggle.innerHTML = '收起 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>';
+            }
         }
 
         function searchFromRankKeyword(keyword) {
@@ -1006,10 +1165,6 @@
             currentPreset = 'all';
             searchInput.value = term;
 
-            /**
-             * 使用 setTimeout 0 等待页面切换完成。
-             * 同时 forceAll + retryIfEmpty 可以避免榜单点击偶发空结果。
-             */
             setTimeout(() => {
                 performSearch(term, {
                     immediate: true,
@@ -1027,10 +1182,23 @@
         document.getElementById('toggleVtquark').addEventListener('click', () => {
             showVtquark = !showVtquark;
 
+            const toggle = document.getElementById('toggleVtquark');
+            const list = document.getElementById('vtquarkTagsList');
+
             if (showVtquark) {
                 renderVtquarkTags();
             } else {
-                document.getElementById('vtquarkTagsList').innerHTML = '';
+                if (list) {
+                    const displayCount = getVtquarkDisplayCount(vtquarkData);
+
+                    list.innerHTML = vtquarkData.length > 0
+                        ? `<span class="tag disabled">已加载 ${displayCount} 条，点击右侧展开查看</span>`
+                        : `<span class="tag disabled">夸克热搜榜加载中...</span>`;
+                }
+
+                if (toggle) {
+                    toggle.innerHTML = '展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+                }
             }
         });
 
