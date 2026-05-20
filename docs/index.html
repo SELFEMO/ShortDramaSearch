@@ -283,7 +283,7 @@
 
         .policy-modal-box {
             width: 100%;
-            max-width: 680px;
+            max-width: 750px;
             background: #14141c;
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 18px;
@@ -447,9 +447,9 @@
         <div class="policy-modal-box">
             <div class="policy-modal-header">
                 <div class="policy-modal-title">用户使用条例</div>
-                <button class="policy-modal-close" onclick="closePolicyModal()">
-                    ×
-                </button>
+                <!--<button class="policy-modal-close" onclick="closePolicyModal()">-->
+                <!--    ×-->
+                <!--</button>-->
             </div>
             <div class="policy-modal-content">
                 <p>
@@ -473,7 +473,8 @@
                 </p>
 
                 <p>
-                    本项目部分功能依赖第三方接口服务（如酷乐API等）。
+                    <!--本项目部分功能依赖第三方接口服务（如酷乐API等）。-->
+                    本项目部分功能依赖第三方接口服务（如<a href="https://api.kuleu.com/" target="_blank" style="color: var(--accent); text-decoration: underline;">酷乐API</a>等）。
                     若相关资源、接口或内容涉及侵权问题，请优先联系对应接口平台或资源提供方进行处理。
                 </p>
 
@@ -927,13 +928,13 @@
             window.location.href = 'about:blank';
         }
 
-        if (policyModalOverlay) {
-            policyModalOverlay.addEventListener('click', (e) => {
-                if (e.target === policyModalOverlay) {
-                    closePolicyModal();
-                }
-            });
-        }
+        // if (policyModalOverlay) {
+        //     policyModalOverlay.addEventListener('click', (e) => {
+        //         if (e.target === policyModalOverlay) {
+        //             closePolicyModal();
+        //         }
+        //     });
+        // }
 
         // ==================== 二维码弹窗逻辑 ====================
         const qrModalOverlay = document.getElementById('qrModalOverlay');
