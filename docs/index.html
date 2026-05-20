@@ -19,6 +19,95 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; overflow-x: hidden; }
+
+        /* ==================== 主页滚动条：隐藏原生滚动条 ==================== */
+        html {
+            scrollbar-width: none; /* Firefox */
+        }
+
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        body {
+            -ms-overflow-style: none; /* IE / Edge Legacy */
+        }
+
+        /* ==================== 主页自定义悬浮滚动条 ==================== */
+        .page-custom-scrollbar {
+            position: fixed;
+            top: 14px;
+            right: 8px;
+            bottom: 14px;
+            width: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            opacity: 0;
+            transform: translateX(6px);
+            transition:
+                    opacity 0.35s ease,
+                    transform 0.35s ease,
+                    background 0.25s ease;
+            pointer-events: none;
+            z-index: 900;
+        }
+
+        .page-custom-scrollbar.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .page-custom-scrollbar-thumb {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 36px;
+            border-radius: 999px;
+            background: linear-gradient(
+                    180deg,
+                    rgba(255, 133, 85, 0.95),
+                    rgba(255, 107, 53, 0.72)
+            );
+            box-shadow:
+                    0 0 10px rgba(255, 107, 53, 0.25),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+            transition:
+                    top 0.08s linear,
+                    height 0.2s ease,
+                    background 0.2s ease,
+                    box-shadow 0.2s ease;
+        }
+
+        .page-custom-scrollbar.show .page-custom-scrollbar-thumb {
+            background: linear-gradient(
+                    180deg,
+                    rgba(255, 154, 106, 0.98),
+                    rgba(255, 107, 53, 0.78)
+            );
+        }
+
+        /* 弹窗打开时，强制隐藏主页滚动条 */
+        body.scrollbar-locked .page-custom-scrollbar {
+            opacity: 0 !important;
+            transform: translateX(6px) !important;
+        }
+
+        @media (max-width: 768px) {
+            .page-custom-scrollbar {
+                top: 10px;
+                right: 5px;
+                bottom: 10px;
+                width: 5px;
+            }
+
+            .page-custom-scrollbar-thumb {
+                min-height: 32px;
+            }
+        }
+
         .font-display { font-family: 'ZCOOL KuaiLe', cursive; }
         .bg-pattern {
             position: fixed; inset: 0; z-index: 0;
@@ -677,6 +766,11 @@
 
     <div id="searchStatus" class="search-status"></div>
 
+    <!-- ==================== 主页自定义滚动条 ==================== -->
+    <div id="pageCustomScrollbar" class="page-custom-scrollbar" aria-hidden="true">
+        <div id="pageCustomScrollbarThumb" class="page-custom-scrollbar-thumb"></div>
+    </div>
+
     <!-- ==================== 用户条例弹窗 ==================== -->
     <div id="policyModalOverlay" class="policy-modal-overlay">
         <div class="policy-modal-box">
@@ -1196,6 +1290,8 @@
         function openPolicyModal() {
             if (!policyModalOverlay) return;
 
+            hidePageScrollbarImmediately();
+            document.body.classList.add('scrollbar-locked');
             policyModalOverlay.classList.add('show');
             document.body.style.overflow = 'hidden';
         }
@@ -1205,6 +1301,9 @@
 
             policyModalOverlay.classList.remove('show');
             document.body.style.overflow = '';
+            document.body.classList.remove('scrollbar-locked');
+
+            setTimeout(updatePageScrollbar, 50);
         }
 
         function rejectPolicy() {
@@ -2112,6 +2211,9 @@
         function openHelpModal() {
             if (!helpModalOverlay) return;
 
+            hidePageScrollbarImmediately();
+            document.body.classList.add('scrollbar-locked');
+
             helpModalOverlay.classList.add('show');
             document.body.style.overflow = 'hidden';
 
@@ -2119,6 +2221,17 @@
                 helpModalContent.scrollTop = 0;
                 hideHelpScrollbarImmediately();
             }
+
+            setTimeout(() => {
+                updateHelpScrollbar();
+
+                if (
+                    helpModalContent &&
+                    helpModalContent.scrollHeight > helpModalContent.clientHeight + 1
+                ) {
+                    showHelpScrollbarTemporarily();
+                }
+            }, 50);
         }
 
         function closeHelpModal() {
@@ -2127,6 +2240,9 @@
             hideHelpScrollbarImmediately();
             helpModalOverlay.classList.remove('show');
             document.body.style.overflow = '';
+            document.body.classList.remove('scrollbar-locked');
+
+            setTimeout(updatePageScrollbar, 50);
         }
 
         if (helpBtn) {
@@ -2221,9 +2337,143 @@
             window.addEventListener('resize', updateHelpScrollbar);
         }
 
+        // ==================== 主页自定义滚动条逻辑 ====================
+        const pageCustomScrollbar = document.getElementById('pageCustomScrollbar');
+        const pageCustomScrollbarThumb = document.getElementById('pageCustomScrollbarThumb');
+
+        let pageScrollbarTimer = null;
+        let pageScrollbarRaf = null;
+
+        function getPageScrollElement() {
+            return document.scrollingElement || document.documentElement;
+        }
+
+        function isPageScrollbarLocked() {
+            return document.body.classList.contains('scrollbar-locked') ||
+                document.body.style.overflow === 'hidden' ||
+                document.documentElement.style.overflow === 'hidden';
+        }
+
+        function updatePageScrollbar() {
+            if (!pageCustomScrollbar || !pageCustomScrollbarThumb) return;
+
+            const scrollElement = getPageScrollElement();
+            const scrollHeight = scrollElement.scrollHeight;
+            const clientHeight = window.innerHeight;
+            const scrollTop = window.pageYOffset || scrollElement.scrollTop || 0;
+
+            const canScroll = scrollHeight > clientHeight + 1 && !isPageScrollbarLocked();
+
+            if (!canScroll) {
+                pageCustomScrollbar.classList.remove('show');
+                pageCustomScrollbarThumb.style.height = '0px';
+                pageCustomScrollbarThumb.style.top = '0px';
+                return;
+            }
+
+            const trackHeight = pageCustomScrollbar.clientHeight || Math.max(0, window.innerHeight - 28);
+            const thumbHeight = Math.max(36, Math.round((clientHeight / scrollHeight) * trackHeight));
+            const maxThumbTop = Math.max(0, trackHeight - thumbHeight);
+            const maxScrollTop = Math.max(1, scrollHeight - clientHeight);
+            const thumbTop = Math.round((scrollTop / maxScrollTop) * maxThumbTop);
+
+            pageCustomScrollbarThumb.style.height = `${thumbHeight}px`;
+            pageCustomScrollbarThumb.style.top = `${thumbTop}px`;
+        }
+
+        function showPageScrollbarTemporarily() {
+            if (!pageCustomScrollbar || !pageCustomScrollbarThumb) return;
+
+            if (isPageScrollbarLocked()) {
+                hidePageScrollbarImmediately();
+                return;
+            }
+
+            if (pageScrollbarRaf) {
+                cancelAnimationFrame(pageScrollbarRaf);
+            }
+
+            pageScrollbarRaf = requestAnimationFrame(() => {
+                updatePageScrollbar();
+
+                const scrollElement = getPageScrollElement();
+                if (scrollElement.scrollHeight > window.innerHeight + 1 && !isPageScrollbarLocked()) {
+                    pageCustomScrollbar.classList.add('show');
+                }
+            });
+
+            if (pageScrollbarTimer) {
+                clearTimeout(pageScrollbarTimer);
+            }
+
+            pageScrollbarTimer = setTimeout(() => {
+                pageCustomScrollbar.classList.remove('show');
+            }, 1000);
+        }
+
+        function hidePageScrollbarImmediately() {
+            if (!pageCustomScrollbar) return;
+
+            if (pageScrollbarTimer) {
+                clearTimeout(pageScrollbarTimer);
+                pageScrollbarTimer = null;
+            }
+
+            if (pageScrollbarRaf) {
+                cancelAnimationFrame(pageScrollbarRaf);
+                pageScrollbarRaf = null;
+            }
+
+            pageCustomScrollbar.classList.remove('show');
+        }
+
+        function bindPageScrollbarEvents() {
+            window.addEventListener('scroll', showPageScrollbarTemporarily, { passive: true });
+            window.addEventListener('wheel', showPageScrollbarTemporarily, { passive: true });
+            window.addEventListener('touchmove', showPageScrollbarTemporarily, { passive: true });
+            window.addEventListener('resize', updatePageScrollbar);
+
+            document.addEventListener('keydown', (e) => {
+                const scrollKeys = [
+                    'ArrowUp',
+                    'ArrowDown',
+                    'PageUp',
+                    'PageDown',
+                    'Home',
+                    'End',
+                    ' '
+                ];
+
+                if (scrollKeys.includes(e.key)) {
+                    showPageScrollbarTemporarily();
+                }
+            });
+
+            if (window.ResizeObserver) {
+                const resizeObserver = new ResizeObserver(() => {
+                    updatePageScrollbar();
+                });
+
+                resizeObserver.observe(document.body);
+            } else {
+                const mutationObserver = new MutationObserver(() => {
+                    updatePageScrollbar();
+                });
+
+                mutationObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true
+                });
+            }
+
+            setTimeout(updatePageScrollbar, 300);
+        }
+
         // ==================== 初始化 ====================
         initRouter();
         bindAppTitleRefresh();
+        bindPageScrollbarEvents();
         loadRankTags();
         loadVtquarkTags();
         checkUrlParams();
