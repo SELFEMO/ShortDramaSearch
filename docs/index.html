@@ -327,10 +327,68 @@
         }
         .rank-to-search-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-        .qr-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .qr-modal-overlay.show { display: flex; }
-        .qr-modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 300px; height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes modalPopIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /*.qr-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }*/
+        /*.qr-modal-overlay.show { display: flex; }*/
+        /*.qr-modal-box { background: #fff; padding: 20px; border-radius: 12px; width: 300px; height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }*/
+        /* ==================== 二维码弹窗动画优化 ==================== */
+        .qr-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition:
+                    opacity 0.28s ease,
+                    background 0.28s ease,
+                    backdrop-filter 0.28s ease,
+                    visibility 0s linear 0.28s;
+        }
+
+        .qr-modal-overlay.show {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition:
+                    opacity 0.28s ease,
+                    background 0.28s ease,
+                    backdrop-filter 0.28s ease,
+                    visibility 0s linear 0s;
+        }
+
+        .qr-modal-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 300px;
+            height: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+
+            opacity: 0;
+            transform: translateY(18px) scale(0.94);
+            transition:
+                    opacity 0.28s ease,
+                    transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .qr-modal-overlay.show .qr-modal-box {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /*@keyframes modalPopIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }*/
         .qr-modal-close { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: #f0f0f0; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; font-size: 16px; }
         .qr-modal-close:hover { background: #e0e0e0; }
         .qr-modal-title { font-size: 16px; font-weight: 600; color: #333; margin-top: 10px; }
@@ -354,22 +412,63 @@
         .user-policy-link:hover {
             opacity: 0.8;
         }
+
+        /*.policy-modal-overlay {*/
+        /*    position: fixed;*/
+        /*    inset: 0;*/
+        /*    background: rgba(0, 0, 0, 0.88);*/
+        /*    z-index: 2000;*/
+        /*    display: none;*/
+        /*    align-items: center;*/
+        /*    justify-content: center;*/
+        /*    backdrop-filter: blur(6px);*/
+        /*    padding: 20px;*/
+        /*}*/
+        /*.policy-modal-overlay.show {*/
+        /*    display: flex;*/
+        /*}*/
+        /*.policy-modal-box {*/
+        /*    width: 100%;*/
+        /*    max-width: 750px;*/
+        /*    background: #14141c;*/
+        /*    border: 1px solid rgba(255,255,255,0.08);*/
+        /*    border-radius: 18px;*/
+        /*    overflow: hidden;*/
+        /*    box-shadow: 0 20px 60px rgba(0,0,0,0.55);*/
+        /*    animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);*/
+        /*}*/
+        /* ==================== 用户条例弹窗动画优化 ==================== */
         .policy-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.88);
             z-index: 2000;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(6px);
             padding: 20px;
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition:
+                    opacity 0.3s ease,
+                    background 0.3s ease,
+                    backdrop-filter 0.3s ease,
+                    visibility 0s linear 0.3s;
         }
-
         .policy-modal-overlay.show {
-            display: flex;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(6px);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition:
+                    opacity 0.3s ease,
+                    background 0.3s ease,
+                    backdrop-filter 0.3s ease,
+                    visibility 0s linear 0s;
         }
-
         .policy-modal-box {
             width: 100%;
             max-width: 750px;
@@ -378,7 +477,16 @@
             border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-            animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            opacity: 0;
+            transform: translateY(22px) scale(0.96);
+            transition:
+                    opacity 0.28s ease,
+                    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .policy-modal-overlay.show .policy-modal-box {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
 
         .policy-modal-header {
@@ -524,21 +632,61 @@
         }
 
         /* 帮助弹窗样式 */
+        /*.help-modal-overlay {*/
+        /*    position: fixed; inset: 0;*/
+        /*    background: rgba(0,0,0,0.88);*/
+        /*    z-index: 3000;*/
+        /*    display: none;*/
+        /*    align-items: center;*/
+        /*    justify-content: center;*/
+        /*    backdrop-filter: blur(6px);*/
+        /*    padding: 20px;*/
+        /*}*/
+        /*.help-modal-overlay.show {*/
+        /*    display: flex;*/
+        /*}*/
+        /*.help-modal-box {*/
+        /*    width: 100%;*/
+        /*    max-width: 780px;*/
+        /*    background: #14141c;*/
+        /*    border: 1px solid rgba(255,255,255,0.08);*/
+        /*    border-radius: 18px;*/
+        /*    overflow: hidden;*/
+        /*    box-shadow: 0 20px 60px rgba(0,0,0,0.55);*/
+        /*    animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);*/
+        /*}*/
+        /* ==================== 帮助弹窗动画优化 ==================== */
         .help-modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.88);
+            position: fixed;
+            inset: 0;
             z-index: 3000;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(6px);
             padding: 20px;
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition:
+                    opacity 0.3s ease,
+                    background 0.3s ease,
+                    backdrop-filter 0.3s ease,
+                    visibility 0s linear 0.3s;
         }
-
         .help-modal-overlay.show {
-            display: flex;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(6px);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition:
+                    opacity 0.3s ease,
+                    background 0.3s ease,
+                    backdrop-filter 0.3s ease,
+                    visibility 0s linear 0s;
         }
-
         .help-modal-box {
             width: 100%;
             max-width: 780px;
@@ -547,7 +695,16 @@
             border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-            animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            opacity: 0;
+            transform: translateY(22px) scale(0.96);
+            transition:
+                    opacity 0.28s ease,
+                    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .help-modal-overlay.show .help-modal-box {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
 
         .help-modal-header {
@@ -755,6 +912,22 @@
             .help-custom-scrollbar {
                 right: 5px;
                 width: 5px;
+            }
+        }
+
+        /* ==================== 弹窗动画通用优化 ==================== */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .qr-modal-overlay,
+            .qr-modal-box,
+            .policy-modal-overlay,
+            .policy-modal-box,
+            .help-modal-overlay,
+            .help-modal-box {
+                transition: none !important;
             }
         }
     </style>
@@ -1284,26 +1457,77 @@
         function clearTimeouts() { if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; } }
         function buildQrCodeUrl(text, size) { const params = new URLSearchParams({ frame: 1, e: 'L', text: text || '', size: size || 200 }); return `${QRCODE_API}?${params.toString()}`; }
 
-        // ==================== 用户条例弹窗逻辑 ====================
-        const policyModalOverlay = document.getElementById('policyModalOverlay');
+        // ==================== 弹窗通用开关动画与页面锁定 ====================
+        let activeModalCount = 0;
 
-        function openPolicyModal() {
-            if (!policyModalOverlay) return;
+        function lockPageForModal() {
+            activeModalCount++;
 
             hidePageScrollbarImmediately();
+            document.body.classList.add('modal-open');
             document.body.classList.add('scrollbar-locked');
-            policyModalOverlay.classList.add('show');
             document.body.style.overflow = 'hidden';
         }
 
+        function unlockPageForModal() {
+            activeModalCount = Math.max(0, activeModalCount - 1);
+
+            if (activeModalCount === 0) {
+                document.body.classList.remove('modal-open');
+                document.body.classList.remove('scrollbar-locked');
+                document.body.style.overflow = '';
+
+                setTimeout(updatePageScrollbar, 320);
+            }
+        }
+
+        function showModalAnimated(overlay) {
+            if (!overlay || overlay.classList.contains('show')) return;
+
+            lockPageForModal();
+
+            overlay.classList.add('show');
+        }
+
+        function hideModalAnimated(overlay, afterClose) {
+            if (!overlay || !overlay.classList.contains('show')) return;
+
+            overlay.classList.remove('show');
+
+            setTimeout(() => {
+                if (typeof afterClose === 'function') {
+                    afterClose();
+                }
+
+                unlockPageForModal();
+            }, 320);
+        }
+
+        // ==================== 用户条例弹窗逻辑 ====================
+        const policyModalOverlay = document.getElementById('policyModalOverlay');
+
+        // function openPolicyModal() {
+        //     if (!policyModalOverlay) return;
+        //
+        //     hidePageScrollbarImmediately();
+        //     document.body.classList.add('scrollbar-locked');
+        //     policyModalOverlay.classList.add('show');
+        //     document.body.style.overflow = 'hidden';
+        // }
+        // function closePolicyModal() {
+        //     if (!policyModalOverlay) return;
+        //
+        //     policyModalOverlay.classList.remove('show');
+        //     document.body.style.overflow = '';
+        //     document.body.classList.remove('scrollbar-locked');
+        //
+        //     setTimeout(updatePageScrollbar, 50);
+        // }
+        function openPolicyModal() {
+            showModalAnimated(policyModalOverlay);
+        }
         function closePolicyModal() {
-            if (!policyModalOverlay) return;
-
-            policyModalOverlay.classList.remove('show');
-            document.body.style.overflow = '';
-            document.body.classList.remove('scrollbar-locked');
-
-            setTimeout(updatePageScrollbar, 50);
+            hideModalAnimated(policyModalOverlay);
         }
 
         function rejectPolicy() {
@@ -1322,8 +1546,28 @@
         const qrModalOverlay = document.getElementById('qrModalOverlay');
         const qrModalImage = document.getElementById('qrModalImage');
         const qrModalError = document.getElementById('qrModalError');
-        function openQrModal(link) { if (!link) return; qrModalImage.style.display = 'none'; qrModalError.style.display = 'none'; qrModalImage.src = buildQrCodeUrl(link, 260); qrModalImage.onload = () => { qrModalImage.style.display = 'block'; }; qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; }; qrModalOverlay.classList.add('show'); }
-        function closeQrModal() { qrModalOverlay.classList.remove('show'); }
+        // function openQrModal(link) { if (!link) return; qrModalImage.style.display = 'none'; qrModalError.style.display = 'none'; qrModalImage.src = buildQrCodeUrl(link, 260); qrModalImage.onload = () => { qrModalImage.style.display = 'block'; }; qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; }; qrModalOverlay.classList.add('show'); }
+        // function closeQrModal() { qrModalOverlay.classList.remove('show'); }
+        function openQrModal(link) {
+            if (!link || !qrModalOverlay) return;
+
+            qrModalImage.style.display = 'none';
+            qrModalError.style.display = 'none';
+            qrModalImage.src = buildQrCodeUrl(link, 260);
+
+            qrModalImage.onload = () => {
+                qrModalImage.style.display = 'block';
+            };
+
+            qrModalImage.onerror = () => {
+                qrModalError.style.display = 'flex';
+            };
+
+            showModalAnimated(qrModalOverlay);
+        }
+        function closeQrModal() {
+            hideModalAnimated(qrModalOverlay);
+        }
         qrModalOverlay.addEventListener('click', (e) => { if (e.target === qrModalOverlay) closeQrModal(); });
 
         // ==================== 核心搜索逻辑 ====================
@@ -2208,14 +2452,45 @@
         const helpBtn = document.getElementById('helpBtn');
         const helpModalOverlay = document.getElementById('helpModalOverlay');
 
+        // function openHelpModal() {
+        //     if (!helpModalOverlay) return;
+        //
+        //     hidePageScrollbarImmediately();
+        //     document.body.classList.add('scrollbar-locked');
+        //
+        //     helpModalOverlay.classList.add('show');
+        //     document.body.style.overflow = 'hidden';
+        //
+        //     if (helpModalContent) {
+        //         helpModalContent.scrollTop = 0;
+        //         hideHelpScrollbarImmediately();
+        //     }
+        //
+        //     setTimeout(() => {
+        //         updateHelpScrollbar();
+        //
+        //         if (
+        //             helpModalContent &&
+        //             helpModalContent.scrollHeight > helpModalContent.clientHeight + 1
+        //         ) {
+        //             showHelpScrollbarTemporarily();
+        //         }
+        //     }, 50);
+        // }
+        // function closeHelpModal() {
+        //     if (!helpModalOverlay) return;
+        //
+        //     hideHelpScrollbarImmediately();
+        //     helpModalOverlay.classList.remove('show');
+        //     document.body.style.overflow = '';
+        //     document.body.classList.remove('scrollbar-locked');
+        //
+        //     setTimeout(updatePageScrollbar, 50);
+        // }
         function openHelpModal() {
             if (!helpModalOverlay) return;
 
-            hidePageScrollbarImmediately();
-            document.body.classList.add('scrollbar-locked');
-
-            helpModalOverlay.classList.add('show');
-            document.body.style.overflow = 'hidden';
+            showModalAnimated(helpModalOverlay);
 
             if (helpModalContent) {
                 helpModalContent.scrollTop = 0;
@@ -2231,18 +2506,12 @@
                 ) {
                     showHelpScrollbarTemporarily();
                 }
-            }, 50);
+            }, 120);
         }
-
         function closeHelpModal() {
-            if (!helpModalOverlay) return;
-
-            hideHelpScrollbarImmediately();
-            helpModalOverlay.classList.remove('show');
-            document.body.style.overflow = '';
-            document.body.classList.remove('scrollbar-locked');
-
-            setTimeout(updatePageScrollbar, 50);
+            hideModalAnimated(helpModalOverlay, () => {
+                hideHelpScrollbarImmediately();
+            });
         }
 
         if (helpBtn) {
