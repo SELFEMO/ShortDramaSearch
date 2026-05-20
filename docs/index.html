@@ -962,6 +962,71 @@
                 transition: none !important;
             }
         }
+
+        /* ==================== 移动端弹窗闪屏修复 ==================== */
+        /* 强制弹窗进入独立合成层，避免移动端 fixed + backdrop-filter 重绘闪屏 */
+        .qr-modal-overlay,
+        .policy-modal-overlay,
+        .help-modal-overlay {
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            will-change: opacity, background;
+            isolation: isolate;
+            contain: paint;
+        }
+
+        /* 弹窗主体也独立合成，避免动画结束时重新压层 */
+        .qr-modal-box,
+        .policy-modal-box,
+        .help-modal-box {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            will-change: opacity, transform;
+        }
+
+        /* 保证弹窗打开时一定压在主页内容上方 */
+        body.modal-open .help-modal-overlay,
+        body.modal-open .policy-modal-overlay,
+        body.modal-open .qr-modal-overlay {
+            z-index: 9999;
+        }
+
+        /* 移动端不要动画 backdrop-filter，很多国产 / WebView 浏览器这里容易闪屏 */
+        @media (max-width: 768px) {
+            .qr-modal-overlay,
+            .policy-modal-overlay,
+            .help-modal-overlay {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                transition:
+                        opacity 0.26s ease,
+                        background 0.26s ease,
+                        visibility 0s linear 0.26s !important;
+            }
+
+            .qr-modal-overlay.show,
+            .policy-modal-overlay.show,
+            .help-modal-overlay.show {
+                transition:
+                        opacity 0.26s ease,
+                        background 0.26s ease,
+                        visibility 0s linear 0s !important;
+            }
+
+            .qr-modal-box,
+            .policy-modal-box,
+            .help-modal-box {
+                transform: translate3d(0, 18px, 0) scale(0.96);
+            }
+
+            .qr-modal-overlay.show .qr-modal-box,
+            .policy-modal-overlay.show .policy-modal-box,
+            .help-modal-overlay.show .help-modal-box {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1527,26 +1592,64 @@
             }
         }
 
+        // function showModalAnimated(overlay) {
+        //     if (!overlay || overlay.classList.contains('show')) return;
+        //
+        //     lockPageForModal();
+        //
+        //     overlay.classList.add('show');
+        // }
+        // function hideModalAnimated(overlay, afterClose) {
+        //     if (!overlay || !overlay.classList.contains('show')) return;
+        //
+        //     overlay.classList.remove('show');
+        //
+        //     setTimeout(() => {
+        //         if (typeof afterClose === 'function') {
+        //             afterClose();
+        //         }
+        //
+        //         unlockPageForModal();
+        //     }, 320);
+        // }
+        const modalTimers = new WeakMap();
         function showModalAnimated(overlay) {
             if (!overlay || overlay.classList.contains('show')) return;
 
+            const oldTimer = modalTimers.get(overlay);
+            if (oldTimer) {
+                clearTimeout(oldTimer);
+                modalTimers.delete(overlay);
+            }
+
             lockPageForModal();
 
-            overlay.classList.add('show');
+            /*
+             * 关键修复：
+             * 先锁定页面，让浏览器完成一帧布局，
+             * 再添加 show，避免移动端在同一帧里同时处理 overflow / fixed / opacity / backdrop。
+             */
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    overlay.classList.add('show');
+                });
+            });
         }
-
         function hideModalAnimated(overlay, afterClose) {
             if (!overlay || !overlay.classList.contains('show')) return;
 
             overlay.classList.remove('show');
 
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 if (typeof afterClose === 'function') {
                     afterClose();
                 }
 
                 unlockPageForModal();
-            }, 320);
+                modalTimers.delete(overlay);
+            }, 360);
+
+            modalTimers.set(overlay, timer);
         }
 
         // ==================== 用户条例弹窗逻辑 ====================
@@ -2552,7 +2655,7 @@
                 ) {
                     showHelpScrollbarTemporarily();
                 }
-            }, 120);
+            }, 380);
         }
         function closeHelpModal() {
             hideModalAnimated(helpModalOverlay, () => {
