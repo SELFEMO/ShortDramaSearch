@@ -433,6 +433,241 @@
             .daily-search-input { width: 100%; margin-bottom: 8px; }
             .daily-refresh-btn { width: 100%; justify-content: center; }
         }
+
+        /* 帮助弹窗样式 */
+        .help-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            padding: 20px;
+        }
+
+        .help-modal-overlay.show {
+            display: flex;
+        }
+
+        .help-modal-box {
+            width: 100%;
+            max-width: 780px;
+            background: #14141c;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+            animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .help-modal-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .help-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .help-modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.08);
+            color: #aaa;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .help-modal-close:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .help-modal-content {
+            padding: 22px;
+            max-height: 70vh;
+            overflow-y: auto;
+            color: #d6d6df;
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .help-modal-content p, .help-modal-content pre {
+            margin-bottom: 12px;
+        }
+
+        .help-modal-content pre {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .help-modal-content { font-size: 13px; padding: 18px; }
+        }
+
+        /* ==================== 帮助弹窗列表优化 ==================== */
+        .help-modal-content ul {
+            padding-left: 20px;      /* 一级列表整体缩进 */
+            margin-bottom: 12px;
+        }
+
+        .help-modal-content ul li {
+            margin-bottom: 6px;      /* 列表项间距 */
+        }
+
+        .help-modal-content ul li ul {
+            padding-left: 20px;      /* 二级列表相对于一级再缩进 */
+            list-style-type: disc;   /* 二级列表仍显示圆点 */
+        }
+
+        .help-modal-content ul li ul li {
+            margin-bottom: 4px;      /* 二级列表项间距 */
+        }
+
+        /* ==================== 帮助弹窗滚动区域 ==================== */
+        .help-modal-body {
+            position: relative;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+
+        .help-modal-content {
+            padding: 22px;
+            max-height: 70vh;
+            overflow-y: auto;
+            color: #d6d6df;
+            font-size: 14px;
+            line-height: 1.9;
+            overscroll-behavior: contain;
+
+            /* 隐藏原生滚动条：Firefox */
+            scrollbar-width: none;
+
+            /* 隐藏原生滚动条：IE / Edge Legacy */
+            -ms-overflow-style: none;
+        }
+
+        /* 隐藏原生滚动条：Chrome / Edge / Safari */
+        .help-modal-content::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .help-modal-content p,
+        .help-modal-content pre {
+            margin-bottom: 12px;
+        }
+
+        .help-modal-content pre {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        /* ==================== 自定义悬浮滚动条 ==================== */
+        .help-custom-scrollbar {
+            position: absolute;
+            top: 14px;
+            right: 8px;
+            bottom: 14px;
+            width: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            opacity: 0;
+            transform: translateX(6px);
+            transition:
+                    opacity 0.35s ease,
+                    transform 0.35s ease,
+                    background 0.25s ease;
+            pointer-events: none;
+        }
+
+        .help-modal-body.show-scrollbar .help-custom-scrollbar {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .help-custom-scrollbar-thumb {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 36px;
+            border-radius: 999px;
+            background: linear-gradient(
+                    180deg,
+                    rgba(255, 133, 85, 0.95),
+                    rgba(255, 107, 53, 0.75)
+            );
+            box-shadow:
+                    0 0 10px rgba(255, 107, 53, 0.25),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+            transition:
+                    top 0.08s linear,
+                    height 0.2s ease,
+                    background 0.2s ease,
+                    box-shadow 0.2s ease;
+        }
+
+        .help-modal-body.show-scrollbar .help-custom-scrollbar:hover .help-custom-scrollbar-thumb {
+            background: linear-gradient(
+                    180deg,
+                    #ff9a6a,
+                    #ff6b35
+            );
+            box-shadow:
+                    0 0 14px rgba(255, 107, 53, 0.4),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+        }
+
+        /* ==================== 帮助弹窗列表优化 ==================== */
+        .help-modal-content ul {
+            padding-left: 24px;
+            margin-bottom: 12px;
+        }
+
+        .help-modal-content ul li {
+            margin-bottom: 6px;
+        }
+
+        .help-modal-content ul li ul {
+            padding-left: 24px;
+            margin-top: 6px;
+            list-style-type: circle;
+        }
+
+        .help-modal-content ul li ul li {
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .help-modal-body {
+                max-height: 70vh;
+            }
+
+            .help-modal-content {
+                font-size: 13px;
+                padding: 18px;
+            }
+
+            .help-custom-scrollbar {
+                right: 5px;
+                width: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -540,6 +775,7 @@
             <div class="nav-link active" data-page="search">短剧搜索</div>
             <div class="nav-link" data-page="daily">每日影视</div>
             <div class="nav-link" data-page="rank">热度榜</div>
+            <div class="nav-link" id="helpBtn">帮助</div>
         </div>
     </nav>
 
@@ -663,6 +899,53 @@
             </div>
         </section>
     </main>
+
+    <!-- ==================== API 使用说明弹窗 ==================== -->
+    <div id="helpModalOverlay" class="help-modal-overlay">
+        <div class="help-modal-box">
+            <div class="help-modal-header">
+                <div class="help-modal-title">网页 API 使用说明</div>
+                <button class="help-modal-close" onclick="closeHelpModal()">×</button>
+            </div>
+            <div class="help-modal-body">
+                <div class="help-modal-content">
+                    <p>欢迎使用 <strong>酷乐短剧 / 影视资源聚合搜索</strong> API。</p>
+                    <p>您可以通过访问以下 URL 参数直接调用搜索 API：</p>
+                    <pre>https://selfemo.github.io/ShortDramaSearch/?q=关键词&from=来源&format=json</pre>
+
+                    <p><strong>参数说明：</strong></p>
+                    <ul>
+                        <li><code>q / name / s</code>：搜索关键词（可中英文），支持空格拆分</li>
+                        <li><code>from</code>：搜索来源，默认 <code>all</code>，可选：
+                            <ul>
+                                <li>聚合类：all, netdisk</li>
+                                <li>网盘类：baidu, quark, aliyun, tianyi, uc, mobile, 115, pikpak, xunlei, 123</li>
+                                <li>链接类：magnet, ed2k</li>
+                            </ul>
+                        </li>
+                        <li><code>format</code>：输出格式，<code>json</code> 为纯 JSON，其他值为网页模式</li>
+                    </ul>
+
+                    <p>示例 API 调用：</p>
+                    <pre>https://selfemo.github.io/ShortDramaSearch/?q=飞驰人生3&from=netdisk&format=json</pre>
+
+                    <p>API 将返回如下 JSON 数据示例：</p>
+                    <pre>{
+  "code": 0,
+  "msg": "success",
+  "keyword": "飞驰人生3",
+  "type": "netdisk",
+  "total": 6,
+  "data": { ... }
+}</pre>
+                </div>
+
+                <div class="help-custom-scrollbar" aria-hidden="true">
+                    <div class="help-custom-scrollbar-thumb"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==================== 公共配置 ====================
@@ -1820,6 +2103,122 @@
                     }, 300);
                 }
             }
+        }
+
+        // ==================== 帮助弹窗逻辑 ====================
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModalOverlay = document.getElementById('helpModalOverlay');
+
+        function openHelpModal() {
+            if (!helpModalOverlay) return;
+
+            helpModalOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            if (helpModalContent) {
+                helpModalContent.scrollTop = 0;
+                hideHelpScrollbarImmediately();
+            }
+        }
+
+        function closeHelpModal() {
+            if (!helpModalOverlay) return;
+
+            hideHelpScrollbarImmediately();
+            helpModalOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        if (helpBtn) {
+            helpBtn.addEventListener('click', openHelpModal);
+        }
+
+        // 点击空白区域关闭弹窗
+        if (helpModalOverlay) {
+            helpModalOverlay.addEventListener('click', e => {
+                if (e.target === helpModalOverlay) closeHelpModal();
+            });
+        }
+
+        // ==================== 帮助弹窗自定义滚动条逻辑 ====================
+        const helpModalBody = document.querySelector('#helpModalOverlay .help-modal-body');
+        const helpModalContent = document.querySelector('#helpModalOverlay .help-modal-content');
+        const helpScrollbarThumb = document.querySelector('#helpModalOverlay .help-custom-scrollbar-thumb');
+
+        let helpScrollbarTimer = null;
+        let helpScrollbarRaf = null;
+
+        function updateHelpScrollbar() {
+            if (!helpModalBody || !helpModalContent || !helpScrollbarThumb) return;
+
+            const scrollHeight = helpModalContent.scrollHeight;
+            const clientHeight = helpModalContent.clientHeight;
+            const scrollTop = helpModalContent.scrollTop;
+
+            const canScroll = scrollHeight > clientHeight + 1;
+
+            if (!canScroll) {
+                helpModalBody.classList.remove('show-scrollbar');
+                helpScrollbarThumb.style.height = '0px';
+                helpScrollbarThumb.style.top = '0px';
+                return;
+            }
+
+            const trackHeight = helpModalBody.clientHeight - 28;
+            const thumbHeight = Math.max(36, Math.round((clientHeight / scrollHeight) * trackHeight));
+            const maxThumbTop = trackHeight - thumbHeight;
+            const maxScrollTop = scrollHeight - clientHeight;
+            const thumbTop = maxScrollTop > 0
+                ? Math.round((scrollTop / maxScrollTop) * maxThumbTop)
+                : 0;
+
+            helpScrollbarThumb.style.height = `${thumbHeight}px`;
+            helpScrollbarThumb.style.top = `${thumbTop}px`;
+        }
+
+        function showHelpScrollbarTemporarily() {
+            if (!helpModalBody || !helpModalContent) return;
+
+            if (helpScrollbarRaf) {
+                cancelAnimationFrame(helpScrollbarRaf);
+            }
+
+            helpScrollbarRaf = requestAnimationFrame(() => {
+                updateHelpScrollbar();
+                helpModalBody.classList.add('show-scrollbar');
+            });
+
+            if (helpScrollbarTimer) {
+                clearTimeout(helpScrollbarTimer);
+            }
+
+            helpScrollbarTimer = setTimeout(() => {
+                helpModalBody.classList.remove('show-scrollbar');
+            }, 1000);
+        }
+
+        function hideHelpScrollbarImmediately() {
+            if (!helpModalBody) return;
+
+            if (helpScrollbarTimer) {
+                clearTimeout(helpScrollbarTimer);
+                helpScrollbarTimer = null;
+            }
+
+            if (helpScrollbarRaf) {
+                cancelAnimationFrame(helpScrollbarRaf);
+                helpScrollbarRaf = null;
+            }
+
+            helpModalBody.classList.remove('show-scrollbar');
+        }
+
+        if (helpModalContent) {
+            helpModalContent.addEventListener('scroll', showHelpScrollbarTemporarily, { passive: true });
+            helpModalContent.addEventListener('wheel', showHelpScrollbarTemporarily, { passive: true });
+            helpModalContent.addEventListener('touchmove', showHelpScrollbarTemporarily, { passive: true });
+
+            window.addEventListener('resize', updateHelpScrollbar);
         }
 
         // ==================== 初始化 ====================
