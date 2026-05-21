@@ -1054,6 +1054,248 @@
                 transform: translate3d(0, 0, 0) scale(1);
             }
         }
+
+        /* ==================== 热榜 / 搜索结果折叠动画优化 ==================== */
+        :root {
+            --collapse-ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --collapse-ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .tags-toggle,
+        .vtquark-toggle {
+            border-radius: 999px;
+            padding: 2px 6px;
+            transition:
+                    color 0.2s ease,
+                    background 0.2s ease,
+                    transform 0.2s ease;
+        }
+
+        .tags-toggle:hover,
+        .vtquark-toggle:hover {
+            background: rgba(255, 107, 53, 0.08);
+            text-decoration: none;
+        }
+
+        .tags-toggle:active,
+        .vtquark-toggle:active {
+            transform: scale(0.96);
+        }
+
+        .tags-toggle svg,
+        .vtquark-toggle svg {
+            flex-shrink: 0;
+            transition: transform 0.34s var(--collapse-ease);
+            transform-origin: center;
+        }
+
+        .tags-toggle.is-open svg,
+        .vtquark-toggle.is-open svg {
+            transform: rotate(180deg);
+        }
+
+        .tags-list,
+        .vtquark-list {
+            overflow: hidden;
+            transform-origin: top;
+            will-change: height, opacity, transform, filter;
+            transition:
+                    height 0.42s var(--collapse-ease),
+                    opacity 0.26s ease,
+                    transform 0.42s var(--collapse-ease),
+                    filter 0.26s ease;
+        }
+
+        .tags-list.is-collapsed,
+        .vtquark-list.is-collapsed {
+            opacity: 0;
+            transform: translate3d(0, -8px, 0);
+            filter: blur(0.5px);
+            pointer-events: none;
+        }
+
+        .tags-list.is-animating,
+        .vtquark-list.is-animating {
+            overflow: hidden;
+        }
+
+        .tags-list.list-opening .tag,
+        .vtquark-list.list-opening .tag {
+            animation: tagSoftIn 0.34s var(--collapse-ease) both;
+            animation-delay: calc(var(--tag-index, 0) * 24ms);
+        }
+
+        @keyframes tagSoftIn {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 8px, 0) scale(0.98);
+                filter: blur(1px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .tags-more {
+            transition:
+                    opacity 0.24s ease,
+                    transform 0.24s var(--collapse-ease);
+        }
+
+        .tags-more.is-hidden {
+            opacity: 0;
+            transform: translateY(-5px);
+            pointer-events: none;
+        }
+
+        /*
+         * 覆盖原来的：
+         * .result-section.collapsed .result-list { display: none; }
+         * 改为真实的高度折叠动画。
+         */
+        .result-section > .result-list {
+            display: flex !important;
+            overflow: hidden;
+            transform-origin: top;
+            will-change: height, opacity, transform;
+            transition:
+                    height 0.44s var(--collapse-ease),
+                    opacity 0.28s ease,
+                    transform 0.44s var(--collapse-ease),
+                    border-color 0.28s ease;
+        }
+
+        .result-section.collapsed > .result-list {
+            display: flex !important;
+            opacity: 0;
+            transform: translate3d(0, -8px, 0) scaleY(0.985);
+            pointer-events: none;
+        }
+
+        .result-section:not(.collapsed) > .result-list {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scaleY(1);
+        }
+
+        .result-section.section-animating {
+            box-shadow:
+                    0 10px 30px rgba(0, 0, 0, 0.16),
+                    0 0 0 1px rgba(255, 107, 53, 0.04);
+        }
+
+        .result-section .section-header {
+            position: relative;
+        }
+
+        .result-section .section-header::after {
+            content: '';
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            bottom: 0;
+            height: 1px;
+            opacity: 0;
+            background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 107, 53, 0.45),
+                    transparent
+            );
+            transition: opacity 0.28s ease;
+        }
+
+        .result-section.section-animating .section-header::after {
+            opacity: 1;
+        }
+
+        .toggle-icon {
+            display: inline-block;
+            transform-origin: center;
+            transition:
+                    transform 0.34s var(--collapse-ease),
+                    color 0.25s ease;
+        }
+
+        .result-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .result-section:not(.collapsed) .toggle-icon {
+            transform: rotate(0deg);
+        }
+
+        .result-section.section-opening .result-item {
+            animation: sectionItemSoftIn 0.36s var(--collapse-ease) both;
+            animation-delay: calc(var(--item-index, 0) * 22ms);
+        }
+
+        @keyframes sectionItemSoftIn {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 10px, 0) scale(0.99);
+                filter: blur(1px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tags-list,
+            .vtquark-list,
+            .tags-list .tag,
+            .vtquark-list .tag,
+            .result-section > .result-list,
+            .result-section .result-item,
+            .tags-toggle svg,
+            .vtquark-toggle svg,
+            .toggle-icon,
+            .tags-more {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
+        /* ==================== 修复热度榜折叠动画时标签被 flex 拉伸变大的问题 ==================== */
+        .tags-list,
+        .vtquark-list {
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+
+        .tags-list .tag,
+        .vtquark-list .tag {
+            flex: 0 0 auto;
+            align-self: flex-start;
+            min-height: 0;
+        }
+
+        /*
+         * 原来的 tagSoftIn 里带 scale，部分移动端 / WebView 在高度动画叠加时
+         * 会放大得很明显，这里改成只做透明度 + 位移，不再缩放。
+         */
+        @keyframes tagSoftIn {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 8px, 0);
+                filter: blur(1px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+                filter: blur(0);
+            }
+        }
+
+        /* ==================== 修复榜单提示与列表高度释放闪变 ==================== */
+        .tags-more {
+            overflow: hidden;
+            will-change: height, opacity, transform;
+        }
     </style>
 </head>
 <body>
@@ -1711,6 +1953,227 @@
         function clearTimeouts() { if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; } }
         function buildQrCodeUrl(text, size) { const params = new URLSearchParams({ frame: 1, e: 'L', text: text || '', size: size || 200 }); return `${QRCODE_API}?${params.toString()}`; }
 
+        // ==================== 折叠动画通用工具 ====================
+        const collapseMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const hotListMotionTimers = new WeakMap();
+
+        function shouldReduceMotion() {
+            return collapseMotionQuery && collapseMotionQuery.matches;
+        }
+
+        function setListTagIndexes(list) {
+            if (!list) return;
+
+            list.querySelectorAll('.tag').forEach((tag, index) => {
+                tag.style.setProperty('--tag-index', index);
+            });
+        }
+
+        function setSoftElementVisible(el, visible) {
+            if (!el) return;
+
+            const currentlyHidden =
+                el.style.display === 'none' ||
+                el.classList.contains('is-hidden');
+
+            if (shouldReduceMotion()) {
+                el.style.display = visible ? 'block' : 'none';
+                el.classList.toggle('is-hidden', !visible);
+                el.style.height = visible ? '' : '0px';
+                return;
+            }
+
+            /*
+             * 关键修复：
+             * 提示文案不能只做 opacity，否则 display:block / none 会造成下面内容瞬间回流。
+             * 这里同步动画 height，让“仅展示前 10 条...”这行也参与平滑布局变化。
+             */
+            if (visible) {
+                if (!currentlyHidden && el.style.display !== 'none') return;
+
+                el.style.display = 'block';
+                el.style.overflow = 'hidden';
+                el.style.height = '0px';
+                el.classList.add('is-hidden');
+
+                const targetHeight = Math.ceil(el.scrollHeight);
+
+                el.getBoundingClientRect();
+
+                requestAnimationFrame(() => {
+                    el.classList.remove('is-hidden');
+                    el.style.height = `${targetHeight}px`;
+                });
+
+                setTimeout(() => {
+                    if (!el.classList.contains('is-hidden')) {
+                        el.style.height = '';
+                        el.style.overflow = '';
+                    }
+                }, 300);
+
+                return;
+            }
+
+            if (currentlyHidden) return;
+
+            const startHeight = Math.ceil(el.getBoundingClientRect().height);
+
+            el.style.overflow = 'hidden';
+            el.style.height = `${startHeight}px`;
+
+            el.getBoundingClientRect();
+
+            requestAnimationFrame(() => {
+                el.classList.add('is-hidden');
+                el.style.height = '0px';
+            });
+
+            setTimeout(() => {
+                if (el.classList.contains('is-hidden')) {
+                    el.style.display = 'none';
+                    el.style.height = '0px';
+                    el.style.overflow = 'hidden';
+                }
+            }, 300);
+        }
+
+        function smoothRenderCollapsibleList(list, html, collapsed, options = {}) {
+            if (!list) return;
+
+            const animated = options.animated !== false &&
+                !shouldReduceMotion() &&
+                list.dataset.motionReady === '1';
+
+            const oldTimer = hotListMotionTimers.get(list);
+            if (oldTimer) {
+                clearTimeout(oldTimer);
+                hotListMotionTimers.delete(list);
+            }
+
+            if (!animated) {
+                list.innerHTML = html || '';
+                setListTagIndexes(list);
+
+                list.classList.toggle('is-collapsed', !!collapsed);
+                list.classList.remove('is-animating', 'list-opening');
+
+                list.style.height = collapsed ? '0px' : '';
+                list.style.overflow = collapsed ? 'hidden' : '';
+
+                list.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+                list.dataset.motionReady = '1';
+
+                updatePageScrollbar();
+                return;
+            }
+
+            const startHeight = Math.ceil(list.getBoundingClientRect().height);
+            const wasCollapsed = list.classList.contains('is-collapsed');
+
+            list.classList.add('is-animating');
+            list.classList.remove('list-opening');
+            list.style.overflow = 'hidden';
+            list.style.height = `${startHeight}px`;
+
+            /*
+             * 先替换内容。
+             * 比如从 20 条收回 10 条时，DOM 必须先变成 10 条，
+             * 然后再测量 10 条的真实自然高度。
+             */
+            list.innerHTML = html || '';
+            setListTagIndexes(list);
+
+            let targetHeight = 0;
+
+            if (collapsed) {
+                targetHeight = 0;
+                list.classList.add('is-collapsed');
+            } else {
+                /*
+                 * 关键修复：
+                 * 不能直接用 list.scrollHeight。
+                 * 因为此时 list 还锁着旧高度，scrollHeight 在部分浏览器里会返回旧高度，
+                 * 这会导致动画结束释放 height:auto 时突然闪变。
+                 *
+                 * 正确做法：
+                 * 1. 临时关闭 transition
+                 * 2. 临时 height:auto
+                 * 3. 测量新内容真实高度
+                 * 4. 恢复旧高度作为动画起点
+                 * 5. 下一帧再动画到真实目标高度
+                 */
+                list.classList.remove('is-collapsed');
+
+                const oldTransition = list.style.transition;
+
+                list.style.transition = 'none';
+                list.style.height = 'auto';
+
+                targetHeight = Math.ceil(list.getBoundingClientRect().height);
+
+                list.style.height = `${startHeight}px`;
+                list.style.transition = oldTransition;
+
+                /*
+                 * 从完全收起状态展开时，先保持视觉上的折叠状态，
+                 * 下一帧再移除，保证 opacity / transform 也能平滑进入。
+                 */
+                if (wasCollapsed) {
+                    list.classList.add('is-collapsed');
+                }
+            }
+
+            list.getBoundingClientRect();
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (collapsed) {
+                        list.classList.add('is-collapsed');
+                        list.classList.remove('list-opening');
+                    } else {
+                        list.classList.remove('is-collapsed');
+                        list.classList.add('list-opening');
+                    }
+
+                    list.style.height = `${targetHeight}px`;
+                });
+            });
+
+            const timer = setTimeout(() => {
+                list.classList.remove('is-animating', 'list-opening');
+
+                if (collapsed) {
+                    list.style.height = '0px';
+                    list.style.overflow = 'hidden';
+                    list.setAttribute('aria-hidden', 'true');
+                } else {
+                    /*
+                     * 关键修复：
+                     * 先锁定最终高度一帧，再释放成 auto。
+                     * 避免浏览器在 transitionend 同一帧重新计算布局时，
+                     * 把下面的“夸克热搜榜”突然顶上来。
+                     */
+                    list.style.height = `${targetHeight}px`;
+                    list.style.overflow = 'hidden';
+                    list.setAttribute('aria-hidden', 'false');
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            list.style.height = '';
+                            list.style.overflow = '';
+                            updatePageScrollbar();
+                        });
+                    });
+                }
+
+                hotListMotionTimers.delete(list);
+                updatePageScrollbar();
+            }, 540);
+
+            hotListMotionTimers.set(list, timer);
+        }
+
         // ==================== 弹窗通用开关动画与页面锁定 ====================
         let activeModalCount = 0;
 
@@ -2130,15 +2593,193 @@
             throw { errorType: 'cors' };
         }
 
-        // 公共分块折叠逻辑
+        // // 公共分块折叠逻辑
+        // function bindSectionToggleEvents() {
+        //     document.querySelectorAll('.result-section .section-header').forEach(header => {
+        //         header.onclick = () => {
+        //             const section = header.closest('.result-section');
+        //             section.classList.toggle('collapsed');
+        //             if (!section.classList.contains('collapsed') && section.id) {
+        //                 setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        //             }
+        //         };
+        //     });
+        // }
+
+        // ==================== 公共分块折叠逻辑：平滑高度动画版 ====================
+        const resultSectionMotionTimers = new WeakMap();
+
+        function getDirectResultList(section) {
+            if (!section) return null;
+
+            return Array.from(section.children).find(child => {
+                return child.classList && child.classList.contains('result-list');
+            }) || section.querySelector('.result-list');
+        }
+
+        function syncResultSectionA11y(section) {
+            if (!section) return;
+
+            const header = section.querySelector('.section-header');
+            const list = getDirectResultList(section);
+            const isCollapsed = section.classList.contains('collapsed');
+
+            if (header) {
+                header.setAttribute('role', 'button');
+                header.setAttribute('tabindex', '0');
+                header.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            }
+
+            if (list) {
+                list.setAttribute('aria-hidden', isCollapsed ? 'true' : 'false');
+            }
+        }
+
+        function prepareResultSectionState(section) {
+            if (!section) return;
+
+            const list = getDirectResultList(section);
+            if (!list) return;
+
+            const isCollapsed = section.classList.contains('collapsed');
+
+            if (isCollapsed) {
+                list.style.height = '0px';
+                list.style.overflow = 'hidden';
+            } else {
+                list.style.height = '';
+                list.style.overflow = '';
+            }
+
+            list.querySelectorAll('.result-item').forEach((item, index) => {
+                item.style.setProperty('--item-index', index);
+            });
+
+            syncResultSectionA11y(section);
+        }
+
+        function restartSectionItemReveal(section) {
+            const list = getDirectResultList(section);
+            if (!list || shouldReduceMotion()) return;
+
+            list.querySelectorAll('.result-item').forEach((item, index) => {
+                item.style.setProperty('--item-index', index);
+                item.style.animation = 'none';
+            });
+
+            list.offsetHeight;
+
+            list.querySelectorAll('.result-item').forEach(item => {
+                item.style.animation = '';
+            });
+
+            section.classList.add('section-opening');
+
+            setTimeout(() => {
+                section.classList.remove('section-opening');
+            }, 460);
+        }
+
+        function setResultSectionCollapsed(section, shouldCollapse, options = {}) {
+            if (!section) return;
+
+            const list = getDirectResultList(section);
+            if (!list) return;
+
+            const animated = options.animated !== false && !shouldReduceMotion();
+
+            const oldTimer = resultSectionMotionTimers.get(section);
+            if (oldTimer) {
+                clearTimeout(oldTimer);
+                resultSectionMotionTimers.delete(section);
+            }
+
+            if (!animated) {
+                section.classList.toggle('collapsed', shouldCollapse);
+
+                list.style.height = shouldCollapse ? '0px' : '';
+                list.style.overflow = shouldCollapse ? 'hidden' : '';
+
+                syncResultSectionA11y(section);
+                updatePageScrollbar();
+                return;
+            }
+
+            const startHeight = list.getBoundingClientRect().height;
+
+            section.classList.add('section-animating');
+            list.style.overflow = 'hidden';
+            list.style.height = `${startHeight}px`;
+
+            list.getBoundingClientRect();
+
+            if (shouldCollapse) {
+                section.classList.add('collapsed');
+                syncResultSectionA11y(section);
+
+                requestAnimationFrame(() => {
+                    list.style.height = '0px';
+                });
+            } else {
+                section.classList.remove('collapsed');
+                syncResultSectionA11y(section);
+
+                const targetHeight = list.scrollHeight;
+
+                requestAnimationFrame(() => {
+                    list.style.height = `${targetHeight}px`;
+                    restartSectionItemReveal(section);
+                });
+            }
+
+            const timer = setTimeout(() => {
+                section.classList.remove('section-animating');
+
+                if (shouldCollapse) {
+                    list.style.height = '0px';
+                    list.style.overflow = 'hidden';
+                } else {
+                    list.style.height = '';
+                    list.style.overflow = '';
+
+                    if (options.scrollIntoView !== false && section.id) {
+                        section.scrollIntoView({
+                            behavior: shouldReduceMotion() ? 'auto' : 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+
+                resultSectionMotionTimers.delete(section);
+                updatePageScrollbar();
+            }, 520);
+
+            resultSectionMotionTimers.set(section, timer);
+        }
+
         function bindSectionToggleEvents() {
+            document.querySelectorAll('.result-section').forEach(section => {
+                prepareResultSectionState(section);
+            });
+
             document.querySelectorAll('.result-section .section-header').forEach(header => {
                 header.onclick = () => {
                     const section = header.closest('.result-section');
-                    section.classList.toggle('collapsed');
-                    if (!section.classList.contains('collapsed') && section.id) {
-                        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                    }
+                    if (!section) return;
+
+                    const shouldCollapse = !section.classList.contains('collapsed');
+
+                    setResultSectionCollapsed(section, shouldCollapse, {
+                        animated: true,
+                        scrollIntoView: !shouldCollapse
+                    });
+                };
+
+                header.onkeydown = (e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+
+                    e.preventDefault();
+                    header.click();
                 };
             });
         }
@@ -2258,6 +2899,13 @@
         const VTQUARK_CACHE_KEY = 'kuleu_vtquark_cache_v1';
         const RANK_API_TIMEOUT = 10000;
 
+        const collapseArrowSvg = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        `;
+
         async function fetchJsonWithTimeout(url, timeout = RANK_API_TIMEOUT) {
             const controller = new AbortController();
 
@@ -2320,7 +2968,6 @@
                 const cache = JSON.parse(raw);
                 if (!cache || !Array.isArray(cache.data)) return [];
 
-                // 缓存保留 24 小时
                 const maxAge = 24 * 60 * 60 * 1000;
                 if (Date.now() - Number(cache.time || 0) > maxAge) return [];
 
@@ -2330,20 +2977,11 @@
             }
         }
 
-        /**
-         * 夸克热搜榜实际展示数量。
-         * 页面只展示前 10 条：
-         * - 如果接口返回 10 条或更多，提示显示 10 条；
-         * - 如果不足 10 条，提示显示实际数量。
-         */
         function getVtquarkDisplayCount(data) {
             if (!Array.isArray(data)) return 0;
             return Math.min(data.length, 10);
         }
 
-        /**
-         * 更新夸克热搜榜标题右侧的弱提示状态。
-         */
         function setVtquarkStatus(text, type = 'ready') {
             const status = document.getElementById('vtquarkStatus');
             if (!status) return;
@@ -2360,6 +2998,22 @@
             return displayCount > 0 ? `已加载 ${displayCount} 条` : '';
         }
 
+        function setRankToggleText(text, direction = 'down') {
+            const toggle = document.getElementById('toggleMoreRank');
+            if (!toggle) return;
+
+            toggle.innerHTML = `${text} ${collapseArrowSvg}`;
+            toggle.classList.toggle('is-open', direction === 'up');
+        }
+
+        function setVtquarkToggleText(text, direction = 'down') {
+            const toggle = document.getElementById('toggleVtquark');
+            if (!toggle) return;
+
+            toggle.innerHTML = `${text} ${collapseArrowSvg}`;
+            toggle.classList.toggle('is-open', direction === 'up');
+        }
+
         async function loadRankTags() {
             try {
                 const json = await fetchJsonWithRetry(SHORTDRAMA_RANK_API, {
@@ -2369,7 +3023,7 @@
 
                 if (json && json.code === 200 && Array.isArray(json.data)) {
                     rankData = json.data;
-                    renderRankTags();
+                    renderRankTags(false);
                 }
             } catch (e) {
                 console.warn('短剧热度榜加载失败:', e);
@@ -2378,18 +3032,14 @@
 
         async function loadVtquarkTags() {
             const section = document.getElementById('vtquarkSection');
-            const list = document.getElementById('vtquarkTagsList');
-            const toggle = document.getElementById('toggleVtquark');
 
-            // 关键修改：模块永远显示，不再因为接口失败隐藏整个模块
-            if (section) section.style.display = 'block';
-            if (toggle) toggle.innerHTML = '展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
-
-            setVtquarkStatus('加载中...', 'loading');
-
-            if (list && !showVtquark) {
-                list.innerHTML = '';
+            if (section) {
+                section.style.display = 'block';
             }
+
+            setVtquarkToggleText(showVtquark ? '收起' : '展开查看', showVtquark ? 'up' : 'down');
+            setVtquarkStatus('加载中...', 'loading');
+            renderVtquarkTags(false);
 
             try {
                 const json = await fetchJsonWithRetry(VTQUARK_API, {
@@ -2403,15 +3053,7 @@
                     saveVtquarkCache(vtquarkData);
 
                     setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
-
-                    if (list && !showVtquark) {
-                        list.innerHTML = '';
-                    }
-
-                    // 如果用户之前已经点了展开，数据回来后自动渲染
-                    if (showVtquark) {
-                        renderVtquarkTags();
-                    }
+                    renderVtquarkTags(false);
 
                     return;
                 }
@@ -2427,14 +3069,7 @@
 
                     const displayCount = getVtquarkDisplayCount(cached);
                     setVtquarkStatus(`缓存 ${displayCount} 条`, 'cache');
-
-                    if (list && !showVtquark) {
-                        list.innerHTML = '';
-                    }
-
-                    if (showVtquark) {
-                        renderVtquarkTags();
-                    }
+                    renderVtquarkTags(false);
 
                     return;
                 }
@@ -2442,117 +3077,74 @@
                 vtquarkData = [];
 
                 setVtquarkStatus('加载失败，重试中', 'error');
+                renderVtquarkTags(false);
 
-                if (list && !showVtquark) {
-                    list.innerHTML = '';
-                }
-
-                // 自动延迟重试一次，不影响页面其它功能
                 setTimeout(() => {
                     loadVtquarkTags();
                 }, 5000);
             }
         }
 
-        function setRankToggleText(text, direction = 'down') {
-            const toggle = document.getElementById('toggleMoreRank');
-            if (!toggle) return;
-
-            const path = direction === 'up'
-                ? 'M18 15l-6-6-6 6'
-                : 'M6 9l6 6 6-6';
-
-            toggle.innerHTML = `${text} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${path}"/></svg>`;
-        }
-
-        function autoCollapseRankTagsAfterFirstSuccessfulSearch() {
-            if (hasAutoCollapsedRankAfterSearch) return;
-
-            hasAutoCollapsedRankAfterSearch = true;
-            rankTagsCollapsed = true;
-            showAllRank = false;
-
-            renderRankTags();
-
-            setTimeout(updatePageScrollbar, 50);
-        }
-
-        // function renderRankTags() {
-        //     const list = document.getElementById('rankTagsList');
-        //     const hint = document.getElementById('rankMoreHint');
-        //
-        //     let html = '';
-        //
-        //     rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => {
-        //         const title = normalizeSearchKeyword(item.title || '');
-        //
-        //         if (!title) return;
-        //
-        //         html += `<span class="tag" data-keyword="${escapeHtml(title)}">
-        //             <span class="tag-rank">${item.ranking || idx + 1}</span>
-        //             ${escapeHtml(title)}
-        //             <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
-        //         </span>`;
-        //     });
-        //
-        //     list.innerHTML = html;
-        //     hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none';
-        // }
-        function renderRankTags() {
-            const list = document.getElementById('rankTagsList');
-            const hint = document.getElementById('rankMoreHint');
-
-            if (!list || !hint) return;
-
-            /*
-             * 完全收起状态：
-             * 搜索成功后自动进入这里，前 10 条也不展示。
-             */
-            if (rankTagsCollapsed) {
-                list.innerHTML = '';
-                hint.style.display = 'none';
-                setRankToggleText('展开榜单', 'down');
-                return;
-            }
-
+        function buildRankTagsHtml() {
             let html = '';
 
-            rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => {
+            const limit = showAllRank ? 20 : 10;
+
+            rankData.slice(0, limit).forEach((item, idx) => {
                 const title = normalizeSearchKeyword(item.title || '');
 
                 if (!title) return;
 
                 html += `<span class="tag" data-keyword="${escapeHtml(title)}">
-                         <span class="tag-rank">${item.ranking || idx + 1}</span>
-                         ${escapeHtml(title)}
-                         <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
-                         </span>`;
+                    <span class="tag-rank">${item.ranking || idx + 1}</span>
+                    ${escapeHtml(title)}
+                    <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
+                </span>`;
             });
 
-            list.innerHTML = html;
+            return html;
+        }
+
+        function renderRankTags(animated = false) {
+            const list = document.getElementById('rankTagsList');
+            const hint = document.getElementById('rankMoreHint');
+
+            if (!list || !hint) return;
+
+            const html = buildRankTagsHtml();
+
+            smoothRenderCollapsibleList(list, html, rankTagsCollapsed, {
+                animated
+            });
+
+            if (rankTagsCollapsed) {
+                setSoftElementVisible(hint, false);
+                setRankToggleText('展开榜单', 'down');
+                return;
+            }
 
             if (rankData.length > 10) {
-                hint.style.display = showAllRank ? 'none' : 'block';
-                setRankToggleText(showAllRank ? '收起到前 10 条' : '展开更多', showAllRank ? 'up' : 'down');
+                setSoftElementVisible(hint, !showAllRank);
+                setRankToggleText(
+                    showAllRank ? '收起到前 10 条' : '展开更多',
+                    showAllRank ? 'up' : 'down'
+                );
             } else {
-                hint.style.display = 'none';
+                setSoftElementVisible(hint, false);
                 setRankToggleText('收起榜单', 'up');
             }
         }
 
-        function renderVtquarkTags() {
-            const list = document.getElementById('vtquarkTagsList');
-            const toggle = document.getElementById('toggleVtquark');
-
-            if (!list) return;
+        function buildVtquarkTagsHtml() {
+            let html = '';
 
             if (!vtquarkData || vtquarkData.length === 0) {
-                list.innerHTML = `<span class="tag disabled">夸克热搜榜暂无数据，正在尝试重新加载...</span>`;
-                loadVtquarkTags();
-                return;
-            }
+                if (showVtquark) {
+                    html = `<span class="tag disabled">夸克热搜榜暂无数据，正在尝试重新加载...</span>`;
+                }
 
-            let html = '';
+                return html;
+            }
 
             vtquarkData.slice(0, 10).forEach((item, idx) => {
                 const title = normalizeSearchKeyword(item.content_title || '');
@@ -2566,11 +3158,31 @@
                 </span>`;
             });
 
-            list.innerHTML = html;
+            return html;
+        }
 
-            if (toggle) {
-                toggle.innerHTML = '收起 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>';
-            }
+        function renderVtquarkTags(animated = false) {
+            const list = document.getElementById('vtquarkTagsList');
+
+            if (!list) return;
+
+            const html = buildVtquarkTagsHtml();
+
+            smoothRenderCollapsibleList(list, html, !showVtquark, {
+                animated
+            });
+
+            setVtquarkToggleText(showVtquark ? '收起' : '展开查看', showVtquark ? 'up' : 'down');
+        }
+
+        function autoCollapseRankTagsAfterFirstSuccessfulSearch() {
+            if (hasAutoCollapsedRankAfterSearch) return;
+
+            hasAutoCollapsedRankAfterSearch = true;
+            rankTagsCollapsed = true;
+            showAllRank = false;
+
+            renderRankTags(true);
         }
 
         function searchFromRankKeyword(keyword) {
@@ -2600,82 +3212,85 @@
             }, 0);
         }
 
-        // document.getElementById('toggleMoreRank').addEventListener('click', () => {
-        //     showAllRank = !showAllRank;
-        //     renderRankTags();
-        // });
-        document.getElementById('toggleMoreRank').addEventListener('click', () => {
-            /*
-             * 如果当前是完全收起状态，点击后恢复默认前 10 条。
-             */
-            if (rankTagsCollapsed) {
-                rankTagsCollapsed = false;
-                showAllRank = false;
-                renderRankTags();
-                setTimeout(updatePageScrollbar, 50);
-                return;
-            }
+        const toggleMoreRankEl = document.getElementById('toggleMoreRank');
 
-            /*
-             * 正常状态：
-             * 前 10 条 <=> 前 20 条。
-             */
-            if (!showAllRank && rankData.length > 10) {
-                showAllRank = true;
-            } else {
+        if (toggleMoreRankEl) {
+            toggleMoreRankEl.addEventListener('click', () => {
                 /*
-                 * 已经展开更多时，再点就回到前 10 条。
-                 * 如果不足 10 条，也可以直接收起榜单。
+                 * 完全收起状态：
+                 * 点击后恢复默认前 10 条。
                  */
-                showAllRank = false;
-
-                if (rankData.length <= 10) {
-                    rankTagsCollapsed = true;
-                }
-            }
-
-            renderRankTags();
-            setTimeout(updatePageScrollbar, 50);
-        });
-
-        document.getElementById('toggleVtquark').addEventListener('click', () => {
-            showVtquark = !showVtquark;
-
-            const toggle = document.getElementById('toggleVtquark');
-            const list = document.getElementById('vtquarkTagsList');
-
-            if (showVtquark) {
-                renderVtquarkTags();
-            } else {
-                if (list) {
-                    list.innerHTML = '';
+                if (rankTagsCollapsed) {
+                    rankTagsCollapsed = false;
+                    showAllRank = false;
+                    renderRankTags(true);
+                    return;
                 }
 
-                if (vtquarkData.length > 0) {
-                    setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
+                /*
+                 * 正常状态：
+                 * 前 10 条 <=> 前 20 条。
+                 */
+                if (!showAllRank && rankData.length > 10) {
+                    showAllRank = true;
                 } else {
-                    setVtquarkStatus('加载中...', 'loading');
+                    showAllRank = false;
+
+                    if (rankData.length <= 10) {
+                        rankTagsCollapsed = true;
+                    }
                 }
 
-                if (toggle) {
-                    toggle.innerHTML = '展开查看 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+                renderRankTags(true);
+            });
+        }
+
+        const toggleVtquarkEl = document.getElementById('toggleVtquark');
+
+        if (toggleVtquarkEl) {
+            toggleVtquarkEl.addEventListener('click', () => {
+                showVtquark = !showVtquark;
+
+                if (showVtquark) {
+                    if (vtquarkData.length > 0) {
+                        setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
+                    } else {
+                        setVtquarkStatus('加载中...', 'loading');
+                        loadVtquarkTags();
+                    }
+                } else {
+                    if (vtquarkData.length > 0) {
+                        setVtquarkStatus(getVtquarkLoadedStatusText(vtquarkData), 'ready');
+                    } else {
+                        setVtquarkStatus('加载中...', 'loading');
+                    }
                 }
-            }
-        });
 
-        document.getElementById('rankTagsList').addEventListener('click', (e) => {
-            const tag = e.target.closest('.tag');
-            if (!tag || tag.classList.contains('disabled')) return;
+                renderVtquarkTags(true);
+            });
+        }
 
-            searchFromRankKeyword(tag.dataset.keyword);
-        });
+        const rankTagsListEl = document.getElementById('rankTagsList');
 
-        document.getElementById('vtquarkTagsList').addEventListener('click', (e) => {
-            const tag = e.target.closest('.tag');
-            if (!tag || tag.classList.contains('disabled')) return;
+        if (rankTagsListEl) {
+            rankTagsListEl.addEventListener('click', (e) => {
+                const tag = e.target.closest('.tag');
+                if (!tag || tag.classList.contains('disabled')) return;
 
-            searchFromRankKeyword(tag.dataset.keyword);
-        });
+                searchFromRankKeyword(tag.dataset.keyword);
+            });
+        }
+
+        const vtquarkTagsListEl = document.getElementById('vtquarkTagsList');
+
+        if (vtquarkTagsListEl) {
+            vtquarkTagsListEl.addEventListener('click', (e) => {
+                const tag = e.target.closest('.tag');
+                if (!tag || tag.classList.contains('disabled')) return;
+
+                searchFromRankKeyword(tag.dataset.keyword);
+            });
+        }
 
         // ==================== 热度榜页面逻辑 ====================
         let currentRankSource = 'drama';
