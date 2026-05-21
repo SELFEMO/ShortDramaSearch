@@ -2143,6 +2143,22 @@
             });
         }
 
+        function shouldCollapseSearchResultSection(type) {
+            /*
+             * 全局聚合 / 网盘聚合：
+             * 只默认展开百度网盘和夸克网盘，其它来源默认收起。
+             */
+            if (currentPreset === 'all' || currentPreset === 'netdisk') {
+                return type !== 'baidu' && type !== 'quark';
+            }
+
+            /*
+             * 单一搜索模式：
+             * 百度、夸克、阿里云盘、天翼、UC、115、磁力、电驴等全部默认展开。
+             */
+            return false;
+        }
+
         function renderGroupedResults(mergedByType, typeList, term, total) { 
             let html = `<div class="result-stats"><span>关键词：${escapeHtml(term)}</span><span>共 ${total} 条</span></div>`;
             let sortedTypes = [];
@@ -2152,10 +2168,29 @@
             sortedTypes.forEach(type => {
                 const items = mergedByType[type]; if (!items || items.length === 0) return;
                 const safeType = type.replace(/\s+/g, '_');
-                const isCollapsed = (type !== 'baidu' && type !== 'quark');
-                html += `<div class="result-section ${isCollapsed ? 'collapsed' : ''}" id="search-${safeType}"><div class="section-header"><div><span class="toggle-icon">▼</span><span class="section-label ${safeType}">${escapeHtml(TYPE_LABEL[type] || type)}</span><span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span></div></div><div class="result-list">`;
-                items.forEach((item, index) => { html += createResultItem(item, type, index); }); 
-                html += `</div></div>`; 
+
+                // const isCollapsed = (type !== 'baidu' && type !== 'quark');
+                /*
+                 * 全局聚合 / 网盘聚合：只默认展开百度和夸克
+                 * 单一搜索模式：默认全部展开
+                 */
+                const isCollapsed = shouldCollapseSearchResultSection(type);
+
+                html += `<div class="result-section ${isCollapsed ? 'collapsed' : ''}" id="search-${safeType}">
+                            <div class="section-header">
+                                <div>
+                                    <span class="toggle-icon">▼</span>
+                                    <span class="section-label ${safeType}">${escapeHtml(TYPE_LABEL[type] || type)}</span>
+                                    <span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span>
+                                </div>
+                            </div>
+                            <div class="result-list">`;
+
+                items.forEach((item, index) => {
+                    html += createResultItem(item, type, index);
+                });
+
+                html += `</div></div>`;
             }); 
             resultsArea.innerHTML = html; 
             bindSectionToggleEvents();
