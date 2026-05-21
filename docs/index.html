@@ -1995,6 +1995,13 @@
                 }
 
                 renderGroupedResults(mergedByType, typeList, term, total);
+
+                /*
+                 * 第一次搜索成功后，自动完全收起首页短剧热度榜。
+                 * 注意：只有成功搜到结果才会触发。
+                 */
+                autoCollapseRankTagsAfterFirstSuccessfulSearch();
+
                 showStatus(`共找到 ${total} 条结果`);
             } catch (error) {
                 if (searchId !== searchSequence) return;
@@ -2201,7 +2208,16 @@
         // ==================== 主页热度榜逻辑 ====================
         let rankData = [];
         let vtquarkData = [];
+
+        /**
+         * 短剧热度榜状态：
+         * - 首次打开网页：默认展开前 10 条
+         * - 第一次搜索成功后：自动完全收起
+         */
         let showAllRank = false;
+        let rankTagsCollapsed = false;
+        let hasAutoCollapsedRankAfterSearch = false;
+
         let showVtquark = false;
 
         const VTQUARK_CACHE_KEY = 'kuleu_vtquark_cache_v1';
@@ -2403,9 +2419,66 @@
             }
         }
 
+        function setRankToggleText(text, direction = 'down') {
+            const toggle = document.getElementById('toggleMoreRank');
+            if (!toggle) return;
+
+            const path = direction === 'up'
+                ? 'M18 15l-6-6-6 6'
+                : 'M6 9l6 6 6-6';
+
+            toggle.innerHTML = `${text} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${path}"/></svg>`;
+        }
+
+        function autoCollapseRankTagsAfterFirstSuccessfulSearch() {
+            if (hasAutoCollapsedRankAfterSearch) return;
+
+            hasAutoCollapsedRankAfterSearch = true;
+            rankTagsCollapsed = true;
+            showAllRank = false;
+
+            renderRankTags();
+
+            setTimeout(updatePageScrollbar, 50);
+        }
+
+        // function renderRankTags() {
+        //     const list = document.getElementById('rankTagsList');
+        //     const hint = document.getElementById('rankMoreHint');
+        //
+        //     let html = '';
+        //
+        //     rankData.slice(0, showAllRank ? 20 : 10).forEach((item, idx) => {
+        //         const title = normalizeSearchKeyword(item.title || '');
+        //
+        //         if (!title) return;
+        //
+        //         html += `<span class="tag" data-keyword="${escapeHtml(title)}">
+        //             <span class="tag-rank">${item.ranking || idx + 1}</span>
+        //             ${escapeHtml(title)}
+        //             <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
+        //         </span>`;
+        //     });
+        //
+        //     list.innerHTML = html;
+        //     hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none';
+        // }
         function renderRankTags() {
             const list = document.getElementById('rankTagsList');
             const hint = document.getElementById('rankMoreHint');
+
+            if (!list || !hint) return;
+
+            /*
+             * 完全收起状态：
+             * 搜索成功后自动进入这里，前 10 条也不展示。
+             */
+            if (rankTagsCollapsed) {
+                list.innerHTML = '';
+                hint.style.display = 'none';
+                setRankToggleText('展开榜单', 'down');
+                return;
+            }
 
             let html = '';
 
@@ -2415,14 +2488,21 @@
                 if (!title) return;
 
                 html += `<span class="tag" data-keyword="${escapeHtml(title)}">
-                    <span class="tag-rank">${item.ranking || idx + 1}</span>
-                    ${escapeHtml(title)}
-                    <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
-                </span>`;
+                         <span class="tag-rank">${item.ranking || idx + 1}</span>
+                         ${escapeHtml(title)}
+                         <span class="tag-hot">🔥 ${escapeHtml(item.hots)}</span>
+                         </span>`;
             });
 
             list.innerHTML = html;
-            hint.style.display = rankData.length > 10 ? (showAllRank ? 'none' : 'block') : 'none';
+
+            if (rankData.length > 10) {
+                hint.style.display = showAllRank ? 'none' : 'block';
+                setRankToggleText(showAllRank ? '收起到前 10 条' : '展开更多', showAllRank ? 'up' : 'down');
+            } else {
+                hint.style.display = 'none';
+                setRankToggleText('收起榜单', 'up');
+            }
         }
 
         function renderVtquarkTags() {
@@ -2485,9 +2565,42 @@
             }, 0);
         }
 
+        // document.getElementById('toggleMoreRank').addEventListener('click', () => {
+        //     showAllRank = !showAllRank;
+        //     renderRankTags();
+        // });
         document.getElementById('toggleMoreRank').addEventListener('click', () => {
-            showAllRank = !showAllRank;
+            /*
+             * 如果当前是完全收起状态，点击后恢复默认前 10 条。
+             */
+            if (rankTagsCollapsed) {
+                rankTagsCollapsed = false;
+                showAllRank = false;
+                renderRankTags();
+                setTimeout(updatePageScrollbar, 50);
+                return;
+            }
+
+            /*
+             * 正常状态：
+             * 前 10 条 <=> 前 20 条。
+             */
+            if (!showAllRank && rankData.length > 10) {
+                showAllRank = true;
+            } else {
+                /*
+                 * 已经展开更多时，再点就回到前 10 条。
+                 * 如果不足 10 条，也可以直接收起榜单。
+                 */
+                showAllRank = false;
+
+                if (rankData.length <= 10) {
+                    rankTagsCollapsed = true;
+                }
+            }
+
             renderRankTags();
+            setTimeout(updatePageScrollbar, 50);
         });
 
         document.getElementById('toggleVtquark').addEventListener('click', () => {
