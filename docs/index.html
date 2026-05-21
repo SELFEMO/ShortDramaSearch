@@ -163,8 +163,35 @@
             justify-content: center;
             gap: 6px;
             line-height: 1.4;
+
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        .nav-link:hover { border-color: var(--accent); color: var(--accent); }
+        /*.nav-link:hover { border-color: var(--accent); color: var(--accent); }*/
+        /* 只有真正支持鼠标悬停的设备才启用 hover */
+        @media (hover: hover) and (pointer: fine) {
+            .nav-link:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+        }
+        /* 移动端点击时只给很短的按压反馈，避免 hover 粘住导致看起来两个选中 */
+        @media (hover: none), (pointer: coarse) {
+            .nav-link:hover {
+                border-color: transparent;
+                color: var(--muted);
+            }
+            .nav-link.active:hover {
+                background: rgba(255, 107, 53, 0.1);
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .nav-link:active {
+                transform: scale(0.96);
+            }
+        }
         .nav-link.active { background: rgba(255, 107, 53, 0.1); border-color: var(--accent); color: var(--accent); }
 
         .github-nav-link svg {
@@ -1357,34 +1384,151 @@
         const pages = { search: document.getElementById('page-search'), daily: document.getElementById('page-daily'), rank: document.getElementById('page-rank') };
         const titles = { search: '酷乐短剧 / 影视资源 · <span>聚合搜索</span>', daily: '酷乐短剧 / 影视资源 · <span>每日影视</span>', rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>' };
 
+        // function navigateTo(pageName) {
+        //     Object.keys(pages).forEach(key => pages[key].classList.toggle('active', key === pageName));
+        //     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
+        //     appTitleEl.innerHTML = titles[pageName] || titles.search;
+        //     if (pageName === 'daily') loadDailyResources();
+        //     if (pageName === 'rank') initRankPage();
+        // }
+        //
+        // function initRouter() {
+        //     const hash = window.location.hash || '#/';
+        //     let page = 'search';
+        //     if (hash.startsWith('#/daily')) page = 'daily';
+        //     else if (hash.startsWith('#/rank')) page = 'rank';
+        //     navigateTo(page);
+        //     window.addEventListener('hashchange', () => {
+        //         const newHash = window.location.hash || '#/';
+        //         let newPage = 'search';
+        //         if (newHash.startsWith('#/daily')) newPage = 'daily';
+        //         else if (newHash.startsWith('#/rank')) newPage = 'rank';
+        //         navigateTo(newPage);
+        //     });
+        //     document.querySelectorAll('.nav-link').forEach(link => {
+        //         link.addEventListener('click', () => {
+        //             const target = link.dataset.page;
+        //             if (target === 'search') window.location.hash = '#/';
+        //             else if (target === 'daily') window.location.hash = '#/daily';
+        //             else if (target === 'rank') window.location.hash = '#/rank';
+        //         });
+        //     });
+        // }
+
+        function getPageFromHash() {
+            const hash = window.location.hash || '#/';
+
+            if (hash.startsWith('#/daily')) return 'daily';
+            if (hash.startsWith('#/rank')) return 'rank';
+
+            return 'search';
+        }
+
+        function getHashFromPage(pageName) {
+            if (pageName === 'daily') return '#/daily';
+            if (pageName === 'rank') return '#/rank';
+            return '#/';
+        }
+
         function navigateTo(pageName) {
-            Object.keys(pages).forEach(key => pages[key].classList.toggle('active', key === pageName));
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
-            appTitleEl.innerHTML = titles[pageName] || titles.search;
-            if (pageName === 'daily') loadDailyResources();
-            if (pageName === 'rank') initRankPage(); 
+            const finalPage = pages[pageName] ? pageName : 'search';
+
+            Object.keys(pages).forEach(key => {
+                pages[key].classList.toggle('active', key === finalPage);
+            });
+
+            /*
+             * 关键修复：
+             * 这里只处理真正的页面导航按钮。
+             * GitHub / 帮助 没有 data-page，不参与 active 状态。
+             */
+            document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+                link.classList.toggle('active', link.dataset.page === finalPage);
+            });
+
+            appTitleEl.innerHTML = titles[finalPage] || titles.search;
+
+            if (finalPage === 'daily') loadDailyResources();
+            if (finalPage === 'rank') initRankPage();
+
+            /*
+             * 移动端某些浏览器会残留 hover / focus 状态，
+             * 主动 blur 可以避免两个按钮看起来同时被选中。
+             */
+            if (document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+        }
+
+        let suppressNextHashNavigate = false;
+        let lastTouchNavTime = 0;
+
+        function switchPageByNav(pageName) {
+            if (!pages[pageName]) return;
+
+            const targetHash = getHashFromPage(pageName);
+
+            /*
+             * 先立即切页面，不等 hashchange。
+             * 这样移动端第一次点击就会马上切换，不需要再点第二次。
+             */
+            navigateTo(pageName);
+
+            if (window.location.hash !== targetHash) {
+                suppressNextHashNavigate = true;
+                window.location.hash = targetHash;
+
+                setTimeout(() => {
+                    suppressNextHashNavigate = false;
+                }, 0);
+            }
         }
 
         function initRouter() {
-            const hash = window.location.hash || '#/';
-            let page = 'search';
-            if (hash.startsWith('#/daily')) page = 'daily';
-            else if (hash.startsWith('#/rank')) page = 'rank';
-            navigateTo(page);
+            navigateTo(getPageFromHash());
+
             window.addEventListener('hashchange', () => {
-                const newHash = window.location.hash || '#/';
-                let newPage = 'search';
-                if (newHash.startsWith('#/daily')) newPage = 'daily';
-                else if (newHash.startsWith('#/rank')) newPage = 'rank';
-                navigateTo(newPage);
+                if (suppressNextHashNavigate) {
+                    suppressNextHashNavigate = false;
+                    return;
+                }
+
+                navigateTo(getPageFromHash());
             });
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', () => {
-                    const target = link.dataset.page;
-                    if (target === 'search') window.location.hash = '#/';
-                    else if (target === 'daily') window.location.hash = '#/daily';
-                    else if (target === 'rank') window.location.hash = '#/rank';
-                });
+
+            const navLinksContainer = document.querySelector('.app-nav-links');
+            if (!navLinksContainer) return;
+
+            /*
+             * 移动端优先用 pointerup，避免部分浏览器第一次 tap 只触发 hover。
+             */
+            navLinksContainer.addEventListener('pointerup', e => {
+                if (e.pointerType === 'mouse') return;
+
+                const link = e.target.closest('.nav-link[data-page]');
+                if (!link) return;
+
+                e.preventDefault();
+                lastTouchNavTime = Date.now();
+
+                switchPageByNav(link.dataset.page);
+            }, { passive: false });
+
+            /*
+             * 桌面端 / 不支持 PointerEvent 的浏览器走 click。
+             * 如果刚刚已经由 pointerup 处理过，则忽略这次 click，避免重复切换。
+             */
+            navLinksContainer.addEventListener('click', e => {
+                const link = e.target.closest('.nav-link[data-page]');
+                if (!link) return;
+
+                if (Date.now() - lastTouchNavTime < 500) {
+                    e.preventDefault();
+                    return;
+                }
+
+                e.preventDefault();
+                switchPageByNav(link.dataset.page);
             });
         }
 
