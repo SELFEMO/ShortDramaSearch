@@ -910,6 +910,187 @@
             }
         }
 
+        /* ==================== API 预览链接快捷操作 ==================== */
+        .api-preview-links-status {
+            min-height: 20px;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .api-preview-links-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .api-preview-link-item {
+            position: relative;
+            overflow: hidden;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 52px 14px 16px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .api-preview-link-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+            transform: translateY(-1px);
+        }
+
+        .api-preview-link-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--fg);
+            line-height: 1.45;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .api-preview-link-title::before {
+            content: '▶';
+            color: var(--accent);
+            margin-right: 7px;
+            font-size: 13px;
+        }
+
+        .api-preview-link-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-left: 2px solid var(--border);
+            padding-left: 12px;
+        }
+
+        .api-preview-link-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .api-preview-link-label {
+            flex: 0 0 auto;
+            min-width: 46px;
+            color: #888;
+        }
+
+        .api-preview-link-source {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .api-preview-link-url {
+            color: var(--accent);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .api-preview-link-url:hover {
+            text-decoration: underline;
+            opacity: 0.85;
+        }
+
+        .api-preview-link-pwd {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .api-preview-link-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding-left: 12px;
+        }
+
+        .api-preview-small-btn {
+            min-height: 30px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            color: #ddd;
+            font-size: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .api-preview-small-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .api-preview-qr-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            z-index: 5;
+            transition: all 0.2s ease;
+        }
+
+        .api-preview-qr-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(255,107,53,0.12);
+        }
+
+        .api-preview-qr-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .api-preview-empty {
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+            background: rgba(255,255,255,0.025);
+        }
+
+        @media (max-width: 768px) {
+            .api-preview-link-item {
+                padding: 13px 48px 13px 13px;
+            }
+
+            .api-preview-link-row {
+                font-size: 12px;
+            }
+
+            .api-preview-link-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .api-preview-small-btn {
+                width: 100%;
+            }
+        }
+
         /* 帮助弹窗样式 */
         /*.help-modal-overlay {*/
         /*    position: fixed; inset: 0;*/
@@ -1838,6 +2019,18 @@
   "tip": "这里会显示预览 JSON，最多 5 条搜索结果。"
 }</pre>
                 </div>
+
+                <div class="api-builder-card">
+                    <div class="api-builder-card-title">🔗 链接快捷操作</div>
+                    <div id="apiPreviewLinksStatus" class="api-preview-links-status">
+                        预览成功后，这里会展示最多 5 条可操作链接，支持打开链接和生成二维码。
+                    </div>
+                    <div id="apiPreviewLinksList" class="api-preview-links-list">
+                        <div class="api-preview-empty">
+                            暂无链接。请先点击“预览 JSON 结果”。
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -1974,8 +2167,11 @@
         const apiCopyBtn = document.getElementById('apiCopyBtn');
         const apiOpenLink = document.getElementById('apiOpenLink');
         const apiPreviewBtn = document.getElementById('apiPreviewBtn');
+
         const apiPreviewStatus = document.getElementById('apiPreviewStatus');
         const apiPreviewOutput = document.getElementById('apiPreviewOutput');
+        const apiPreviewLinksStatus = document.getElementById('apiPreviewLinksStatus');
+        const apiPreviewLinksList = document.getElementById('apiPreviewLinksList');
 
         const helpApiTemplateUrl = document.getElementById('helpApiTemplateUrl');
         const helpApiExampleUrl = document.getElementById('helpApiExampleUrl');
@@ -4084,6 +4280,168 @@
             apiPreviewOutput.textContent = JSON.stringify(payload, null, 2);
         }
 
+        function clearApiPreviewLinks(message = '暂无链接。请先点击“预览 JSON 结果”。') {
+            if (apiPreviewLinksStatus) {
+                apiPreviewLinksStatus.textContent = message;
+            }
+
+            if (apiPreviewLinksList) {
+                apiPreviewLinksList.innerHTML = `
+                    <div class="api-preview-empty">
+                        ${escapeHtml(message)}
+                    </div>
+                `;
+            }
+        }
+
+        function flattenPreviewLinks(previewData, limit = 5) {
+            const result = [];
+
+            if (!previewData || typeof previewData !== 'object') {
+                return result;
+            }
+
+            const orderedTypes = getOrderedPreviewTypes(Object.keys(previewData));
+
+            for (const type of orderedTypes) {
+                const list = Array.isArray(previewData[type]) ? previewData[type] : [];
+
+                for (const rawItem of list) {
+                    if (result.length >= limit) break;
+
+                    const item = normalizeResourceItem({ ...(rawItem || {}) });
+                    const link = item.url || item.link || item.href || '';
+
+                    if (!link || link === '#') continue;
+
+                    result.push({
+                        type,
+                        item,
+                        link
+                    });
+                }
+
+                if (result.length >= limit) break;
+            }
+
+            return result;
+        }
+
+        function createApiPreviewLinkItem(entry, index) {
+            const type = entry.type;
+            const item = entry.item || {};
+            const link = entry.link || '';
+
+            const name = item.name || item.title || '未知资源';
+            const pwd = extractPwdFromLink(link) || formatPwd(item.pwd || item.password || item.pass || item.code);
+            const domain = extractDomain(link);
+            const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+
+            return `
+                <div class="api-preview-link-item" style="animation-delay: ${index * 0.04}s" data-link="${escapeHtml(link)}">
+                    <button class="api-preview-qr-btn" type="button" title="生成二维码" data-action="qr" data-link="${escapeHtml(link)}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                    </button>
+
+                    <div class="api-preview-link-title">${escapeHtml(name)}</div>
+
+                    <div class="api-preview-link-meta">
+                        <div class="api-preview-link-row">
+                            <span class="api-preview-link-label">来源:</span>
+                            <span class="api-preview-link-source">${escapeHtml(TYPE_LABEL[type] || type)}</span>
+                        </div>
+
+                        <div class="api-preview-link-row">
+                            <span class="api-preview-link-label">链接:</span>
+                            <a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" class="api-preview-link-url">
+                                ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" class="source-icon" onerror="this.style.display='none'">` : ''}
+                                ${escapeHtml(link)}
+                            </a>
+                        </div>
+
+                        ${pwd ? `
+                            <div class="api-preview-link-row">
+                                <span class="api-preview-link-label">密码:</span>
+                                <span class="api-preview-link-pwd">${escapeHtml(pwd)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="api-preview-link-actions">
+                        <a class="api-preview-small-btn" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">
+                            打开链接
+                        </a>
+
+                        <button class="api-preview-small-btn" type="button" data-action="copy" data-link="${escapeHtml(link)}">
+                            复制链接
+                        </button>
+
+                        <button class="api-preview-small-btn" type="button" data-action="qr" data-link="${escapeHtml(link)}">
+                            生成二维码
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function bindApiPreviewLinkActions() {
+            if (!apiPreviewLinksList) return;
+
+            apiPreviewLinksList.querySelectorAll('[data-action="qr"]').forEach(btn => {
+                btn.addEventListener('click', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const link = btn.getAttribute('data-link') || '';
+                    if (!link) return;
+
+                    openQrModal(link);
+                });
+            });
+
+            apiPreviewLinksList.querySelectorAll('[data-action="copy"]').forEach(btn => {
+                btn.addEventListener('click', async event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const link = btn.getAttribute('data-link') || '';
+                    if (!link) return;
+
+                    const ok = await copyTextToClipboard(link);
+
+                    if (apiPreviewLinksStatus) {
+                        apiPreviewLinksStatus.textContent = ok ? '链接已复制。' : '复制失败，请手动复制。';
+                    }
+                });
+            });
+        }
+
+        function renderApiPreviewLinks(previewData) {
+            if (!apiPreviewLinksList) return;
+
+            const links = flattenPreviewLinks(previewData, 5);
+
+            if (!links.length) {
+                clearApiPreviewLinks('预览结果中没有可操作链接。');
+                return;
+            }
+
+            if (apiPreviewLinksStatus) {
+                apiPreviewLinksStatus.textContent = `已展示 ${links.length} 条可操作链接，支持打开、复制和生成二维码。`;
+            }
+
+            apiPreviewLinksList.innerHTML = links.map((entry, index) => {
+                return createApiPreviewLinkItem(entry, index);
+            }).join('');
+
+            bindApiPreviewLinkActions();
+        }
+
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
@@ -4173,6 +4531,90 @@
             };
         }
 
+        // async function previewApiFromBuilder() {
+        //     if (!apiKeywordInput || !apiFromSelect) return;
+        //
+        //     const keyword = normalizeSearchKeyword(apiKeywordInput.value);
+        //     const requestedFrom = apiFromSelect.value || 'all';
+        //     const from = getValidApiPresetName(requestedFrom);
+        //     const url = updateApiGeneratedUrl();
+        //
+        //     if (!keyword || !url) {
+        //         setApiBuilderStatus('请先输入搜索关键词。', 'error');
+        //
+        //         renderApiPreviewJson({
+        //             code: -1,
+        //             msg: 'missing keyword'
+        //         });
+        //
+        //         return;
+        //     }
+        //
+        //     const oldText = apiPreviewBtn ? apiPreviewBtn.textContent : '';
+        //
+        //     if (apiPreviewBtn) {
+        //         apiPreviewBtn.disabled = true;
+        //         apiPreviewBtn.textContent = '预览中...';
+        //     }
+        //
+        //     setApiBuilderStatus('正在请求接口并生成预览...', 'loading');
+        //
+        //     renderApiPreviewJson({
+        //         code: 0,
+        //         msg: 'loading',
+        //         keyword,
+        //         type: from,
+        //         total: 0,
+        //         data: {}
+        //     });
+        //
+        //     try {
+        //         const result = await fetchAndMergeDataStable(keyword, from, {
+        //             attempts: 3,
+        //             delay: 700
+        //         });
+        //
+        //         const { mergedByType, total, typeList, effectivePreset } = result;
+        //         const { previewData, previewCount } = buildLimitedPreviewData(mergedByType, typeList, 5);
+        //
+        //         /*
+        //          * 注意：
+        //          * 预览 JSON 的字段结构必须和真实 API 保持一致。
+        //          * 这里只限制 data 内部最多展示 5 条结果，
+        //          * 不额外添加 preview_count、preview_types、retry_count、preview_note、api_url 等字段。
+        //          */
+        //         const payload = {
+        //             code: 0,
+        //             msg: 'success',
+        //             keyword,
+        //             type: effectivePreset,
+        //             total,
+        //             data: previewData
+        //         };
+        //
+        //         renderApiPreviewJson(payload);
+        //
+        //         if (previewCount > 0) {
+        //             setApiBuilderStatus(`预览完成：真实结果共 ${total} 条，预览区仅展示前 ${previewCount} 条。`, 'success');
+        //         } else {
+        //             setApiBuilderStatus('接口已自动重试，但仍未搜索到结果。请确认关键词，或把来源切换为“全局聚合 / 网盘聚合”。', 'error');
+        //         }
+        //     } catch (error) {
+        //         console.error(error);
+        //
+        //         renderApiPreviewJson({
+        //             code: -1,
+        //             msg: error.message || error.errorType || 'preview error'
+        //         });
+        //
+        //         setApiBuilderStatus('预览失败，请检查关键词、网络或第三方接口状态。', 'error');
+        //     } finally {
+        //         if (apiPreviewBtn) {
+        //             apiPreviewBtn.disabled = false;
+        //             apiPreviewBtn.textContent = oldText || '预览 JSON 结果';
+        //         }
+        //     }
+        // }
         async function previewApiFromBuilder() {
             if (!apiKeywordInput || !apiFromSelect) return;
 
@@ -4189,6 +4631,8 @@
                     msg: 'missing keyword'
                 });
 
+                clearApiPreviewLinks('请输入关键词后再预览链接。');
+
                 return;
             }
 
@@ -4200,6 +4644,7 @@
             }
 
             setApiBuilderStatus('正在请求接口并生成预览...', 'loading');
+            clearApiPreviewLinks('正在等待 JSON 预览结果...');
 
             renderApiPreviewJson({
                 code: 0,
@@ -4220,10 +4665,8 @@
                 const { previewData, previewCount } = buildLimitedPreviewData(mergedByType, typeList, 5);
 
                 /*
-                 * 注意：
-                 * 预览 JSON 的字段结构必须和真实 API 保持一致。
-                 * 这里只限制 data 内部最多展示 5 条结果，
-                 * 不额外添加 preview_count、preview_types、retry_count、preview_note、api_url 等字段。
+                 * JSON 预览保持真实 API 字段结构。
+                 * 链接快捷操作单独渲染，不写入 JSON。
                  */
                 const payload = {
                     code: 0,
@@ -4235,11 +4678,13 @@
                 };
 
                 renderApiPreviewJson(payload);
+                renderApiPreviewLinks(previewData);
 
                 if (previewCount > 0) {
                     setApiBuilderStatus(`预览完成：真实结果共 ${total} 条，预览区仅展示前 ${previewCount} 条。`, 'success');
                 } else {
                     setApiBuilderStatus('接口已自动重试，但仍未搜索到结果。请确认关键词，或把来源切换为“全局聚合 / 网盘聚合”。', 'error');
+                    clearApiPreviewLinks('没有可操作链接。');
                 }
             } catch (error) {
                 console.error(error);
@@ -4249,6 +4694,7 @@
                     msg: error.message || error.errorType || 'preview error'
                 });
 
+                clearApiPreviewLinks('预览失败，暂无可操作链接。');
                 setApiBuilderStatus('预览失败，请检查关键词、网络或第三方接口状态。', 'error');
             } finally {
                 if (apiPreviewBtn) {
