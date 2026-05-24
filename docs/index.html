@@ -2343,8 +2343,14 @@
 
         /* ==================== 深浅模式最终方案：页面快照过渡，真实元素不动 ==================== */
         :root {
-            --theme-vt-duration: 180ms;
-            --theme-vt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+            --theme-vt-duration: 1000ms;
+            --theme-vt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --theme-vt-duration: 800ms;
+            }
         }
 
         /*
@@ -2368,31 +2374,23 @@
         }
 
         ::view-transition-old(root) {
-            animation-name: themeSnapshotOldOut;
+            animation-name: themeOldOut;
             mix-blend-mode: normal;
         }
 
         ::view-transition-new(root) {
-            animation-name: themeSnapshotNewIn;
+            animation-name: themeNewIn;
             mix-blend-mode: normal;
         }
 
-        @keyframes themeSnapshotOldOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
+        @keyframes themeOldOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
 
-        @keyframes themeSnapshotNewIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+        @keyframes themeNewIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /*
@@ -2412,7 +2410,7 @@
 
         @media (max-width: 768px) {
             :root {
-                --theme-vt-duration: 140ms;
+                --theme-vt-duration: 120ms;
             }
         }
 
@@ -6775,7 +6773,7 @@
          * 2. 使用 View Transition 的页面快照做整页淡入淡出。
          * 3. 避免“整体幕布闪”和“元素各自闪”。
          */
-        const THEME_SWITCH_UNLOCK_DELAY = 260;
+        const THEME_SWITCH_UNLOCK_DELAY = 1200;
 
         let themeSwitchLocked = false;
         let systemThemeMediaQuery = null;
@@ -6826,7 +6824,6 @@
 
         function lockThemeSwitch() {
             themeSwitchLocked = true;
-
             document.documentElement.classList.add('theme-switching');
 
             if (themeToggleBtn) {
@@ -6852,16 +6849,6 @@
             const theme = normalizeTheme(nextTheme);
             if (!theme) return;
 
-            const root = document.documentElement;
-
-            /*
-             * 用户设置了减少动态效果时，直接切。
-             */
-            if (prefersReducedMotion() || !document.body) {
-                applyTheme(theme, { save: true, showToast: true });
-                return;
-            }
-
             lockThemeSwitch();
 
             /*
@@ -6878,7 +6865,7 @@
                 });
 
                 transition.finished.finally(() => {
-                    window.setTimeout(unlockThemeSwitch, 40);
+                    setTimeout(unlockThemeSwitch, 40);
                 });
 
                 return;
