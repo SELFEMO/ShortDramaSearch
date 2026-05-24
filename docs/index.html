@@ -1913,6 +1913,392 @@
                 width: 100%;
             }
         }
+
+        /* ==================== 推荐增强功能：主题 / 导入导出 / 批量复制 ==================== */
+        html[data-theme="dark"] {
+            color-scheme: dark;
+        }
+
+        html[data-theme="light"] {
+            color-scheme: light;
+        }
+
+        html.theme-light,
+        body.theme-light {
+            --bg: #f4f6fb;
+            --bg-secondary: #ffffff;
+            --fg: #111827;
+            --muted: #4b5563;
+            --card: #ffffff;
+            --border: #d7dde8;
+            --accent: #ff6b35;
+            --accent-glow: rgba(255, 107, 53, 0.22);
+            --error: #dc2626;
+        }
+
+        html.theme-light body {
+            background: #f4f6fb;
+            color: #111827;
+        }
+
+        html.theme-light .bg-pattern {
+            background:
+                    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 107, 53, 0.16), transparent),
+                    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.08), transparent),
+                    linear-gradient(180deg, #f4f6fb 0%, #ffffff 100%);
+        }
+
+        html.theme-light .floating-orb {
+            opacity: 0.18;
+        }
+
+        /* 顶部导航 */
+        html.theme-light .app-nav {
+            background: rgba(255, 255, 255, 0.88);
+            border-bottom-color: #d7dde8;
+            box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+        }
+
+        html.theme-light .app-title,
+        html.theme-light .header h1,
+        html.theme-light .header h2,
+        html.theme-light .drama-title,
+        html.theme-light .api-builder-card-title,
+        html.theme-light .favorite-title,
+        html.theme-light .api-preview-link-title {
+            color: #111827;
+        }
+
+        html.theme-light .header p,
+        html.theme-light .tags-title,
+        html.theme-light .daily-stats,
+        html.theme-light .result-stats,
+        html.theme-light .api-builder-label,
+        html.theme-light .api-builder-hint,
+        html.theme-light .api-preview-status,
+        html.theme-light .api-preview-links-status,
+        html.theme-light .info-item,
+        html.theme-light .api-preview-link-row,
+        html.theme-light .history-header {
+            color: #4b5563;
+        }
+
+        /* 搜索框 / 输入框 / 选择框 */
+        html.theme-light .search-box,
+        html.theme-light .daily-search-input,
+        html.theme-light .rank-search-input,
+        html.theme-light .favorite-search-input,
+        html.theme-light .api-builder-input,
+        html.theme-light .api-builder-select,
+        html.theme-light .api-builder-url {
+            background: #ffffff;
+            color: #111827;
+            border-color: #d7dde8;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        }
+
+        html.theme-light .search-input {
+            color: #111827;
+        }
+
+        html.theme-light .search-input::placeholder,
+        html.theme-light .daily-search-input::placeholder,
+        html.theme-light .rank-search-input::placeholder,
+        html.theme-light .favorite-search-input::placeholder,
+        html.theme-light .api-builder-input::placeholder {
+            color: #9ca3af;
+        }
+
+        html.theme-light .type-select,
+        html.theme-light .api-builder-select {
+            background: #f9fafb;
+            color: #111827;
+            border-color: #d7dde8;
+        }
+
+        html.theme-light .type-select option,
+        html.theme-light .api-builder-select option {
+            background: #ffffff;
+            color: #111827;
+        }
+
+        /* 卡片 / 搜索结果 / 预览结果 */
+        html.theme-light .result-section,
+        html.theme-light .result-item,
+        html.theme-light .favorite-item,
+        html.theme-light .api-builder-card,
+        html.theme-light .api-preview-link-item,
+        html.theme-light .history-panel {
+            background: rgba(255, 255, 255, 0.96);
+            border-color: #d7dde8;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+        }
+
+        html.theme-light .result-list {
+            background: rgba(241, 245, 249, 0.75);
+            border-top-color: #e5e7eb;
+        }
+
+        html.theme-light .section-header {
+            background: #ffffff;
+            color: #111827;
+        }
+
+        html.theme-light .section-header:hover {
+            background: #f8fafc;
+        }
+
+        html.theme-light .info-list,
+        html.theme-light .api-preview-link-meta {
+            border-left-color: #d7dde8;
+        }
+
+        html.theme-light .info-label,
+        html.theme-light .api-preview-link-label {
+            color: #64748b;
+        }
+
+        html.theme-light .info-link,
+        html.theme-light .api-preview-link-url,
+        html.theme-light .user-policy-link {
+            color: #e85926;
+        }
+
+        html.theme-light .api-preview-output {
+            background: #0f172a;
+            color: #e5e7eb;
+            border-color: #1e293b;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        /* 标签 */
+        html.theme-light .tag,
+        html.theme-light .history-chip {
+            background: #ffffff;
+            color: #374151;
+            border-color: #d7dde8;
+        }
+
+        html.theme-light .tag:hover,
+        html.theme-light .history-chip:hover {
+            background: rgba(255, 107, 53, 0.09);
+            color: #e85926;
+            border-color: rgba(255, 107, 53, 0.45);
+        }
+
+        html.theme-light .vtquark-status {
+            background: #f8fafc;
+            color: #64748b;
+            border-color: #d7dde8;
+        }
+
+        /* 按钮 */
+        .nav-button {
+            background: transparent;
+            font-family: inherit;
+        }
+
+        .extra-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: -0.75rem 0 1.2rem;
+        }
+
+        .extra-btn,
+        .resource-action-btn,
+        .api-preview-small-btn,
+        .history-clear-btn,
+        .favorite-clear-btn,
+        .api-builder-btn-ghost {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            color: #ddd;
+        }
+
+        .extra-btn {
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        html.theme-light .extra-btn,
+        html.theme-light .resource-action-btn,
+        html.theme-light .api-preview-small-btn,
+        html.theme-light .history-clear-btn,
+        html.theme-light .favorite-clear-btn,
+        html.theme-light .api-builder-btn-ghost {
+            background: #ffffff;
+            color: #374151;
+            border-color: #d7dde8;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+        }
+
+        html.theme-light .extra-btn:hover,
+        html.theme-light .resource-action-btn:hover,
+        html.theme-light .api-preview-small-btn:hover,
+        html.theme-light .api-builder-btn-ghost:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        /* 用户条例弹窗 / 帮助弹窗 */
+        html.theme-light .policy-modal-overlay.show,
+        html.theme-light .help-modal-overlay.show {
+            background: rgba(15, 23, 42, 0.42);
+        }
+
+        html.theme-light .policy-modal-box,
+        html.theme-light .help-modal-box {
+            background: #ffffff;
+            color: #111827;
+            border-color: #d7dde8;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+        }
+
+        html.theme-light .policy-modal-header,
+        html.theme-light .policy-modal-actions,
+        html.theme-light .help-modal-header {
+            background: #f8fafc;
+            border-color: #e5e7eb;
+        }
+
+        html.theme-light .policy-modal-title,
+        html.theme-light .help-modal-title {
+            color: #111827;
+        }
+
+        html.theme-light .policy-modal-content,
+        html.theme-light .help-modal-content {
+            color: #374151;
+        }
+
+        html.theme-light .policy-highlight {
+            color: #111827;
+        }
+
+        html.theme-light .policy-modal-close,
+        html.theme-light .help-modal-close {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        html.theme-light .policy-modal-close:hover,
+        html.theme-light .help-modal-close:hover {
+            background: #d1d5db;
+            color: #111827;
+        }
+
+        html.theme-light .policy-btn-reject {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #d7dde8;
+        }
+
+        html.theme-light .policy-btn-reject:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        html.theme-light .help-modal-content pre {
+            background: #f1f5f9;
+            color: #111827;
+        }
+
+        /* 二维码弹窗 */
+        .qr-modal-box {
+            background: #ffffff;
+            color: #111827;
+        }
+
+        .qr-modal-title {
+            color: #111827;
+        }
+
+        .qr-modal-hint {
+            color: #6b7280;
+        }
+
+        .qr-modal-image {
+            background: #ffffff;
+        }
+
+        html[data-theme="dark"] .qr-modal-overlay.show {
+            background: rgba(0, 0, 0, 0.88);
+        }
+
+        html[data-theme="dark"] .qr-modal-box {
+            background: #111827;
+            color: #f9fafb;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.58);
+        }
+
+        html[data-theme="dark"] .qr-modal-title {
+            color: #f9fafb;
+        }
+
+        html[data-theme="dark"] .qr-modal-hint {
+            color: #cbd5e1;
+        }
+
+        html[data-theme="dark"] .qr-modal-close {
+            background: rgba(255,255,255,0.1);
+            color: #e5e7eb;
+        }
+
+        html[data-theme="dark"] .qr-modal-close:hover {
+            background: rgba(255,255,255,0.18);
+            color: #ffffff;
+        }
+
+        /* 二维码反色：黑底白码 */
+        html[data-theme="dark"] .qr-modal-image {
+            background: #000000;
+            filter: invert(1);
+            border-radius: 8px;
+        }
+
+        /* 如果某些二维码接口反色后扫码失败，就注释掉上面 filter: invert(1); 这一行 */
+
+        html.theme-light .qr-modal-box {
+            background: #ffffff;
+            color: #111827;
+            border: 1px solid #e5e7eb;
+        }
+
+        html.theme-light .qr-modal-image {
+            background: #ffffff;
+            filter: none;
+        }
+
+        html.theme-light .qr-modal-error {
+            background: #fff7ed;
+            color: #e85926;
+        }
+
+        /* 状态提示 */
+        html.theme-light .search-status {
+            background: rgba(17, 24, 39, 0.9);
+            color: #ffffff;
+        }
+
+        /* 滚动条 */
+        html.theme-light .page-custom-scrollbar {
+            background: rgba(15, 23, 42, 0.08);
+        }
+
+        html.theme-light .help-custom-scrollbar {
+            background: rgba(15, 23, 42, 0.08);
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -2027,6 +2413,7 @@
             <div class="nav-link" data-page="daily">每日影视</div>
             <div class="nav-link" data-page="rank">热度榜</div>
             <div class="nav-link" data-page="favorites">我的收藏</div>
+            <button id="themeToggleBtn" class="nav-link nav-button" type="button">浅色模式</button>
 
             <a
                     class="nav-link github-nav-link"
@@ -2105,6 +2492,13 @@
                 </div>
                 <div class="history-list" id="searchHistoryList"></div>
             </div>
+
+            <div class="extra-toolbar">
+                <button id="copyCurrentLinksBtn" class="extra-btn" type="button">复制当前结果链接</button>
+                <button id="exportHistoryBtn" class="extra-btn" type="button">导出搜索历史</button>
+                <button id="importHistoryBtn" class="extra-btn" type="button">导入搜索历史</button>
+            </div>
+            <input id="importHistoryInput" class="hidden-file-input" type="file" accept="application/json">
 
             <div class="tags-container" id="hotTagsContainer">
                 <div class="tags-header">
@@ -2331,8 +2725,11 @@
 
                 <div class="favorites-toolbar">
                     <input id="favoriteSearchInput" class="favorite-search-input" type="text" placeholder="在收藏中搜索名称 / 来源 / 链接..." autocomplete="off">
+                    <button id="exportFavoritesBtn" class="favorite-clear-btn" type="button">导出收藏</button>
+                    <button id="importFavoritesBtn" class="favorite-clear-btn" type="button">导入收藏</button>
                     <button id="clearFavoritesBtn" class="favorite-clear-btn" type="button">清空收藏</button>
                 </div>
+                <input id="importFavoritesInput" class="hidden-file-input" type="file" accept="application/json">
 
                 <div id="favoritesStats" class="favorites-stats"></div>
                 <div id="favoritesList" class="favorites-list"></div>
@@ -5743,6 +6140,319 @@
             bindResourceActionEvents();
         });
 
+        // ==================== 推荐增强功能：主题 / 导入导出 / 批量复制 ====================
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const copyCurrentLinksBtn = document.getElementById('copyCurrentLinksBtn');
+
+        const exportHistoryBtn = document.getElementById('exportHistoryBtn');
+        const importHistoryBtn = document.getElementById('importHistoryBtn');
+        const importHistoryInput = document.getElementById('importHistoryInput');
+
+        const exportFavoritesBtn = document.getElementById('exportFavoritesBtn');
+        const importFavoritesBtn = document.getElementById('importFavoritesBtn');
+        const importFavoritesInput = document.getElementById('importFavoritesInput');
+
+        function downloadJsonFile(filename, data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: 'application/json;charset=utf-8'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function readJsonFile(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    reject(new Error('未选择文件'));
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    try {
+                        resolve(JSON.parse(reader.result));
+                    } catch (err) {
+                        reject(new Error('JSON 文件格式错误'));
+                    }
+                };
+
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsText(file, 'utf-8');
+            });
+        }
+
+        function getSystemTheme() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                return 'light';
+            }
+            return 'dark';
+        }
+
+        function applyTheme(theme, options = {}) {
+            const { save = false, showToast = false } = options;
+            const isLight = theme === 'light';
+
+            document.documentElement.classList.toggle('theme-light', isLight);
+            document.body.classList.toggle('theme-light', isLight);
+            document.documentElement.setAttribute('data-theme', theme);
+
+            if (themeToggleBtn) {
+                themeToggleBtn.textContent = isLight ? '深色模式' : '浅色模式';
+                themeToggleBtn.title = isLight ? '切换为深色模式' : '切换为浅色模式';
+            }
+
+            if (save) {
+                localStorage.setItem('kuleu_theme_manual', theme);
+            }
+
+            if (showToast) {
+                showStatus(isLight ? '已切换为浅色模式' : '已切换为深色模式');
+            }
+        }
+
+        function initThemeToggle() {
+            localStorage.removeItem('kuleu_theme');
+
+            const manualTheme = localStorage.getItem('kuleu_theme_manual');
+            const initialTheme = manualTheme || getSystemTheme();
+
+            applyTheme(initialTheme, { save: false });
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const currentIsLight = document.documentElement.getAttribute('data-theme') === 'light';
+                    const nextTheme = currentIsLight ? 'dark' : 'light';
+
+                    applyTheme(nextTheme, {
+                        save: true,
+                        showToast: true
+                    });
+                });
+            }
+
+            if (window.matchMedia) {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+                const handleSystemThemeChange = event => {
+                    const manualThemeNow = localStorage.getItem('kuleu_theme_manual');
+                    if (manualThemeNow) return;
+
+                    applyTheme(event.matches ? 'light' : 'dark', {
+                        save: false,
+                        showToast: false
+                    });
+                };
+
+                if (mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', handleSystemThemeChange);
+                } else if (mediaQuery.addListener) {
+                    mediaQuery.addListener(handleSystemThemeChange);
+                }
+            }
+        }
+
+        function initThemeToggle() {
+            // 删除旧版本保存的主题，避免旧的 kuleu_theme=dark 一直覆盖系统浅色
+            localStorage.removeItem('kuleu_theme');
+
+            const manualTheme = localStorage.getItem('kuleu_theme_manual');
+            const initialTheme = manualTheme || getSystemTheme();
+
+            applyTheme(initialTheme, { save: false });
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const currentIsLight = document.documentElement.classList.contains('theme-light');
+                    const nextTheme = currentIsLight ? 'dark' : 'light';
+
+                    applyTheme(nextTheme, {
+                        save: true,
+                        showToast: true
+                    });
+                });
+            }
+
+            if (window.matchMedia) {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+
+                mediaQuery.addEventListener('change', event => {
+                    const manualThemeNow = localStorage.getItem('kuleu_theme_manual');
+
+                    if (manualThemeNow) return;
+
+                    applyTheme(event.matches ? 'light' : 'dark', {
+                        save: false,
+                        showToast: false
+                    });
+                });
+            }
+        }
+
+        function exportSearchHistoryData() {
+            const data = {
+                type: 'kuleu_search_history',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: getSearchHistory()
+            };
+
+            downloadJsonFile('kuleu-search-history.json', data);
+            showStatus('搜索历史已导出');
+        }
+
+        async function importSearchHistoryData(file) {
+            try {
+                const json = await readJsonFile(file);
+                const list = Array.isArray(json) ? json : json.data;
+
+                if (!Array.isArray(list)) {
+                    showStatus('导入失败：文件内容不是搜索历史', 2500);
+                    return;
+                }
+
+                const cleanList = [...new Set(
+                    list
+                        .map(item => String(item || '').trim())
+                        .filter(Boolean)
+                )].slice(0, 30);
+
+                writeLocalList(LOCAL_KEYS.searchHistory, cleanList);
+                renderSearchHistory();
+                showStatus(`已导入 ${cleanList.length} 条搜索历史`);
+            } catch (err) {
+                showStatus(err.message || '导入失败', 2500);
+            } finally {
+                if (importHistoryInput) importHistoryInput.value = '';
+            }
+        }
+
+        function exportFavoritesData() {
+            const data = {
+                type: 'kuleu_favorites',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: getFavorites()
+            };
+
+            downloadJsonFile('kuleu-favorites.json', data);
+            showStatus('收藏已导出');
+        }
+
+        async function importFavoritesData(file) {
+            try {
+                const json = await readJsonFile(file);
+                const list = Array.isArray(json) ? json : json.data;
+
+                if (!Array.isArray(list)) {
+                    showStatus('导入失败：文件内容不是收藏数据', 2500);
+                    return;
+                }
+
+                const oldList = getFavorites();
+                const map = new Map();
+
+                oldList.forEach(item => {
+                    if (item && item.link) map.set(item.link, item);
+                });
+
+                list.forEach(item => {
+                    if (!item || !item.link) return;
+
+                    map.set(item.link, {
+                        id: item.id || makeResourceId(item),
+                        name: item.name || item.title || '未命名资源',
+                        link: item.link,
+                        pwd: item.pwd || item.password || '',
+                        type: item.type || item.source || '',
+                        savedAt: item.savedAt || new Date().toISOString()
+                    });
+                });
+
+                const merged = Array.from(map.values());
+
+                saveFavorites(merged);
+                renderFavorites();
+                updateFavoriteButtons();
+
+                showStatus(`已导入收藏，共 ${merged.length} 条`);
+            } catch (err) {
+                showStatus(err.message || '导入失败', 2500);
+            } finally {
+                if (importFavoritesInput) importFavoritesInput.value = '';
+            }
+        }
+
+        function collectCurrentResultLinks() {
+            const links = [];
+
+            document.querySelectorAll('#resultsArea .result-item').forEach(item => {
+                const title = item.querySelector('.drama-title')?.textContent?.trim() || '未命名资源';
+                const linkEl = item.querySelector('.info-link[href]');
+                const link = linkEl ? linkEl.href : '';
+
+                if (!link) return;
+
+                const pwdText = Array.from(item.querySelectorAll('.info-item'))
+                    .map(el => el.textContent || '')
+                    .find(text => text.includes('提取码') || text.includes('密码')) || '';
+
+                links.push(`${title}\n${link}${pwdText ? `\n${pwdText.trim()}` : ''}`);
+            });
+
+            return links;
+        }
+
+        async function copyCurrentResultLinks() {
+            const links = collectCurrentResultLinks();
+
+            if (!links.length) {
+                showStatus('当前没有可复制的搜索结果', 2500);
+                return;
+            }
+
+            await copyTextToClipboard(links.join('\n\n'));
+            showStatus(`已复制 ${links.length} 条结果链接`);
+        }
+
+        function bindExtraFeatureEvents() {
+            initThemeToggle();
+
+            if (copyCurrentLinksBtn) {
+                copyCurrentLinksBtn.addEventListener('click', copyCurrentResultLinks);
+            }
+
+            if (exportHistoryBtn) {
+                exportHistoryBtn.addEventListener('click', exportSearchHistoryData);
+            }
+
+            if (importHistoryBtn && importHistoryInput) {
+                importHistoryBtn.addEventListener('click', () => importHistoryInput.click());
+                importHistoryInput.addEventListener('change', () => {
+                    importSearchHistoryData(importHistoryInput.files[0]);
+                });
+            }
+
+            if (exportFavoritesBtn) {
+                exportFavoritesBtn.addEventListener('click', exportFavoritesData);
+            }
+
+            if (importFavoritesBtn && importFavoritesInput) {
+                importFavoritesBtn.addEventListener('click', () => importFavoritesInput.click());
+                importFavoritesInput.addEventListener('change', () => {
+                    importFavoritesData(importFavoritesInput.files[0]);
+                });
+            }
+        }
+
         // ==================== 初始化 ====================
         initRouter();
         bindAppTitleRefresh();
@@ -5754,6 +6464,7 @@
         checkUrlParams();
         renderSearchHistory();
         renderFavorites();
+        bindExtraFeatureEvents();
 
         // ==================== 用户条例每次打开 / 刷新都弹出 ====================
         showPolicyModalOnEveryPageLoad();
