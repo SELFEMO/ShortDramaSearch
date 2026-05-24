@@ -4084,11 +4084,101 @@
             apiPreviewOutput.textContent = JSON.stringify(payload, null, 2);
         }
 
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getValidApiPresetName(presetName) {
+            return Object.prototype.hasOwnProperty.call(TYPE_PRESETS, presetName) ? presetName : 'all';
+        }
+
+        function normalizeMergedSearchResult(result) {
+            const mergedByType = result && result.mergedByType ? result.mergedByType : {};
+
+            const typeList = Object.keys(mergedByType).filter(type => {
+                return Array.isArray(mergedByType[type]) && mergedByType[type].length > 0;
+            });
+
+            const countedTotal = typeList.reduce((sum, type) => {
+                return sum + mergedByType[type].length;
+            }, 0);
+
+            const rawTotal = Number(result && result.total ? result.total : 0);
+            const total = Math.max(rawTotal, countedTotal);
+
+            return {
+                mergedByType,
+                total,
+                typeList
+            };
+        }
+
+        function isMergedSearchEmpty(result) {
+            if (!result) return true;
+            if (!result.mergedByType) return true;
+            if (!Array.isArray(result.typeList)) return true;
+            if (result.typeList.length === 0) return true;
+            if (!result.total || result.total <= 0) return true;
+
+            return false;
+        }
+
+        async function fetchAndMergeDataStable(term, presetName, options = {}) {
+            const safePreset = getValidApiPresetName(presetName);
+            const attempts = Number(options.attempts || 3);
+            const delay = Number(options.delay || 700);
+
+            let lastResult = null;
+            let lastError = null;
+
+            for (let i = 0; i < attempts; i++) {
+                try {
+                    const result = await fetchAndMergeData(term, safePreset);
+                    const normalized = normalizeMergedSearchResult(result);
+
+                    lastResult = normalized;
+
+                    if (!isMergedSearchEmpty(normalized)) {
+                        return {
+                            ...normalized,
+                            effectivePreset: safePreset,
+                            retryCount: i
+                        };
+                    }
+                } catch (error) {
+                    lastError = error;
+                }
+
+                if (i < attempts - 1) {
+                    await sleep(delay * (i + 1));
+                }
+            }
+
+            if (lastResult) {
+                return {
+                    ...lastResult,
+                    effectivePreset: safePreset,
+                    retryCount: attempts - 1
+                };
+            }
+
+            if (lastError) throw lastError;
+
+            return {
+                mergedByType: {},
+                total: 0,
+                typeList: [],
+                effectivePreset: safePreset,
+                retryCount: attempts - 1
+            };
+        }
+
         async function previewApiFromBuilder() {
             if (!apiKeywordInput || !apiFromSelect) return;
 
             const keyword = normalizeSearchKeyword(apiKeywordInput.value);
-            const from = apiFromSelect.value || 'all';
+            const requestedFrom = apiFromSelect.value || 'all';
+            const from = getValidApiPresetName(requestedFrom);
             const url = updateApiGeneratedUrl();
 
             if (!keyword || !url) {
@@ -4120,17 +4210,23 @@
             });
 
             try {
-                const { mergedByType, total, typeList } = await fetchAndMergeData(keyword, from);
+                const result = await fetchAndMergeDataStable(keyword, from, {
+                    attempts: 3,
+                    delay: 700
+                });
+
+                const { mergedByType, total, typeList, retryCount, effectivePreset } = result;
                 const { previewData, previewCount, previewTypes } = buildLimitedPreviewData(mergedByType, typeList, 5);
 
                 const payload = {
                     code: 0,
                     msg: 'success',
                     keyword,
-                    type: from,
+                    type: effectivePreset,
                     total,
                     preview_count: previewCount,
                     preview_types: previewTypes,
+                    retry_count: retryCount,
                     preview_note: '这里只预览最多 5 条结果，并尽量从不同来源中抽样。真实 API 链接会返回完整 data。',
                     api_url: url,
                     data: previewData
@@ -4139,9 +4235,10 @@
                 renderApiPreviewJson(payload);
 
                 if (previewCount > 0) {
-                    setApiBuilderStatus(`预览完成：真实结果共 ${total} 条，这里显示 ${previewCount} 条。`, 'success');
+                    const retryText = retryCount > 0 ? `，自动重试 ${retryCount} 次后成功` : '';
+                    setApiBuilderStatus(`预览完成：真实结果共 ${total} 条，这里显示 ${previewCount} 条${retryText}。`, 'success');
                 } else {
-                    setApiBuilderStatus('接口请求成功，但没有搜索到相关结果。', 'error');
+                    setApiBuilderStatus('接口已自动重试，但仍未搜索到结果。请确认关键词，或把来源切换为“全局聚合 / 网盘聚合”。', 'error');
                 }
             } catch (error) {
                 console.error(error);
@@ -4232,63 +4329,63 @@
             const query = params.get('q') || params.get('name') || params.get('s');
             const from = params.get('from') || 'all';
             const format = params.get('format');
-            if (query) {
-                const decodedQuery = decodeURIComponent(query);
-                if (format === 'json') {
-                    document.body.innerHTML = 'Loading...'; document.body.style.cssText = 'background:#fff; color:#000; font-family: monospace; white-space: pre; padding:20px;';
-                    try { const { mergedByType, total } = await fetchAndMergeData(decodedQuery, from); document.body.innerText = JSON.stringify({ code: 0, msg: "success", keyword: decodedQuery, type: from, total: total, data: mergedByType }, null, 2); } catch (error) { document.body.innerText = JSON.stringify({ code: -1, msg: error.message || 'Error' }, null, 2); }
-                } else {
-                    if (window.location.hash !== '#/' && window.location.hash !== '') window.location.hash = '#/';
-                    setTimeout(() => {
-                        const validTypes = Object.keys(TYPE_PRESETS);
-                        typeSelect.value = validTypes.includes(from) ? from : 'all';
-                        currentPreset = typeSelect.value;
-                        searchInput.value = decodedQuery;
-                        performSearch(decodedQuery);
-                    }, 300);
+
+            if (!query) return;
+
+            const decodedQuery = decodeURIComponent(query);
+            const safeFrom = getValidApiPresetName(from);
+
+            if (format === 'json') {
+                document.body.innerHTML = 'Loading...';
+                document.body.style.cssText = 'background:#fff; color:#000; font-family: monospace; white-space: pre; padding:20px;';
+
+                try {
+                    const { mergedByType, total, typeList, retryCount, effectivePreset } = await fetchAndMergeDataStable(decodedQuery, safeFrom, {
+                        attempts: 3,
+                        delay: 700
+                    });
+
+                    document.body.innerText = JSON.stringify({
+                        code: 0,
+                        msg: 'success',
+                        keyword: decodedQuery,
+                        type: effectivePreset,
+                        total,
+                        type_count: typeList.length,
+                        retry_count: retryCount,
+                        data: mergedByType
+                    }, null, 2);
+                } catch (error) {
+                    document.body.innerText = JSON.stringify({
+                        code: -1,
+                        msg: error.message || error.errorType || 'Error'
+                    }, null, 2);
                 }
+
+                return;
             }
+
+            if (window.location.hash !== '#/' && window.location.hash !== '') {
+                window.location.hash = '#/';
+            }
+
+            setTimeout(() => {
+                const validTypes = Object.keys(TYPE_PRESETS);
+                typeSelect.value = validTypes.includes(from) ? from : 'all';
+                currentPreset = typeSelect.value;
+                searchInput.value = decodedQuery;
+
+                performSearch(decodedQuery, {
+                    immediate: true,
+                    retryIfEmpty: true
+                });
+            }, 300);
         }
 
         // ==================== 帮助弹窗逻辑 ====================
         const helpBtn = document.getElementById('helpBtn');
         const helpModalOverlay = document.getElementById('helpModalOverlay');
 
-        // function openHelpModal() {
-        //     if (!helpModalOverlay) return;
-        //
-        //     hidePageScrollbarImmediately();
-        //     document.body.classList.add('scrollbar-locked');
-        //
-        //     helpModalOverlay.classList.add('show');
-        //     document.body.style.overflow = 'hidden';
-        //
-        //     if (helpModalContent) {
-        //         helpModalContent.scrollTop = 0;
-        //         hideHelpScrollbarImmediately();
-        //     }
-        //
-        //     setTimeout(() => {
-        //         updateHelpScrollbar();
-        //
-        //         if (
-        //             helpModalContent &&
-        //             helpModalContent.scrollHeight > helpModalContent.clientHeight + 1
-        //         ) {
-        //             showHelpScrollbarTemporarily();
-        //         }
-        //     }, 50);
-        // }
-        // function closeHelpModal() {
-        //     if (!helpModalOverlay) return;
-        //
-        //     hideHelpScrollbarImmediately();
-        //     helpModalOverlay.classList.remove('show');
-        //     document.body.style.overflow = '';
-        //     document.body.classList.remove('scrollbar-locked');
-        //
-        //     setTimeout(updatePageScrollbar, 50);
-        // }
         function openHelpModal() {
             if (!helpModalOverlay) return;
 
