@@ -6,6 +6,47 @@
     <title>酷乐短剧 / 影视资源聚合搜索</title>
     
     <meta name="referrer" content="no-referrer">
+
+    <script>
+        (function () {
+            const MANUAL_THEME_KEY = 'kuleu_theme_manual';
+            const LEGACY_THEME_KEY = 'kuleu_theme';
+
+            function safeStorageGet(key) {
+                try {
+                    return window.localStorage.getItem(key);
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function safeStorageRemove(key) {
+                try {
+                    window.localStorage.removeItem(key);
+                } catch (error) {}
+            }
+
+            function getSystemThemeEarly() {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    return 'light';
+                }
+                return 'dark';
+            }
+
+            safeStorageRemove(LEGACY_THEME_KEY);
+
+            const manualTheme = safeStorageGet(MANUAL_THEME_KEY);
+            const theme = manualTheme === 'light' || manualTheme === 'dark'
+                ? manualTheme
+                : getSystemThemeEarly();
+
+            const root = document.documentElement;
+            root.setAttribute('data-theme', theme);
+            root.classList.toggle('theme-light', theme === 'light');
+            root.style.colorScheme = theme;
+        })();
+    </script>
+
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2300,8 +2341,193 @@
             background: rgba(15, 23, 42, 0.08);
         }
 
-        .hidden-file-input {
-            display: none;
+        /* ==================== 深浅模式高级切换动画 ==================== */
+        :root {
+            --theme-switch-x: 50vw;
+            --theme-switch-y: 0px;
+            --theme-switch-radius: 150vmax;
+            --theme-switch-duration: 920ms;
+            --theme-switch-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        html.theme-animating,
+        html.theme-animating * {
+            cursor: progress;
+        }
+
+        ::view-transition-group(root) {
+            animation-duration: var(--theme-switch-duration);
+            animation-timing-function: var(--theme-switch-ease);
+        }
+
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: var(--theme-switch-duration);
+            animation-timing-function: var(--theme-switch-ease);
+            animation-fill-mode: both;
+            mix-blend-mode: normal;
+        }
+
+        ::view-transition-old(root) {
+            z-index: 1;
+            animation-name: themeOldSceneFade;
+        }
+
+        ::view-transition-new(root) {
+            z-index: 2;
+            animation-name: themeNewSceneReveal;
+            clip-path: circle(0 at var(--theme-switch-x) var(--theme-switch-y));
+        }
+
+        @keyframes themeNewSceneReveal {
+            0% {
+                clip-path: circle(0 at var(--theme-switch-x) var(--theme-switch-y));
+                filter: saturate(1.25) brightness(1.06);
+            }
+            62% {
+                filter: saturate(1.12) brightness(1.03);
+            }
+            100% {
+                clip-path: circle(var(--theme-switch-radius) at var(--theme-switch-x) var(--theme-switch-y));
+                filter: saturate(1) brightness(1);
+            }
+        }
+
+        @keyframes themeOldSceneFade {
+            0% {
+                filter: saturate(1) brightness(1);
+            }
+            100% {
+                filter: saturate(0.82) brightness(0.92) blur(1.5px);
+            }
+        }
+
+        .theme-burst-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 1;
+            contain: paint;
+            --wipe-bg: rgba(10, 10, 15, 0.92);
+            --burst-color-1: rgba(255, 107, 53, 0.42);
+            --burst-color-2: rgba(139, 92, 246, 0.26);
+            --burst-color-3: rgba(255, 255, 255, 0.20);
+        }
+
+        .theme-burst-overlay.theme-burst-dark {
+            --wipe-bg: rgba(10, 10, 15, 0.94);
+            --burst-color-1: rgba(255, 107, 53, 0.44);
+            --burst-color-2: rgba(99, 102, 241, 0.30);
+            --burst-color-3: rgba(10, 10, 15, 0.62);
+        }
+
+        .theme-burst-overlay.theme-burst-light {
+            --wipe-bg: rgba(244, 246, 251, 0.96);
+            --burst-color-1: rgba(255, 183, 77, 0.46);
+            --burst-color-2: rgba(96, 165, 250, 0.25);
+            --burst-color-3: rgba(255, 255, 255, 0.72);
+        }
+
+        .theme-burst-overlay::before {
+            content: '';
+            position: absolute;
+            left: var(--theme-switch-x);
+            top: var(--theme-switch-y);
+            width: calc(var(--theme-switch-radius) * 2);
+            height: calc(var(--theme-switch-radius) * 2);
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0);
+            background:
+                    radial-gradient(
+                            circle,
+                            var(--burst-color-3) 0 7%,
+                            transparent 8% 12%,
+                            var(--wipe-bg) 13% 58%,
+                            var(--burst-color-1) 59% 61%,
+                            transparent 62% 100%
+                    ),
+                    radial-gradient(circle, var(--burst-color-2), transparent 70%);
+            box-shadow:
+                    0 0 34px var(--burst-color-1),
+                    0 0 88px var(--burst-color-2),
+                    inset 0 0 20px rgba(255,255,255,0.26);
+            animation: themeBurstRing var(--theme-switch-duration) var(--theme-switch-ease) forwards;
+        }
+
+        .theme-burst-overlay::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            background:
+                    radial-gradient(circle at var(--theme-switch-x) var(--theme-switch-y), var(--burst-color-3), transparent 22%),
+                    conic-gradient(from 90deg at var(--theme-switch-x) var(--theme-switch-y), transparent, var(--burst-color-1), transparent, var(--burst-color-2), transparent);
+            filter: blur(10px) saturate(1.25);
+            animation: themeBurstGlare var(--theme-switch-duration) ease forwards;
+        }
+
+        @keyframes themeBurstRing {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0);
+            }
+            12% {
+                opacity: 1;
+            }
+            72% {
+                opacity: 0.78;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes themeBurstGlare {
+            0% {
+                opacity: 0;
+                transform: scale(0.98) rotate(0deg);
+            }
+            18% {
+                opacity: 0.68;
+            }
+            58% {
+                opacity: 0.25;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.04) rotate(18deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html.theme-animating,
+            html.theme-animating * {
+                cursor: auto;
+            }
+
+            ::view-transition-group(root),
+            ::view-transition-old(root),
+            ::view-transition-new(root),
+            .theme-burst-overlay,
+            .theme-burst-overlay::before,
+            .theme-burst-overlay::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        .hidden-file-input,
+        input.hidden-file-input[type="file"] {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* ==================== 失效资源自动折叠 / 资源质量评分 ==================== */
@@ -2556,7 +2782,7 @@
             <div class="nav-link" data-page="daily">每日影视</div>
             <div class="nav-link" data-page="rank">热度榜</div>
             <div class="nav-link" data-page="favorites">我的收藏</div>
-            <button id="themeToggleBtn" class="nav-link nav-button" type="button">浅色模式</button>
+            <button id="themeToggleBtn" class="nav-link nav-button" type="button" aria-label="切换深浅模式">切换模式</button>
 
             <a
                     class="nav-link github-nav-link"
@@ -6611,21 +6837,70 @@
             return 'dark';
         }
 
+        function normalizeTheme(theme) {
+            return theme === 'light' || theme === 'dark' ? theme : null;
+        }
+
+        function safeGetLocalStorage(key) {
+            try {
+                return localStorage.getItem(key);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function safeSetLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (error) {}
+        }
+
+        function safeRemoveLocalStorage(key) {
+            try {
+                localStorage.removeItem(key);
+            } catch (error) {}
+        }
+
+        const THEME_MANUAL_KEY = 'kuleu_theme_manual';
+        const THEME_LEGACY_KEY = 'kuleu_theme';
+        const THEME_SWITCH_DURATION = 920;
+
+        let themeSwitchLocked = false;
+        let systemThemeMediaQuery = null;
+        let systemThemeListenerBound = false;
+
+        function getInitialTheme() {
+            const manualTheme = normalizeTheme(safeGetLocalStorage(THEME_MANUAL_KEY));
+            return manualTheme || getSystemTheme();
+        }
+
+        function updateThemeToggleButton(theme) {
+            if (!themeToggleBtn) return;
+
+            const isLight = theme === 'light';
+            themeToggleBtn.textContent = isLight ? '深色模式' : '浅色模式';
+            themeToggleBtn.title = isLight ? '切换为深色模式' : '切换为浅色模式';
+            themeToggleBtn.setAttribute('aria-label', isLight ? '切换为深色模式' : '切换为浅色模式');
+        }
+
         function applyTheme(theme, options = {}) {
             const { save = false, showToast = false } = options;
-            const isLight = theme === 'light';
+            const nextTheme = normalizeTheme(theme) || getSystemTheme();
+            const isLight = nextTheme === 'light';
+            const root = document.documentElement;
 
-            document.documentElement.classList.toggle('theme-light', isLight);
-            document.body.classList.toggle('theme-light', isLight);
-            document.documentElement.setAttribute('data-theme', theme);
+            root.classList.toggle('theme-light', isLight);
+            root.setAttribute('data-theme', nextTheme);
+            root.style.colorScheme = nextTheme;
 
-            if (themeToggleBtn) {
-                themeToggleBtn.textContent = isLight ? '深色模式' : '浅色模式';
-                themeToggleBtn.title = isLight ? '切换为深色模式' : '切换为浅色模式';
+            if (document.body) {
+                document.body.classList.toggle('theme-light', isLight);
             }
 
+            updateThemeToggleButton(nextTheme);
+
             if (save) {
-                localStorage.setItem('kuleu_theme_manual', theme);
+                safeSetLocalStorage(THEME_MANUAL_KEY, nextTheme);
             }
 
             if (showToast) {
@@ -6633,81 +6908,160 @@
             }
         }
 
-        function initThemeToggle() {
-            localStorage.removeItem('kuleu_theme');
+        function prefersReducedMotion() {
+            return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        }
 
-            const manualTheme = localStorage.getItem('kuleu_theme_manual');
-            const initialTheme = manualTheme || getSystemTheme();
+        function getThemeSwitchGeometry(event) {
+            let x = window.innerWidth / 2;
+            let y = 0;
 
-            applyTheme(initialTheme, { save: false });
-
-            if (themeToggleBtn) {
-                themeToggleBtn.addEventListener('click', () => {
-                    const currentIsLight = document.documentElement.getAttribute('data-theme') === 'light';
-                    const nextTheme = currentIsLight ? 'dark' : 'light';
-
-                    applyTheme(nextTheme, {
-                        save: true,
-                        showToast: true
-                    });
-                });
+            if (event && typeof event.clientX === 'number' && typeof event.clientY === 'number') {
+                x = event.clientX;
+                y = event.clientY;
+            } else if (themeToggleBtn) {
+                const rect = themeToggleBtn.getBoundingClientRect();
+                x = rect.left + rect.width / 2;
+                y = rect.top + rect.height / 2;
             }
 
-            if (window.matchMedia) {
-                const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
-                const handleSystemThemeChange = event => {
-                    const manualThemeNow = localStorage.getItem('kuleu_theme_manual');
-                    if (manualThemeNow) return;
+            const radius = Math.ceil(Math.hypot(
+                Math.max(x, window.innerWidth - x),
+                Math.max(y, window.innerHeight - y)
+            ));
 
-                    applyTheme(event.matches ? 'light' : 'dark', {
-                        save: false,
-                        showToast: false
-                    });
-                };
+            return { x, y, radius };
+        }
 
-                if (mediaQuery.addEventListener) {
-                    mediaQuery.addEventListener('change', handleSystemThemeChange);
-                } else if (mediaQuery.addListener) {
-                    mediaQuery.addListener(handleSystemThemeChange);
+        function setThemeSwitchCssVars(geometry) {
+            const root = document.documentElement;
+            root.style.setProperty('--theme-switch-x', `${geometry.x}px`);
+            root.style.setProperty('--theme-switch-y', `${geometry.y}px`);
+            root.style.setProperty('--theme-switch-radius', `${geometry.radius + 120}px`);
+            root.style.setProperty('--theme-switch-duration', `${THEME_SWITCH_DURATION}ms`);
+        }
+
+        function playThemeBurst(geometry, nextTheme) {
+            if (!document.body || prefersReducedMotion()) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = `theme-burst-overlay theme-burst-${nextTheme}`;
+            overlay.style.setProperty('--theme-switch-x', `${geometry.x}px`);
+            overlay.style.setProperty('--theme-switch-y', `${geometry.y}px`);
+            overlay.style.setProperty('--theme-switch-radius', `${geometry.radius + 120}px`);
+            overlay.style.setProperty('--theme-switch-duration', `${THEME_SWITCH_DURATION}ms`);
+
+            document.body.appendChild(overlay);
+
+            window.setTimeout(() => {
+                overlay.remove();
+            }, THEME_SWITCH_DURATION + 180);
+        }
+
+        function cleanupThemeSwitchState() {
+            const root = document.documentElement;
+            root.classList.remove('theme-animating', 'theme-to-light', 'theme-to-dark');
+            themeSwitchLocked = false;
+        }
+
+        async function switchThemeWithAnimation(nextTheme, event) {
+            if (themeSwitchLocked) return;
+
+            const theme = normalizeTheme(nextTheme);
+            if (!theme) return;
+
+            const root = document.documentElement;
+            const geometry = getThemeSwitchGeometry(event);
+
+            setThemeSwitchCssVars(geometry);
+
+            if (prefersReducedMotion() || !document.body) {
+                applyTheme(theme, { save: true, showToast: true });
+                return;
+            }
+
+            themeSwitchLocked = true;
+            root.classList.add('theme-animating', `theme-to-${theme}`);
+            playThemeBurst(geometry, theme);
+
+            let committed = false;
+
+            const commitTheme = () => {
+                committed = true;
+                applyTheme(theme, {
+                    save: true,
+                    showToast: true
+                });
+            };
+
+            if (document.startViewTransition) {
+                try {
+                    const transition = document.startViewTransition(commitTheme);
+                    await transition.finished;
+                } catch (error) {
+                    if (!committed) {
+                        commitTheme();
+                    }
+                } finally {
+                    cleanupThemeSwitchState();
                 }
+
+                return;
+            }
+
+            window.setTimeout(commitTheme, Math.round(THEME_SWITCH_DURATION * 0.72));
+            window.setTimeout(cleanupThemeSwitchState, THEME_SWITCH_DURATION + 180);
+        }
+
+        function bindSystemThemeAutoSync() {
+            if (!window.matchMedia || systemThemeListenerBound) return;
+
+            systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+            systemThemeListenerBound = true;
+
+            const handleSystemThemeChange = event => {
+                const manualThemeNow = normalizeTheme(safeGetLocalStorage(THEME_MANUAL_KEY));
+                if (manualThemeNow) return;
+
+                // 系统变化不是站内主动点击，不走炫技动画，避免突然的动画干扰。
+                applyTheme(event.matches ? 'light' : 'dark', {
+                    save: false,
+                    showToast: false
+                });
+            };
+
+            if (systemThemeMediaQuery.addEventListener) {
+                systemThemeMediaQuery.addEventListener('change', handleSystemThemeChange);
+            } else if (systemThemeMediaQuery.addListener) {
+                systemThemeMediaQuery.addListener(handleSystemThemeChange);
             }
         }
 
         function initThemeToggle() {
-            // 删除旧版本保存的主题，避免旧的 kuleu_theme=dark 一直覆盖系统浅色
-            localStorage.removeItem('kuleu_theme');
+            // 清理旧版本保存的主题键；真正使用的是 kuleu_theme_manual。
+            safeRemoveLocalStorage(THEME_LEGACY_KEY);
 
-            const manualTheme = localStorage.getItem('kuleu_theme_manual');
-            const initialTheme = manualTheme || getSystemTheme();
+            // head 内联脚本已经在首屏渲染前设置过 html 主题；
+            // 这里仅同步 body class 与按钮文字，不会产生可见跳变。
+            applyTheme(getInitialTheme(), {
+                save: false,
+                showToast: false
+            });
 
-            applyTheme(initialTheme, { save: false });
+            if (themeToggleBtn && themeToggleBtn.dataset.themeBound !== '1') {
+                themeToggleBtn.dataset.themeBound = '1';
 
-            if (themeToggleBtn) {
-                themeToggleBtn.addEventListener('click', () => {
-                    const currentIsLight = document.documentElement.classList.contains('theme-light');
-                    const nextTheme = currentIsLight ? 'dark' : 'light';
+                themeToggleBtn.addEventListener('click', event => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme') === 'light'
+                        ? 'light'
+                        : 'dark';
 
-                    applyTheme(nextTheme, {
-                        save: true,
-                        showToast: true
-                    });
+                    const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+                    switchThemeWithAnimation(nextTheme, event);
                 });
             }
 
-            if (window.matchMedia) {
-                const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
-
-                mediaQuery.addEventListener('change', event => {
-                    const manualThemeNow = localStorage.getItem('kuleu_theme_manual');
-
-                    if (manualThemeNow) return;
-
-                    applyTheme(event.matches ? 'light' : 'dark', {
-                        save: false,
-                        showToast: false
-                    });
-                });
-            }
+            bindSystemThemeAutoSync();
         }
 
         function exportSearchHistoryData() {
