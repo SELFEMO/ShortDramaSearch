@@ -2341,180 +2341,71 @@
             background: rgba(15, 23, 42, 0.08);
         }
 
-        /* ==================== 深浅模式高级切换动画 ==================== */
+        /* ==================== 深浅模式无分层切换：幕布 + 临时冻结动效 ==================== */
         :root {
-            --theme-switch-x: 50vw;
-            --theme-switch-y: 0px;
-            --theme-switch-radius: 150vmax;
-            --theme-switch-duration: 920ms;
-            --theme-switch-ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --theme-curtain-in-duration: 80ms;
+            --theme-curtain-hold-duration: 80ms;
+            --theme-curtain-out-duration: 130ms;
+            --theme-curtain-ease: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         html.theme-animating,
-        html.theme-animating * {
-            cursor: progress;
+        html.theme-animating body {
+            cursor: default;
         }
 
-        ::view-transition-group(root) {
-            animation-duration: var(--theme-switch-duration);
-            animation-timing-function: var(--theme-switch-ease);
+        /*
+         * 关键修复：
+         * 主题切换期间，临时关闭页面所有普通元素的 transition / animation。
+         * 否则输入框、按钮、榜单卡片、结果折叠区会各自过渡，造成分层闪烁。
+         */
+        html.theme-animating *:not(.theme-curtain-overlay) {
+            transition: none !important;
+            animation: none !important;
         }
 
-        ::view-transition-old(root),
-        ::view-transition-new(root) {
-            animation-duration: var(--theme-switch-duration);
-            animation-timing-function: var(--theme-switch-ease);
-            animation-fill-mode: both;
-            mix-blend-mode: normal;
+        html.theme-animating *::before,
+        html.theme-animating *::after {
+            transition: none !important;
+            animation: none !important;
         }
 
-        ::view-transition-old(root) {
-            z-index: 1;
-            animation-name: themeOldSceneFade;
-        }
-
-        ::view-transition-new(root) {
-            z-index: 2;
-            animation-name: themeNewSceneReveal;
-            clip-path: circle(0 at var(--theme-switch-x) var(--theme-switch-y));
-        }
-
-        @keyframes themeNewSceneReveal {
-            0% {
-                clip-path: circle(0 at var(--theme-switch-x) var(--theme-switch-y));
-                filter: saturate(1.25) brightness(1.06);
-            }
-            62% {
-                filter: saturate(1.12) brightness(1.03);
-            }
-            100% {
-                clip-path: circle(var(--theme-switch-radius) at var(--theme-switch-x) var(--theme-switch-y));
-                filter: saturate(1) brightness(1);
-            }
-        }
-
-        @keyframes themeOldSceneFade {
-            0% {
-                filter: saturate(1) brightness(1);
-            }
-            100% {
-                filter: saturate(0.82) brightness(0.92) blur(1.5px);
-            }
-        }
-
-        .theme-burst-overlay {
+        .theme-curtain-overlay {
             position: fixed;
             inset: 0;
-            z-index: 100000;
+            z-index: 2147483647;
             pointer-events: none;
-            overflow: hidden;
-            opacity: 1;
-            contain: paint;
-            --wipe-bg: rgba(10, 10, 15, 0.92);
-            --burst-color-1: rgba(255, 107, 53, 0.42);
-            --burst-color-2: rgba(139, 92, 246, 0.26);
-            --burst-color-3: rgba(255, 255, 255, 0.20);
-        }
-
-        .theme-burst-overlay.theme-burst-dark {
-            --wipe-bg: rgba(10, 10, 15, 0.94);
-            --burst-color-1: rgba(255, 107, 53, 0.44);
-            --burst-color-2: rgba(99, 102, 241, 0.30);
-            --burst-color-3: rgba(10, 10, 15, 0.62);
-        }
-
-        .theme-burst-overlay.theme-burst-light {
-            --wipe-bg: rgba(244, 246, 251, 0.96);
-            --burst-color-1: rgba(255, 183, 77, 0.46);
-            --burst-color-2: rgba(96, 165, 250, 0.25);
-            --burst-color-3: rgba(255, 255, 255, 0.72);
-        }
-
-        .theme-burst-overlay::before {
-            content: '';
-            position: absolute;
-            left: var(--theme-switch-x);
-            top: var(--theme-switch-y);
-            width: calc(var(--theme-switch-radius) * 2);
-            height: calc(var(--theme-switch-radius) * 2);
-            border-radius: 999px;
-            transform: translate(-50%, -50%) scale(0);
-            background:
-                    radial-gradient(
-                            circle,
-                            var(--burst-color-3) 0 7%,
-                            transparent 8% 12%,
-                            var(--wipe-bg) 13% 58%,
-                            var(--burst-color-1) 59% 61%,
-                            transparent 62% 100%
-                    ),
-                    radial-gradient(circle, var(--burst-color-2), transparent 70%);
-            box-shadow:
-                    0 0 34px var(--burst-color-1),
-                    0 0 88px var(--burst-color-2),
-                    inset 0 0 20px rgba(255,255,255,0.26);
-            animation: themeBurstRing var(--theme-switch-duration) var(--theme-switch-ease) forwards;
-        }
-
-        .theme-burst-overlay::after {
-            content: '';
-            position: absolute;
-            inset: 0;
             opacity: 0;
-            background:
-                    radial-gradient(circle at var(--theme-switch-x) var(--theme-switch-y), var(--burst-color-3), transparent 22%),
-                    conic-gradient(from 90deg at var(--theme-switch-x) var(--theme-switch-y), transparent, var(--burst-color-1), transparent, var(--burst-color-2), transparent);
-            filter: blur(10px) saturate(1.25);
-            animation: themeBurstGlare var(--theme-switch-duration) ease forwards;
+            background: var(--theme-curtain-bg, #0a0a0f);
+            contain: strict;
+            will-change: opacity;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transition: opacity var(--theme-curtain-in-duration) var(--theme-curtain-ease);
         }
 
-        @keyframes themeBurstRing {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0);
-            }
-            12% {
-                opacity: 1;
-            }
-            72% {
-                opacity: 0.78;
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(1);
-            }
+        .theme-curtain-overlay.is-covering {
+            opacity: 1;
         }
 
-        @keyframes themeBurstGlare {
-            0% {
-                opacity: 0;
-                transform: scale(0.98) rotate(0deg);
-            }
-            18% {
-                opacity: 0.68;
-            }
-            58% {
-                opacity: 0.25;
-            }
-            100% {
-                opacity: 0;
-                transform: scale(1.04) rotate(18deg);
+        .theme-curtain-overlay.is-revealing {
+            opacity: 0;
+            transition-duration: var(--theme-curtain-out-duration);
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --theme-curtain-in-duration: 60ms;
+                --theme-curtain-hold-duration: 70ms;
+                --theme-curtain-out-duration: 110ms;
             }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            html.theme-animating,
-            html.theme-animating * {
-                cursor: auto;
-            }
-
-            ::view-transition-group(root),
-            ::view-transition-old(root),
-            ::view-transition-new(root),
-            .theme-burst-overlay,
-            .theme-burst-overlay::before,
-            .theme-burst-overlay::after {
-                animation: none !important;
+            .theme-curtain-overlay {
+                display: none !important;
                 transition: none !important;
             }
         }
@@ -6863,7 +6754,19 @@
 
         const THEME_MANUAL_KEY = 'kuleu_theme_manual';
         const THEME_LEGACY_KEY = 'kuleu_theme';
-        const THEME_SWITCH_DURATION = 920;
+
+        /*
+         * 深浅模式最终修复版：
+         * 1. 不使用 View Transition。
+         * 2. 不使用 clip-path / filter / blur。
+         * 3. 不做透明遮罩叠加。
+         * 4. 使用不透明幕布遮住页面。
+         * 5. 切换期间给 html 加 theme-animating，CSS 临时禁用所有元素 transition / animation。
+         * 6. 等主题变量、输入框、按钮、榜单卡片、折叠列表全部同步完成后，再揭开幕布。
+         */
+        const THEME_CURTAIN_IN_DURATION = 80;
+        const THEME_CURTAIN_HOLD_DURATION = 80;
+        const THEME_CURTAIN_OUT_DURATION = 130;
 
         let themeSwitchLocked = false;
         let systemThemeMediaQuery = null;
@@ -6912,68 +6815,74 @@
             return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         }
 
-        function getThemeSwitchGeometry(event) {
-            let x = window.innerWidth / 2;
-            let y = 0;
+        function getCurrentThemeCurtainColor() {
+            const rootStyles = getComputedStyle(document.documentElement);
+            const rootBg = rootStyles.getPropertyValue('--bg').trim();
 
-            if (event && typeof event.clientX === 'number' && typeof event.clientY === 'number') {
-                x = event.clientX;
-                y = event.clientY;
-            } else if (themeToggleBtn) {
-                const rect = themeToggleBtn.getBoundingClientRect();
-                x = rect.left + rect.width / 2;
-                y = rect.top + rect.height / 2;
+            if (rootBg) return rootBg;
+
+            if (document.body) {
+                const bodyBg = getComputedStyle(document.body).backgroundColor;
+                if (bodyBg) return bodyBg;
             }
 
-            const radius = Math.ceil(Math.hypot(
-                Math.max(x, window.innerWidth - x),
-                Math.max(y, window.innerHeight - y)
-            ));
-
-            return { x, y, radius };
-        }
-
-        function setThemeSwitchCssVars(geometry) {
-            const root = document.documentElement;
-            root.style.setProperty('--theme-switch-x', `${geometry.x}px`);
-            root.style.setProperty('--theme-switch-y', `${geometry.y}px`);
-            root.style.setProperty('--theme-switch-radius', `${geometry.radius + 120}px`);
-            root.style.setProperty('--theme-switch-duration', `${THEME_SWITCH_DURATION}ms`);
-        }
-
-        function playThemeBurst(geometry, nextTheme) {
-            if (!document.body || prefersReducedMotion()) return;
-
-            const overlay = document.createElement('div');
-            overlay.className = `theme-burst-overlay theme-burst-${nextTheme}`;
-            overlay.style.setProperty('--theme-switch-x', `${geometry.x}px`);
-            overlay.style.setProperty('--theme-switch-y', `${geometry.y}px`);
-            overlay.style.setProperty('--theme-switch-radius', `${geometry.radius + 120}px`);
-            overlay.style.setProperty('--theme-switch-duration', `${THEME_SWITCH_DURATION}ms`);
-
-            document.body.appendChild(overlay);
-
-            window.setTimeout(() => {
-                overlay.remove();
-            }, THEME_SWITCH_DURATION + 180);
+            return document.documentElement.classList.contains('theme-light')
+                ? '#f7f4ef'
+                : '#0a0a0f';
         }
 
         function cleanupThemeSwitchState() {
             const root = document.documentElement;
             root.classList.remove('theme-animating', 'theme-to-light', 'theme-to-dark');
+
+            if (themeToggleBtn) {
+                themeToggleBtn.disabled = false;
+                themeToggleBtn.removeAttribute('aria-busy');
+            }
+
             themeSwitchLocked = false;
         }
 
-        async function switchThemeWithAnimation(nextTheme, event) {
+        function createThemeCurtainOverlay() {
+            if (!document.body || prefersReducedMotion()) return null;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'theme-curtain-overlay';
+            overlay.style.setProperty('--theme-curtain-bg', getCurrentThemeCurtainColor());
+
+            document.body.appendChild(overlay);
+
+            // 触发布局，让 opacity 进入动画能稳定执行。
+            overlay.offsetHeight;
+            overlay.classList.add('is-covering');
+
+            return overlay;
+        }
+
+        function revealAndRemoveThemeCurtain(overlay) {
+            if (!overlay) return;
+
+            overlay.classList.remove('is-covering');
+            overlay.classList.add('is-revealing');
+
+            window.setTimeout(() => {
+                overlay.remove();
+            }, THEME_CURTAIN_OUT_DURATION + 40);
+        }
+
+        function waitTwoFrames(callback) {
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(callback);
+            });
+        }
+
+        function switchThemeWithAnimation(nextTheme, event) {
             if (themeSwitchLocked) return;
 
             const theme = normalizeTheme(nextTheme);
             if (!theme) return;
 
             const root = document.documentElement;
-            const geometry = getThemeSwitchGeometry(event);
-
-            setThemeSwitchCssVars(geometry);
 
             if (prefersReducedMotion() || !document.body) {
                 applyTheme(theme, { save: true, showToast: true });
@@ -6981,36 +6890,45 @@
             }
 
             themeSwitchLocked = true;
+
+            /*
+             * 先加 theme-animating。
+             * 这一步会通过 CSS 临时关掉所有元素自身 transition / animation。
+             */
             root.classList.add('theme-animating', `theme-to-${theme}`);
-            playThemeBurst(geometry, theme);
 
-            let committed = false;
+            if (themeToggleBtn) {
+                themeToggleBtn.disabled = true;
+                themeToggleBtn.setAttribute('aria-busy', 'true');
+            }
 
-            const commitTheme = () => {
-                committed = true;
+            const overlay = createThemeCurtainOverlay();
+
+            window.setTimeout(() => {
+                /*
+                 * 幕布已经盖住后，再切主题。
+                 * 由于 theme-animating 已经禁用了所有元素 transition，
+                 * 输入框、按钮、榜单项、结果卡片、折叠列表会一次性同步换色。
+                 */
                 applyTheme(theme, {
                     save: true,
                     showToast: true
                 });
-            };
 
-            if (document.startViewTransition) {
-                try {
-                    const transition = document.startViewTransition(commitTheme);
-                    await transition.finished;
-                } catch (error) {
-                    if (!committed) {
-                        commitTheme();
-                    }
-                } finally {
-                    cleanupThemeSwitchState();
-                }
+                /*
+                 * 等两帧，让浏览器完成样式计算和重绘。
+                 * 再额外 hold 一下，避免低端 WebView 还没把顶层合成层更新完就揭幕。
+                 */
+                waitTwoFrames(() => {
+                    window.setTimeout(() => {
+                        revealAndRemoveThemeCurtain(overlay);
 
-                return;
-            }
-
-            window.setTimeout(commitTheme, Math.round(THEME_SWITCH_DURATION * 0.72));
-            window.setTimeout(cleanupThemeSwitchState, THEME_SWITCH_DURATION + 180);
+                        window.setTimeout(() => {
+                            cleanupThemeSwitchState();
+                        }, THEME_CURTAIN_OUT_DURATION + 60);
+                    }, THEME_CURTAIN_HOLD_DURATION);
+                });
+            }, THEME_CURTAIN_IN_DURATION);
         }
 
         function bindSystemThemeAutoSync() {
