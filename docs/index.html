@@ -2341,72 +2341,86 @@
             background: rgba(15, 23, 42, 0.08);
         }
 
-        /* ==================== 深浅模式无分层切换：幕布 + 临时冻结动效 ==================== */
+        /* ==================== 深浅模式最终方案：页面快照过渡，真实元素不动 ==================== */
         :root {
-            --theme-curtain-in-duration: 80ms;
-            --theme-curtain-hold-duration: 80ms;
-            --theme-curtain-out-duration: 130ms;
-            --theme-curtain-ease: cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        html.theme-animating,
-        html.theme-animating body {
-            cursor: default;
+            --theme-vt-duration: 180ms;
+            --theme-vt-ease: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         /*
-         * 关键修复：
-         * 主题切换期间，临时关闭页面所有普通元素的 transition / animation。
-         * 否则输入框、按钮、榜单卡片、结果折叠区会各自过渡，造成分层闪烁。
+         * 主题切换期间，真实 DOM 不参与任何动画。
+         * 这样可以避免按钮、输入框、卡片、榜单、结果项各自闪烁。
          */
-        html.theme-animating *:not(.theme-curtain-overlay) {
+        html.theme-switching *,
+        html.theme-switching *::before,
+        html.theme-switching *::after {
             transition: none !important;
-            animation: none !important;
+            animation-play-state: paused !important;
         }
 
-        html.theme-animating *::before,
-        html.theme-animating *::after {
-            transition: none !important;
-            animation: none !important;
+        /*
+         * View Transition 只做整页快照交叉淡入淡出。
+         * 不做 clip-path、不做扩散、不做 blur、不做局部元素动画。
+         */
+        ::view-transition-group(root) {
+            animation-duration: var(--theme-vt-duration);
+            animation-timing-function: var(--theme-vt-ease);
         }
 
-        .theme-curtain-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 2147483647;
-            pointer-events: none;
-            opacity: 0;
-            background: var(--theme-curtain-bg, #0a0a0f);
-            contain: strict;
-            will-change: opacity;
-            transform: translate3d(0, 0, 0);
-            -webkit-transform: translate3d(0, 0, 0);
+        ::view-transition-old(root) {
+            animation-name: themeSnapshotOldOut;
+            mix-blend-mode: normal;
+        }
+
+        ::view-transition-new(root) {
+            animation-name: themeSnapshotNewIn;
+            mix-blend-mode: normal;
+        }
+
+        @keyframes themeSnapshotOldOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes themeSnapshotNewIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /*
+         * 降低移动端 WebView 因 fixed / filter / blur 合成导致的闪动。
+         */
+        html.theme-switching .floating-orb {
+            animation-play-state: paused !important;
+        }
+
+        html.theme-switching .bg-pattern,
+        html.theme-switching .app-nav,
+        html.theme-switching .main-content {
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            transition: opacity var(--theme-curtain-in-duration) var(--theme-curtain-ease);
-        }
-
-        .theme-curtain-overlay.is-covering {
-            opacity: 1;
-        }
-
-        .theme-curtain-overlay.is-revealing {
-            opacity: 0;
-            transition-duration: var(--theme-curtain-out-duration);
+            transform: translate3d(0, 0, 0);
         }
 
         @media (max-width: 768px) {
             :root {
-                --theme-curtain-in-duration: 60ms;
-                --theme-curtain-hold-duration: 70ms;
-                --theme-curtain-out-duration: 110ms;
+                --theme-vt-duration: 140ms;
             }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .theme-curtain-overlay {
-                display: none !important;
-                transition: none !important;
+            ::view-transition-group(root),
+            ::view-transition-old(root),
+            ::view-transition-new(root) {
+                animation: none !important;
             }
         }
 
@@ -6756,17 +6770,12 @@
         const THEME_LEGACY_KEY = 'kuleu_theme';
 
         /*
-         * 深浅模式最终修复版：
-         * 1. 不使用 View Transition。
-         * 2. 不使用 clip-path / filter / blur。
-         * 3. 不做透明遮罩叠加。
-         * 4. 使用不透明幕布遮住页面。
-         * 5. 切换期间给 html 加 theme-animating，CSS 临时禁用所有元素 transition / animation。
-         * 6. 等主题变量、输入框、按钮、榜单卡片、折叠列表全部同步完成后，再揭开幕布。
+         * 深浅模式最终方案：
+         * 1. 真实 DOM 不做颜色过渡。
+         * 2. 使用 View Transition 的页面快照做整页淡入淡出。
+         * 3. 避免“整体幕布闪”和“元素各自闪”。
          */
-        const THEME_CURTAIN_IN_DURATION = 80;
-        const THEME_CURTAIN_HOLD_DURATION = 80;
-        const THEME_CURTAIN_OUT_DURATION = 130;
+        const THEME_SWITCH_UNLOCK_DELAY = 260;
 
         let themeSwitchLocked = false;
         let systemThemeMediaQuery = null;
@@ -6815,25 +6824,19 @@
             return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         }
 
-        function getCurrentThemeCurtainColor() {
-            const rootStyles = getComputedStyle(document.documentElement);
-            const rootBg = rootStyles.getPropertyValue('--bg').trim();
+        function lockThemeSwitch() {
+            themeSwitchLocked = true;
 
-            if (rootBg) return rootBg;
+            document.documentElement.classList.add('theme-switching');
 
-            if (document.body) {
-                const bodyBg = getComputedStyle(document.body).backgroundColor;
-                if (bodyBg) return bodyBg;
+            if (themeToggleBtn) {
+                themeToggleBtn.disabled = true;
+                themeToggleBtn.setAttribute('aria-busy', 'true');
             }
-
-            return document.documentElement.classList.contains('theme-light')
-                ? '#f7f4ef'
-                : '#0a0a0f';
         }
 
-        function cleanupThemeSwitchState() {
-            const root = document.documentElement;
-            root.classList.remove('theme-animating', 'theme-to-light', 'theme-to-dark');
+        function unlockThemeSwitch() {
+            document.documentElement.classList.remove('theme-switching');
 
             if (themeToggleBtn) {
                 themeToggleBtn.disabled = false;
@@ -6841,39 +6844,6 @@
             }
 
             themeSwitchLocked = false;
-        }
-
-        function createThemeCurtainOverlay() {
-            if (!document.body || prefersReducedMotion()) return null;
-
-            const overlay = document.createElement('div');
-            overlay.className = 'theme-curtain-overlay';
-            overlay.style.setProperty('--theme-curtain-bg', getCurrentThemeCurtainColor());
-
-            document.body.appendChild(overlay);
-
-            // 触发布局，让 opacity 进入动画能稳定执行。
-            overlay.offsetHeight;
-            overlay.classList.add('is-covering');
-
-            return overlay;
-        }
-
-        function revealAndRemoveThemeCurtain(overlay) {
-            if (!overlay) return;
-
-            overlay.classList.remove('is-covering');
-            overlay.classList.add('is-revealing');
-
-            window.setTimeout(() => {
-                overlay.remove();
-            }, THEME_CURTAIN_OUT_DURATION + 40);
-        }
-
-        function waitTwoFrames(callback) {
-            window.requestAnimationFrame(() => {
-                window.requestAnimationFrame(callback);
-            });
         }
 
         function switchThemeWithAnimation(nextTheme, event) {
@@ -6884,51 +6854,47 @@
 
             const root = document.documentElement;
 
+            /*
+             * 用户设置了减少动态效果时，直接切。
+             */
             if (prefersReducedMotion() || !document.body) {
                 applyTheme(theme, { save: true, showToast: true });
                 return;
             }
 
-            themeSwitchLocked = true;
+            lockThemeSwitch();
 
             /*
-             * 先加 theme-animating。
-             * 这一步会通过 CSS 临时关掉所有元素自身 transition / animation。
+             * 支持 View Transition 的浏览器：
+             * 浏览器会自动截取旧页面和新页面快照。
+             * 真实 DOM 瞬间完成主题切换，用户看到的是快照整体淡入淡出。
              */
-            root.classList.add('theme-animating', `theme-to-${theme}`);
+            if (document.startViewTransition) {
+                const transition = document.startViewTransition(() => {
+                    applyTheme(theme, {
+                        save: true,
+                        showToast: true
+                    });
+                });
 
-            if (themeToggleBtn) {
-                themeToggleBtn.disabled = true;
-                themeToggleBtn.setAttribute('aria-busy', 'true');
+                transition.finished.finally(() => {
+                    window.setTimeout(unlockThemeSwitch, 40);
+                });
+
+                return;
             }
 
-            const overlay = createThemeCurtainOverlay();
+            /*
+             * 不支持 View Transition 的浏览器兜底：
+             * 这里宁愿直接切，也不要再做元素级过渡。
+             * 因为元素级过渡就是你现在看到的“各自闪”。
+             */
+            applyTheme(theme, {
+                save: true,
+                showToast: true
+            });
 
-            window.setTimeout(() => {
-                /*
-                 * 幕布已经盖住后，再切主题。
-                 * 由于 theme-animating 已经禁用了所有元素 transition，
-                 * 输入框、按钮、榜单项、结果卡片、折叠列表会一次性同步换色。
-                 */
-                applyTheme(theme, {
-                    save: true,
-                    showToast: true
-                });
-
-                /*
-                 * 等两帧，让浏览器完成样式计算和重绘。
-                 * 再额外 hold 一下，避免低端 WebView 还没把顶层合成层更新完就揭幕。
-                 */
-                waitTwoFrames(() => {
-                    window.setTimeout(() => {
-                        revealAndRemoveThemeCurtain(overlay);
-
-                        window.setTimeout(() => {
-                            cleanupThemeSwitchState();
-                        }, THEME_CURTAIN_OUT_DURATION + 60);
-                    }, THEME_CURTAIN_HOLD_DURATION);
-                });
-            }, THEME_CURTAIN_IN_DURATION);
+            window.setTimeout(unlockThemeSwitch, THEME_SWITCH_UNLOCK_DELAY);
         }
 
         function bindSystemThemeAutoSync() {
