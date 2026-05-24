@@ -1896,21 +1896,25 @@
             .result-actions,
             .favorite-actions {
                 padding-left: 0;
-                flex-direction: column;
+                padding-right: 0;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 7px;
             }
 
             .resource-action-btn {
-                width: 100%;
+                width: auto;
+                flex: 0 0 auto;
+                min-height: 30px;
+                padding: 0 10px;
+                white-space: nowrap;
             }
 
             .favorites-toolbar {
                 flex-direction: column;
                 align-items: stretch;
-            }
-
-            .favorite-search-input,
-            .favorite-clear-btn {
-                width: 100%;
             }
         }
 
@@ -2298,6 +2302,145 @@
 
         .hidden-file-input {
             display: none;
+        }
+
+        /* ==================== 失效资源自动折叠 / 资源质量评分 ==================== */
+        .broken-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px;
+        }
+
+        .broken-filter-btn {
+            min-height: 32px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            color: #ddd;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .broken-filter-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .broken-filter-tip {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .result-item.is-local-broken {
+            opacity: 0.62;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .result-item.is-local-broken::after {
+            content: '疑似失效';
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(239, 68, 68, 0.14);
+            color: #f87171;
+            font-size: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.24);
+            z-index: 4;
+        }
+
+        @media (max-width: 768px) {
+            .drama-title {
+                padding-right: 0;
+            }
+
+            .quality-rating {
+                display: flex;
+                width: 100%;
+                margin-left: 0;
+                margin-top: 6px;
+                flex-wrap: wrap;
+            }
+
+            .result-item.is-local-broken {
+                padding-bottom: 12px;
+            }
+
+            .result-item.is-local-broken::after {
+                position: static;
+                display: inline-flex;
+                width: fit-content;
+                margin-top: 10px;
+                margin-left: 0;
+            }
+        }
+
+        .result-item.is-broken-hidden {
+            display: none !important;
+        }
+
+        .quality-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .quality-star {
+            border: none;
+            background: transparent;
+            color: #555564;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            padding: 0 1px;
+            transition: color 0.18s ease, transform 0.18s ease;
+        }
+
+        .quality-star:hover {
+            transform: scale(1.14);
+        }
+
+        .quality-star.is-active {
+            color: #f59e0b;
+        }
+
+        .quality-text {
+            margin-left: 5px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        html.theme-light .broken-filter-btn {
+            background: #ffffff;
+            color: #374151;
+            border-color: #d7dde8;
+        }
+
+        html.theme-light .broken-filter-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        html.theme-light .quality-star {
+            color: #cbd5e1;
+        }
+
+        html.theme-light .quality-star.is-active {
+            color: #f59e0b;
+        }
+
+        html.theme-light .result-item.is-local-broken {
+            background: #fff7f7;
+            border-color: rgba(220, 38, 38, 0.28);
         }
     </style>
 </head>
@@ -3015,7 +3158,9 @@
         const LOCAL_KEYS = {
             history: 'kuleu_search_history_v1',
             favorites: 'kuleu_favorites_v1',
-            broken: 'kuleu_broken_links_v1'
+            broken: 'kuleu_broken_links_v1',
+            quality: 'kuleu_resource_quality_v1',
+            hideBroken: 'kuleu_hide_broken_v1'
         };
 
         function readLocalList(key) {
@@ -3151,6 +3296,125 @@
 
             saveBrokenLinks(nextList);
             updateBrokenButtons();
+            updateBrokenVisibility();
+            renderFavorites();
+        }
+
+        function getResourceQualityMap() {
+            const data = safeJsonParse(localStorage.getItem(LOCAL_KEYS.quality), {});
+            return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+        }
+
+        function saveResourceQualityMap(map) {
+            localStorage.setItem(LOCAL_KEYS.quality, JSON.stringify(map || {}));
+        }
+
+        function getResourceQuality(link) {
+            const id = makeResourceId(link);
+            const map = getResourceQualityMap();
+            const score = Number(map[id] || 0);
+            return Number.isFinite(score) ? Math.max(0, Math.min(5, score)) : 0;
+        }
+
+        function setResourceQuality(link, score) {
+            if (!link) {
+                showStatus('评分失败：链接为空');
+                return;
+            }
+
+            const id = makeResourceId(link);
+            const map = getResourceQualityMap();
+            const cleanScore = Math.max(0, Math.min(5, Number(score) || 0));
+
+            if (cleanScore <= 0) {
+                delete map[id];
+            } else {
+                map[id] = cleanScore;
+            }
+
+            saveResourceQualityMap(map);
+            updateQualityRatings(link);
+            renderFavorites();
+
+            showStatus(cleanScore ? `已评分 ${cleanScore} 星` : '已清除评分');
+        }
+
+        function isHideBrokenEnabled() {
+            return localStorage.getItem(LOCAL_KEYS.hideBroken) === '1';
+        }
+
+        function setHideBrokenEnabled(enabled) {
+            localStorage.setItem(LOCAL_KEYS.hideBroken, enabled ? '1' : '0');
+            updateBrokenVisibility();
+        }
+
+        function updateBrokenVisibility() {
+            const hide = isHideBrokenEnabled();
+            let brokenCount = 0;
+
+            document.querySelectorAll('.result-item[data-link]').forEach(item => {
+                const link = item.dataset.link || '';
+                const broken = isBrokenMarked(link);
+
+                item.classList.toggle('is-local-broken', broken);
+                item.classList.toggle('is-broken-hidden', hide && broken);
+
+                if (broken) brokenCount++;
+            });
+
+            const btn = document.getElementById('toggleBrokenFilterBtn');
+            const tip = document.getElementById('brokenFilterTip');
+
+            if (btn) {
+                btn.textContent = hide ? '显示疑似失效资源' : '隐藏疑似失效资源';
+            }
+
+            if (tip) {
+                tip.textContent = brokenCount
+                    ? `当前结果中有 ${brokenCount} 条疑似失效资源`
+                    : '当前结果暂无本地失效标记';
+            }
+        }
+
+        function updateQualityRatings(targetLink = '') {
+            const selector = targetLink
+                ? `.quality-rating[data-link="${CSS.escape(targetLink)}"]`
+                : '.quality-rating[data-link]';
+
+            document.querySelectorAll(selector).forEach(box => {
+                const link = box.dataset.link || '';
+                const score = getResourceQuality(link);
+
+                box.querySelectorAll('.quality-star').forEach(star => {
+                    const value = Number(star.dataset.score || 0);
+                    star.classList.toggle('is-active', value <= score);
+                });
+
+                const text = box.querySelector('.quality-text');
+                if (text) {
+                    text.textContent = score ? `${score}星` : '未评分';
+                }
+            });
+        }
+
+        function createQualityRatingHtml(link) {
+            const score = getResourceQuality(link);
+
+            return `
+        <span class="quality-rating" data-link="${escapeHtml(link)}" title="本地资源质量评分">
+            ${[1, 2, 3, 4, 5].map(value => `
+                <button
+                    type="button"
+                    class="quality-star ${value <= score ? 'is-active' : ''}"
+                    data-action="quality"
+                    data-score="${value}"
+                    data-link="${escapeHtml(link)}"
+                    aria-label="${value}星"
+                >★</button>
+            `).join('')}
+            <span class="quality-text">${score ? `${score}星` : '未评分'}</span>
+        </span>
+    `;
         }
 
         function renderSearchHistory() {
@@ -3194,7 +3458,7 @@
                 const typeName = TYPE_LABEL[item.type] || item.type || '未知来源';
                 const pwd = item.pwd || '';
                 return `
-            <div class="result-item" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(item.link)}">
+            <div class="result-item ${isBrokenMarked(item.link) ? 'is-local-broken' : ''}" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(item.link)}">
                 <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(item.link)}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/>
@@ -3203,7 +3467,10 @@
                         <rect x="14" y="14" width="7" height="7"/>
                     </svg>
                 </button>
-                <div class="drama-title">${escapeHtml(item.name || '未知资源')}</div>
+                <div class="drama-title">
+                    ${escapeHtml(item.name || '未知资源')}
+                    ${createQualityRatingHtml(item.link)}
+                </div>
                 <div class="info-list">
                     <div class="info-item">
                         <span class="info-label">来源:</span>
@@ -3252,7 +3519,7 @@
         }
 
         function bindResourceActionEvents() {
-            document.querySelectorAll('.resource-action-btn').forEach(btn => {
+            document.querySelectorAll('.resource-action-btn, .quality-star').forEach(btn => {
                 if (btn.dataset.bound === '1') return;
                 btn.dataset.bound = '1';
 
@@ -3291,6 +3558,11 @@
                             link: btn.dataset.link || '',
                             type: btn.dataset.type || ''
                         });
+                        return;
+                    }
+
+                    if (action === 'quality') {
+                        setResourceQuality(btn.dataset.link || '', btn.dataset.score || 0);
                     }
                 });
             });
@@ -3852,8 +4124,8 @@
         qrModalOverlay.addEventListener('click', (e) => { if (e.target === qrModalOverlay) closeQrModal(); });
 
         // ==================== 核心搜索逻辑 ====================
-        let isSearching = false;
         let searchTimer = null;
+        let isSearching = false;
         let currentPreset = 'all';
 
         /**
@@ -3861,6 +4133,57 @@
          * 用来避免旧搜索结果覆盖新搜索结果。
          */
         let searchSequence = 0;
+
+        /* ==================== 搜索接口防 429：缓存 / 合并请求 / 冷却 ==================== */
+        const SEARCH_CACHE_TTL = 60 * 1000;
+        const SEARCH_MIN_INTERVAL = 900;
+
+        const searchApiCache = new Map();
+        const searchApiInflight = new Map();
+
+        let lastSearchApiTime = 0;
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function makeSearchApiCacheKey(url) {
+            return String(url || '').trim();
+        }
+
+        function getCachedSearchApiResult(url) {
+            const key = makeSearchApiCacheKey(url);
+            const cached = searchApiCache.get(key);
+
+            if (!cached) return null;
+
+            if (Date.now() - cached.time > SEARCH_CACHE_TTL) {
+                searchApiCache.delete(key);
+                return null;
+            }
+
+            return cached.data;
+        }
+
+        function setCachedSearchApiResult(url, data) {
+            const key = makeSearchApiCacheKey(url);
+
+            searchApiCache.set(key, {
+                time: Date.now(),
+                data
+            });
+        }
+
+        async function waitSearchApiInterval() {
+            const now = Date.now();
+            const diff = now - lastSearchApiTime;
+
+            if (diff < SEARCH_MIN_INTERVAL) {
+                await sleep(SEARCH_MIN_INTERVAL - diff);
+            }
+
+            lastSearchApiTime = Date.now();
+        }
 
         typeSelect.addEventListener('change', () => {
             currentPreset = typeSelect.value;
@@ -3953,23 +4276,24 @@
             try {
                 let result = await fetchAndMergeData(term, currentPreset);
 
-                /**
-                 * 如果这是旧搜索返回的结果，直接丢弃。
-                 * 这样可以避免：
-                 * A 搜索较慢，B 搜索较快，最后 A 的“未找到”覆盖 B 的正常结果。
-                 */
                 if (searchId !== searchSequence) return;
 
-                /**
-                 * 榜单点击时，接口偶尔会第一次空返回。
-                 * 自动重试一次，避免用户看到“未找到”，但手动再搜又正常。
+                /*
+                 * 只有“真正空结果”才允许重试。
+                 * 如果是 429 / 限流，不重试。
                  */
+                const isRateLimited =
+                    result &&
+                    result.apiStatus &&
+                    result.apiStatus.failedReason === 'rate_limited';
+
                 if (
                     options.retryIfEmpty &&
+                    !isRateLimited &&
                     (!result || result.total === 0 || result.typeList.length === 0)
                 ) {
                     showStatus('首次未命中，正在自动重试...');
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await sleep(1200);
 
                     result = await fetchAndMergeData(term, currentPreset);
 
@@ -3977,6 +4301,17 @@
                 }
 
                 const { mergedByType, total, typeList, apiStatus } = result;
+
+                if (apiStatus && apiStatus.failedReason === 'rate_limited') {
+                    resultsArea.innerHTML = `
+                <div class="status-message">
+                    <p style="color: var(--error);">接口请求过于频繁</p>
+                    <p style="margin-top: 8px;">请稍后再搜索，系统已停止自动重复请求，避免继续触发 429。</p>
+                </div>
+            `;
+                    showStatus('接口请求过于频繁，请稍后再试');
+                    return;
+                }
 
                 if (typeList.length === 0 || total === 0) {
                     resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`;
@@ -3986,10 +4321,6 @@
 
                 renderGroupedResults(mergedByType, typeList, term, total, apiStatus);
 
-                /*
-                 * 第一次搜索成功后，自动完全收起首页短剧热度榜。
-                 * 注意：只有成功搜到结果才会触发。
-                 */
                 autoCollapseRankTagsAfterFirstSuccessfulSearch();
 
                 showStatus(`共找到 ${total} 条结果`);
@@ -3997,6 +4328,18 @@
                 if (searchId !== searchSequence) return;
 
                 console.error(error);
+
+                if (error && error.errorType === 'rate_limited') {
+                    resultsArea.innerHTML = `
+                <div class="status-message">
+                    <p style="color: var(--error);">接口请求过于频繁</p>
+                    <p style="margin-top: 8px;">请稍后再试。系统不会继续自动重试，避免加重限流。</p>
+                </div>
+            `;
+                    showStatus('接口请求过于频繁，请稍后再试');
+                    return;
+                }
+
                 resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">发生错误</p></div>`;
             } finally {
                 if (searchId === searchSequence) {
@@ -4030,6 +4373,21 @@
                 } catch (e) {
                     failedCount++;
                     failedTerms.push(st);
+
+                    if (e && e.errorType === 'rate_limited') {
+                        return {
+                            mergedByType,
+                            total,
+                            typeList: Object.keys(mergedByType),
+                            apiStatus: {
+                                successCount,
+                                failedCount,
+                                failedTerms,
+                                failedReason: 'rate_limited'
+                            }
+                        };
+                    }
+
                     continue;
                 }
 
@@ -4077,45 +4435,81 @@
         }
 
         async function fetchSearchApi(fullUrl) {
-            try {
-                let data = await tryFetchDirect(fullUrl);
-                if (!data) data = await tryFetchWithProxies(fullUrl);
-                if (!data) throw { errorType: 'network' };
-                return data;
-            } catch (error) {
-                if (error.errorType) throw error;
-                throw { errorType: 'unknown' };
+            const cacheKey = makeSearchApiCacheKey(fullUrl);
+
+            const cached = getCachedSearchApiResult(cacheKey);
+            if (cached) return cached;
+
+            if (searchApiInflight.has(cacheKey)) {
+                return searchApiInflight.get(cacheKey);
             }
+
+            const task = (async () => {
+                try {
+                    await waitSearchApiInterval();
+
+                    let data = await tryFetchDirect(fullUrl);
+
+                    /*
+                     * 429 是接口限流，不要再走代理重试。
+                     * 否则同一个接口会被继续打，429 更严重。
+                     */
+                    if (!data) {
+                        data = await tryFetchWithProxies(fullUrl);
+                    }
+
+                    if (!data) throw { errorType: 'network' };
+
+                    setCachedSearchApiResult(cacheKey, data);
+                    return data;
+                } catch (error) {
+                    if (error && error.errorType) throw error;
+                    throw { errorType: 'unknown' };
+                } finally {
+                    searchApiInflight.delete(cacheKey);
+                }
+            })();
+
+            searchApiInflight.set(cacheKey, task);
+            return task;
         }
 
         async function tryFetchDirect(url) {
             const controller = new AbortController();
 
-            const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => {
-                    controller.abort();
-                    reject({ errorType: 'timeout' });
-                }, SEARCH_TIMEOUT);
-            });
+            const localTimeoutId = setTimeout(() => {
+                controller.abort();
+            }, SEARCH_TIMEOUT);
 
             try {
-                const response = await Promise.race([
-                    fetch(url, { signal: controller.signal }),
-                    timeoutPromise
-                ]);
+                const response = await fetch(url, { signal: controller.signal });
 
-                if (!response.ok) throw { errorType: 'server' };
+                if (response.status === 429) {
+                    throw {
+                        errorType: 'rate_limited',
+                        message: '接口请求过于频繁，请稍后再试'
+                    };
+                }
 
-                // 关键修改：不能用 response.json()
-                // 必须先拿原始文本，保护 pwd 后再 JSON.parse
+                if (!response.ok) {
+                    throw {
+                        errorType: 'server',
+                        status: response.status
+                    };
+                }
+
                 const text = await response.text();
                 return parseApiJsonSafely(text);
             } catch (error) {
-                if (error.name === 'AbortError') throw { errorType: 'timeout' };
+                if (error.name === 'AbortError') {
+                    throw { errorType: 'timeout' };
+                }
+
                 if (error.errorType) throw error;
+
                 return null;
             } finally {
-                clearTimeouts();
+                clearTimeout(localTimeoutId);
             }
         }
 
@@ -4385,6 +4779,13 @@
                 </span>` : ''}
             </div>
         </div>
+
+        <div class="broken-filter-bar">
+            <button type="button" id="toggleBrokenFilterBtn" class="broken-filter-btn">
+                ${isHideBrokenEnabled() ? '显示疑似失效资源' : '隐藏疑似失效资源'}
+            </button>
+            <span id="brokenFilterTip" class="broken-filter-tip"></span>
+        </div>
     `;
 
             let sortedTypes = [];
@@ -4429,6 +4830,15 @@
             bindResourceActionEvents();
             updateFavoriteButtons();
             updateBrokenButtons();
+            updateQualityRatings();
+            updateBrokenVisibility();
+
+            const toggleBrokenFilterBtn = document.getElementById('toggleBrokenFilterBtn');
+            if (toggleBrokenFilterBtn) {
+                toggleBrokenFilterBtn.addEventListener('click', () => {
+                    setHideBrokenEnabled(!isHideBrokenEnabled());
+                });
+            }
         }
 
         function createResultItem(item, type, index) {
@@ -4441,7 +4851,7 @@
             const broken = isBrokenMarked(link);
 
             return `
-        <div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
+        <div class="result-item ${broken ? 'is-local-broken' : ''} ${isHideBrokenEnabled() && broken ? 'is-broken-hidden' : ''}" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
             <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"/>
@@ -4451,7 +4861,10 @@
                 </svg>
             </button>
 
-            <div class="drama-title">${escapeHtml(name)}</div>
+            <div class="drama-title">
+                ${escapeHtml(name)}
+                ${createQualityRatingHtml(link)}
+            </div>
 
             <div class="info-list">
                 <div class="info-item">
@@ -6395,17 +6808,35 @@
             const links = [];
 
             document.querySelectorAll('#resultsArea .result-item').forEach(item => {
-                const title = item.querySelector('.drama-title')?.textContent?.trim() || '未命名资源';
+                const titleNode = item.querySelector('.drama-title');
+                const title = titleNode
+                    ? Array.from(titleNode.childNodes)
+                        .filter(node => node.nodeType === Node.TEXT_NODE)
+                        .map(node => node.textContent.trim())
+                        .join('')
+                        .trim()
+                    : '未命名资源';
+
                 const linkEl = item.querySelector('.info-link[href]');
                 const link = linkEl ? linkEl.href : '';
 
                 if (!link) return;
 
-                const pwdText = Array.from(item.querySelectorAll('.info-item'))
-                    .map(el => el.textContent || '')
-                    .find(text => text.includes('提取码') || text.includes('密码')) || '';
+                const pwdEl = item.querySelector('.info-item .info-label');
+                let pwd = '';
 
-                links.push(`${title}\n${link}${pwdText ? `\n${pwdText.trim()}` : ''}`);
+                item.querySelectorAll('.info-item').forEach(row => {
+                    const label = row.querySelector('.info-label')?.textContent?.trim() || '';
+                    if (label.includes('密码') || label.includes('提取码')) {
+                        const cloned = row.cloneNode(true);
+                        const clonedLabel = cloned.querySelector('.info-label');
+                        if (clonedLabel) clonedLabel.remove();
+
+                        pwd = cloned.textContent.replace(/\s+/g, '').trim();
+                    }
+                });
+
+                links.push(`${title}\n${link}${pwd ? `\n密码：${pwd}` : ''}`);
             });
 
             return links;
