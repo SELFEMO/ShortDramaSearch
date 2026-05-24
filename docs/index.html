@@ -1701,6 +1701,218 @@
             overflow: hidden;
             will-change: height, opacity, transform;
         }
+
+        /* ==================== 搜索历史 / 收藏 / 复制 / 失效反馈 ==================== */
+        .history-panel {
+            display: none;
+            margin: -0.75rem 0 1.5rem;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(26, 26, 36, 0.55);
+        }
+
+        .history-panel.show {
+            display: block;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .history-clear-btn,
+        .favorite-clear-btn {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            color: #ccc;
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .history-clear-btn:hover,
+        .favorite-clear-btn:hover {
+            background: rgba(239, 68, 68, 0.14);
+            color: #fff;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .history-chip {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(255, 107, 53, 0.08);
+        }
+
+        .result-actions,
+        .favorite-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding-left: 22px;
+        }
+
+        .resource-action-btn {
+            min-height: 30px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            color: #ddd;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .resource-action-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .resource-action-btn.is-favorited {
+            background: rgba(255, 107, 53, 0.16);
+            color: var(--accent);
+            border-color: rgba(255, 107, 53, 0.38);
+        }
+
+        .resource-action-btn.is-broken {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.32);
+        }
+
+        .search-health {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .search-health-chip {
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .search-health-chip.ok {
+            color: #7dd3a8;
+        }
+
+        .search-health-chip.warn {
+            color: #fbbf24;
+        }
+
+        .favorites-page {
+            padding-top: 1rem;
+        }
+
+        .favorites-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .favorite-search-input {
+            flex: 1;
+            min-width: 220px;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--fg);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .favorite-search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .favorites-stats {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .favorites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .favorite-empty {
+            padding: 30px 18px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center;
+            background: rgba(255,255,255,0.025);
+        }
+
+        @media (max-width: 768px) {
+            .history-panel {
+                margin-top: -0.5rem;
+            }
+
+            .result-actions,
+            .favorite-actions {
+                padding-left: 0;
+                flex-direction: column;
+            }
+
+            .resource-action-btn {
+                width: 100%;
+            }
+
+            .favorites-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .favorite-search-input,
+            .favorite-clear-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1814,6 +2026,7 @@
             <div class="nav-link" data-page="api">API生成器</div>
             <div class="nav-link" data-page="daily">每日影视</div>
             <div class="nav-link" data-page="rank">热度榜</div>
+            <div class="nav-link" data-page="favorites">我的收藏</div>
 
             <a
                     class="nav-link github-nav-link"
@@ -1884,6 +2097,15 @@
                     </button>
                 </div>
             </div>
+
+            <div class="history-panel" id="searchHistoryPanel">
+                <div class="history-header">
+                    <span>🕘 最近搜索</span>
+                    <button type="button" class="history-clear-btn" id="clearHistoryBtn">清空</button>
+                </div>
+                <div class="history-list" id="searchHistoryList"></div>
+            </div>
+
             <div class="tags-container" id="hotTagsContainer">
                 <div class="tags-header">
                     <div class="tags-title">🔥 <strong>短剧热度榜</strong></div>
@@ -2096,6 +2318,26 @@
                 <div id="rankListContainer"></div>
             </div>
         </section>
+
+        <section id="page-favorites" class="page">
+            <div class="favorites-page">
+                <div class="header" style="margin-bottom: 1.5rem;">
+                    <div class="header-top">
+                        <img class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                        <h2 class="font-display" style="font-size: 2rem;">我的收藏</h2>
+                    </div>
+                    <p>收藏保存在当前浏览器本地，不会上传到服务器。</p>
+                </div>
+
+                <div class="favorites-toolbar">
+                    <input id="favoriteSearchInput" class="favorite-search-input" type="text" placeholder="在收藏中搜索名称 / 来源 / 链接..." autocomplete="off">
+                    <button id="clearFavoritesBtn" class="favorite-clear-btn" type="button">清空收藏</button>
+                </div>
+
+                <div id="favoritesStats" class="favorites-stats"></div>
+                <div id="favoritesList" class="favorites-list"></div>
+            </div>
+        </section>
     </main>
 
     <!-- ==================== API 使用说明弹窗 ==================== -->
@@ -2189,59 +2431,38 @@
         const helpApiTemplateUrl = document.getElementById('helpApiTemplateUrl');
         const helpApiExampleUrl = document.getElementById('helpApiExampleUrl');
 
+        const searchHistoryPanel = document.getElementById('searchHistoryPanel');
+        const searchHistoryList = document.getElementById('searchHistoryList');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+        const favoriteSearchInput = document.getElementById('favoriteSearchInput');
+        const clearFavoritesBtn = document.getElementById('clearFavoritesBtn');
+        const favoritesStats = document.getElementById('favoritesStats');
+        const favoritesList = document.getElementById('favoritesList');
+
         // ==================== 路由与工具函数 ====================
         const pages = {
             search: document.getElementById('page-search'),
             api: document.getElementById('page-api'),
             daily: document.getElementById('page-daily'),
-            rank: document.getElementById('page-rank')
+            rank: document.getElementById('page-rank'),
+            favorites: document.getElementById('page-favorites')
         };
 
         const titles = {
             search: '酷乐短剧 / 影视资源 · <span>聚合搜索</span>',
             api: '酷乐短剧 / 影视资源 · <span>API生成器</span>',
             daily: '酷乐短剧 / 影视资源 · <span>每日影视</span>',
-            rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>'
+            rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>',
+            favorites: '酷乐短剧 / 影视资源 · <span>我的收藏</span>'
         };
-
-        // function navigateTo(pageName) {
-        //     Object.keys(pages).forEach(key => pages[key].classList.toggle('active', key === pageName));
-        //     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
-        //     appTitleEl.innerHTML = titles[pageName] || titles.search;
-        //     if (pageName === 'daily') loadDailyResources();
-        //     if (pageName === 'rank') initRankPage();
-        // }
-        //
-        // function initRouter() {
-        //     const hash = window.location.hash || '#/';
-        //     let page = 'search';
-        //     if (hash.startsWith('#/daily')) page = 'daily';
-        //     else if (hash.startsWith('#/rank')) page = 'rank';
-        //     navigateTo(page);
-        //     window.addEventListener('hashchange', () => {
-        //         const newHash = window.location.hash || '#/';
-        //         let newPage = 'search';
-        //         if (newHash.startsWith('#/daily')) newPage = 'daily';
-        //         else if (newHash.startsWith('#/rank')) newPage = 'rank';
-        //         navigateTo(newPage);
-        //     });
-        //     document.querySelectorAll('.nav-link').forEach(link => {
-        //         link.addEventListener('click', () => {
-        //             const target = link.dataset.page;
-        //             if (target === 'search') window.location.hash = '#/';
-        //             else if (target === 'daily') window.location.hash = '#/daily';
-        //             else if (target === 'rank') window.location.hash = '#/rank';
-        //         });
-        //     });
-        // }
 
         function getPageFromHash() {
             const hash = window.location.hash || '#/';
-
-            if (hash.startsWith('#/api')) return 'api';
-            if (hash.startsWith('#/daily')) return 'daily';
-            if (hash.startsWith('#/rank')) return 'rank';
-
+            if (hash === '#/api') return 'api';
+            if (hash === '#/daily') return 'daily';
+            if (hash === '#/rank') return 'rank';
+            if (hash === '#/favorites') return 'favorites';
             return 'search';
         }
 
@@ -2249,6 +2470,7 @@
             if (pageName === 'api') return '#/api';
             if (pageName === 'daily') return '#/daily';
             if (pageName === 'rank') return '#/rank';
+            if (pageName === 'favorites') return '#/favorites';
             return '#/';
         }
 
@@ -2384,6 +2606,298 @@
 
         function showStatus(message, duration = 2000) { searchStatus.textContent = message; searchStatus.classList.add('show'); setTimeout(() => searchStatus.classList.remove('show'), duration); }
         function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s])); }
+
+        function safeJsonParse(text, fallback) {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        const LOCAL_KEYS = {
+            history: 'kuleu_search_history_v1',
+            favorites: 'kuleu_favorites_v1',
+            broken: 'kuleu_broken_links_v1'
+        };
+
+        function readLocalList(key) {
+            const data = safeJsonParse(localStorage.getItem(key), []);
+            return Array.isArray(data) ? data : [];
+        }
+
+        function writeLocalList(key, list) {
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+
+        function makeResourceId(link) {
+            return encodeURIComponent(String(link || '').trim());
+        }
+
+        function getSearchHistory() {
+            return readLocalList(LOCAL_KEYS.history);
+        }
+
+        function saveSearchHistory(term) {
+            const keyword = normalizeSearchKeyword(term);
+            if (!keyword) return;
+
+            const oldList = getSearchHistory();
+            const nextList = [
+                keyword,
+                ...oldList.filter(item => item !== keyword)
+            ].slice(0, 12);
+
+            writeLocalList(LOCAL_KEYS.history, nextList);
+            renderSearchHistory();
+        }
+
+        function clearSearchHistory() {
+            writeLocalList(LOCAL_KEYS.history, []);
+            renderSearchHistory();
+        }
+
+        function getFavorites() {
+            return readLocalList(LOCAL_KEYS.favorites);
+        }
+
+        function saveFavorites(list) {
+            writeLocalList(LOCAL_KEYS.favorites, list);
+        }
+
+        function isFavorited(link) {
+            const id = makeResourceId(link);
+            return getFavorites().some(item => item.id === id);
+        }
+
+        function toggleFavoriteResource(resource) {
+            if (!resource || !resource.link) {
+                showStatus('收藏失败：链接为空');
+                return;
+            }
+
+            const id = makeResourceId(resource.link);
+            const list = getFavorites();
+            const exists = list.some(item => item.id === id);
+
+            let nextList;
+
+            if (exists) {
+                nextList = list.filter(item => item.id !== id);
+                showStatus('已取消收藏');
+            } else {
+                nextList = [{
+                    id,
+                    name: resource.name || '未知资源',
+                    link: resource.link,
+                    pwd: resource.pwd || '',
+                    type: resource.type || '',
+                    source: resource.source || '',
+                    createdAt: Date.now()
+                }, ...list].slice(0, 200);
+
+                showStatus('已加入收藏');
+            }
+
+            saveFavorites(nextList);
+            updateFavoriteButtons();
+            renderFavorites();
+        }
+
+        function clearFavorites() {
+            if (!confirm('确定要清空全部收藏吗？')) return;
+            saveFavorites([]);
+            updateFavoriteButtons();
+            renderFavorites();
+            showStatus('收藏已清空');
+        }
+
+        function getBrokenLinks() {
+            return readLocalList(LOCAL_KEYS.broken);
+        }
+
+        function saveBrokenLinks(list) {
+            writeLocalList(LOCAL_KEYS.broken, list);
+        }
+
+        function isBrokenMarked(link) {
+            const id = makeResourceId(link);
+            return getBrokenLinks().some(item => item.id === id);
+        }
+
+        function toggleBrokenLink(resource) {
+            if (!resource || !resource.link) {
+                showStatus('反馈失败：链接为空');
+                return;
+            }
+
+            const id = makeResourceId(resource.link);
+            const list = getBrokenLinks();
+            const exists = list.some(item => item.id === id);
+
+            let nextList;
+
+            if (exists) {
+                nextList = list.filter(item => item.id !== id);
+                showStatus('已取消失效标记');
+            } else {
+                nextList = [{
+                    id,
+                    name: resource.name || '未知资源',
+                    link: resource.link,
+                    type: resource.type || '',
+                    createdAt: Date.now()
+                }, ...list].slice(0, 300);
+
+                showStatus('已标记为疑似失效');
+            }
+
+            saveBrokenLinks(nextList);
+            updateBrokenButtons();
+        }
+
+        function renderSearchHistory() {
+            if (!searchHistoryPanel || !searchHistoryList) return;
+
+            const list = getSearchHistory();
+
+            if (!list.length) {
+                searchHistoryPanel.classList.remove('show');
+                searchHistoryList.innerHTML = '';
+                return;
+            }
+
+            searchHistoryPanel.classList.add('show');
+            searchHistoryList.innerHTML = list.map(item => {
+                return `<button type="button" class="history-chip" data-history-keyword="${escapeHtml(item)}">${escapeHtml(item)}</button>`;
+            }).join('');
+        }
+
+        function renderFavorites() {
+            if (!favoritesList || !favoritesStats) return;
+
+            const keyword = normalizeSearchKeyword(favoriteSearchInput ? favoriteSearchInput.value : '');
+            const list = getFavorites();
+
+            const filtered = keyword
+                ? list.filter(item => {
+                    const text = `${item.name || ''} ${item.link || ''} ${TYPE_LABEL[item.type] || item.type || ''} ${item.pwd || ''}`.toLowerCase();
+                    return text.includes(keyword.toLowerCase());
+                })
+                : list;
+
+            favoritesStats.textContent = `共收藏 ${list.length} 条${keyword ? `，当前筛选 ${filtered.length} 条` : ''}`;
+
+            if (!filtered.length) {
+                favoritesList.innerHTML = `<div class="favorite-empty">${keyword ? '没有匹配的收藏。' : '暂无收藏。你可以在搜索结果中点击“收藏”。'}</div>`;
+                return;
+            }
+
+            favoritesList.innerHTML = filtered.map((item, index) => {
+                const typeName = TYPE_LABEL[item.type] || item.type || '未知来源';
+                const pwd = item.pwd || '';
+                return `
+            <div class="result-item" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(item.link)}">
+                <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(item.link)}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                </button>
+                <div class="drama-title">${escapeHtml(item.name || '未知资源')}</div>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">来源:</span>
+                        <span>${escapeHtml(typeName)}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">链接:</span>
+                        <a href="${escapeHtml(item.link)}" target="_blank" class="info-link">${escapeHtml(item.link)}</a>
+                    </div>
+                    ${pwd ? `<div class="info-item">
+                        <span class="info-label">密码:</span>
+                        <span style="color: #f59e0b;">${escapeHtml(pwd)}</span>
+                    </div>` : ''}
+                </div>
+                <div class="favorite-actions">
+                    <button type="button" class="resource-action-btn" data-action="copy-link" data-link="${escapeHtml(item.link)}">复制链接</button>
+                    ${pwd ? `<button type="button" class="resource-action-btn" data-action="copy-pwd" data-pwd="${escapeHtml(pwd)}">复制密码</button>` : ''}
+                    <button type="button" class="resource-action-btn is-favorited" data-action="favorite" data-name="${escapeHtml(item.name || '')}" data-link="${escapeHtml(item.link)}" data-pwd="${escapeHtml(pwd)}" data-type="${escapeHtml(item.type || '')}">取消收藏</button>
+                    <button type="button" class="resource-action-btn ${isBrokenMarked(item.link) ? 'is-broken' : ''}" data-action="broken" data-name="${escapeHtml(item.name || '')}" data-link="${escapeHtml(item.link)}" data-type="${escapeHtml(item.type || '')}">
+                        ${isBrokenMarked(item.link) ? '已标记失效' : '失效反馈'}
+                    </button>
+                </div>
+            </div>
+        `;
+            }).join('');
+
+            bindResourceActionEvents();
+        }
+
+        function updateFavoriteButtons() {
+            document.querySelectorAll('.resource-action-btn[data-action="favorite"]').forEach(btn => {
+                const link = btn.dataset.link || '';
+                const yes = isFavorited(link);
+                btn.classList.toggle('is-favorited', yes);
+                btn.textContent = yes ? '取消收藏' : '收藏';
+            });
+        }
+
+        function updateBrokenButtons() {
+            document.querySelectorAll('.resource-action-btn[data-action="broken"]').forEach(btn => {
+                const link = btn.dataset.link || '';
+                const yes = isBrokenMarked(link);
+                btn.classList.toggle('is-broken', yes);
+                btn.textContent = yes ? '已标记失效' : '失效反馈';
+            });
+        }
+
+        function bindResourceActionEvents() {
+            document.querySelectorAll('.resource-action-btn').forEach(btn => {
+                if (btn.dataset.bound === '1') return;
+                btn.dataset.bound = '1';
+
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const action = btn.dataset.action;
+
+                    if (action === 'copy-link') {
+                        await copyTextToClipboard(btn.dataset.link || '');
+                        showStatus('链接已复制');
+                        return;
+                    }
+
+                    if (action === 'copy-pwd') {
+                        await copyTextToClipboard(btn.dataset.pwd || '');
+                        showStatus('密码已复制');
+                        return;
+                    }
+
+                    if (action === 'favorite') {
+                        toggleFavoriteResource({
+                            name: btn.dataset.name || '',
+                            link: btn.dataset.link || '',
+                            pwd: btn.dataset.pwd || '',
+                            type: btn.dataset.type || '',
+                            source: btn.dataset.source || ''
+                        });
+                        return;
+                    }
+
+                    if (action === 'broken') {
+                        toggleBrokenLink({
+                            name: btn.dataset.name || '',
+                            link: btn.dataset.link || '',
+                            type: btn.dataset.type || ''
+                        });
+                    }
+                });
+            });
+        }
 
         /**
          * 在 JSON.parse 之前保护网盘提取码。
@@ -3012,6 +3526,7 @@
             }
 
             searchInput.value = term;
+            saveSearchHistory(term);
 
             clearTimeout(searchTimer);
 
@@ -3064,7 +3579,7 @@
                     if (searchId !== searchSequence) return;
                 }
 
-                const { mergedByType, total, typeList } = result;
+                const { mergedByType, total, typeList, apiStatus } = result;
 
                 if (typeList.length === 0 || total === 0) {
                     resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`;
@@ -3072,7 +3587,7 @@
                     return;
                 }
 
-                renderGroupedResults(mergedByType, typeList, term, total);
+                renderGroupedResults(mergedByType, typeList, term, total, apiStatus);
 
                 /*
                  * 第一次搜索成功后，自动完全收起首页短剧热度榜。
@@ -3100,24 +3615,68 @@
             const types = TYPE_PRESETS[presetName] || TYPE_PRESETS.all;
             const typeParam = types.join(',');
             const searchTerms = buildSearchTerms(term);
-            const mergedByType = {}; const urlSet = new Set(); let total = 0;
+
+            const mergedByType = {};
+            const urlSet = new Set();
+
+            let total = 0;
+            let successCount = 0;
+            let failedCount = 0;
+            const failedTerms = [];
+
             for (const st of searchTerms) {
-                let data; try { data = await fetchSearchApi(`${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`); } catch (e) { continue; }
+                let data;
+
+                try {
+                    data = await fetchSearchApi(`${JHSJ_API}?type=${encodeURIComponent(typeParam)}&name=${encodeURIComponent(st)}`);
+                    successCount++;
+                } catch (e) {
+                    failedCount++;
+                    failedTerms.push(st);
+                    continue;
+                }
+
                 if (data && data.code === 0 && data.data && data.data.merged_by_type) {
                     Object.keys(data.data.merged_by_type).forEach(type => {
                         if (!mergedByType[type]) mergedByType[type] = [];
+
                         data.data.merged_by_type[type].forEach(item => {
                             if (!item.url || urlSet.has(item.url)) return;
+
                             urlSet.add(item.url);
-                            mergedByType[type].push({ ...normalizeResourceItem(item), _searchTerm: st });
+                            mergedByType[type].push({
+                                ...normalizeResourceItem(item),
+                                _searchTerm: st
+                            });
                             total++;
                         });
                     });
                 }
+
                 if (total >= 200) break;
             }
-            Object.keys(mergedByType).forEach(type => { mergedByType[type].sort((a, b) => { const aIsWhole = a._searchTerm === term ? 1 : 0; const bIsWhole = b._searchTerm === term ? 1 : 0; if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole; return (b.name?.length || 0) - (a.name?.length || 0); }); });
-            return { mergedByType, total, typeList: Object.keys(mergedByType) };
+
+            Object.keys(mergedByType).forEach(type => {
+                mergedByType[type].sort((a, b) => {
+                    const aIsWhole = a._searchTerm === term ? 1 : 0;
+                    const bIsWhole = b._searchTerm === term ? 1 : 0;
+
+                    if (aIsWhole !== bIsWhole) return bIsWhole - aIsWhole;
+
+                    return (b.name?.length || 0) - (a.name?.length || 0);
+                });
+            });
+
+            return {
+                mergedByType,
+                total,
+                typeList: Object.keys(mergedByType),
+                apiStatus: {
+                    successCount,
+                    failedCount,
+                    failedTerms
+                }
+            };
         }
 
         async function fetchSearchApi(fullUrl) {
@@ -3415,83 +3974,136 @@
             return false;
         }
 
-        function renderGroupedResults(mergedByType, typeList, term, total) { 
-            let html = `<div class="result-stats"><span>关键词：${escapeHtml(term)}</span><span>共 ${total} 条</span></div>`;
+        function renderGroupedResults(mergedByType, typeList, term, total, apiStatus = null) {
+            const typeNames = typeList.map(type => TYPE_LABEL[type] || type).join('、');
+
+            let html = `
+        <div class="result-stats">
+            <span>关键词：${escapeHtml(term)}</span>
+            <span>共 ${total} 条</span>
+            <div class="search-health">
+                <span class="search-health-chip ok">已命中来源：${escapeHtml(typeNames || '无')}</span>
+                ${apiStatus ? `<span class="search-health-chip ${apiStatus.failedCount ? 'warn' : 'ok'}">
+                    搜索请求：成功 ${apiStatus.successCount} 次 / 失败 ${apiStatus.failedCount} 次
+                </span>` : ''}
+            </div>
+        </div>
+    `;
+
             let sortedTypes = [];
-            ['baidu', 'quark'].forEach(p => { if (typeList.includes(p)) sortedTypes.push(p); });
-            typeList.forEach(t => { if (!sortedTypes.includes(t)) sortedTypes.push(t); });
+
+            ['baidu', 'quark'].forEach(p => {
+                if (typeList.includes(p)) sortedTypes.push(p);
+            });
+
+            typeList.forEach(t => {
+                if (!sortedTypes.includes(t)) sortedTypes.push(t);
+            });
 
             sortedTypes.forEach(type => {
-                const items = mergedByType[type]; if (!items || items.length === 0) return;
-                const safeType = type.replace(/\s+/g, '_');
+                const items = mergedByType[type];
+                if (!items || items.length === 0) return;
 
-                // const isCollapsed = (type !== 'baidu' && type !== 'quark');
-                /*
-                 * 全局聚合 / 网盘聚合：只默认展开百度和夸克
-                 * 单一搜索模式：默认全部展开
-                 */
+                const safeType = type.replace(/\s+/g, '_');
                 const isCollapsed = shouldCollapseSearchResultSection(type);
 
-                html += `<div class="result-section ${isCollapsed ? 'collapsed' : ''}" id="search-${safeType}">
-                            <div class="section-header">
-                                <div>
-                                    <span class="toggle-icon">▼</span>
-                                    <span class="section-label ${safeType}">${escapeHtml(TYPE_LABEL[type] || type)}</span>
-                                    <span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span>
-                                </div>
-                            </div>
-                            <div class="result-list">`;
+                html += `
+            <div class="result-section ${isCollapsed ? 'collapsed' : ''}" id="search-${safeType}">
+                <div class="section-header">
+                    <div>
+                        <span class="toggle-icon">▼</span>
+                        <span class="section-label ${safeType}">${escapeHtml(TYPE_LABEL[type] || type)}</span>
+                        <span style="margin-left: 6px; font-size: 13px; color: #888;">共 ${items.length} 条</span>
+                    </div>
+                </div>
+                <div class="result-list">
+        `;
 
                 items.forEach((item, index) => {
                     html += createResultItem(item, type, index);
                 });
 
                 html += `</div></div>`;
-            }); 
-            resultsArea.innerHTML = html; 
+            });
+
+            resultsArea.innerHTML = html;
+
             bindSectionToggleEvents();
+            bindResourceActionEvents();
+            updateFavoriteButtons();
+            updateBrokenButtons();
         }
 
         function createResultItem(item, type, index) {
             const name = item.name || '未知资源';
             const link = item.url || '#';
-
-            // 关键修改：提取码必须始终作为字符串处理，不能参与数字转换
             const pwd = extractPwdFromLink(link) || formatPwd(item.pwd);
-
             const domain = extractDomain(link);
             const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
+            const fav = isFavorited(link);
+            const broken = isBrokenMarked(link);
 
-            return `<div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
-                <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                    </svg>
-                </button>
-                <div class="drama-title">${escapeHtml(name)}</div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">来源:</span>
-                        <span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">
-                            ${escapeHtml(TYPE_LABEL[type] || type)}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">链接:</span>
-                        <a href="${escapeHtml(link)}" target="_blank" class="info-link">
-                            ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}
-                            ${escapeHtml(link)}
-                        </a>
-                    </div>
-                    ${pwd ? `<div class="info-item">
-                        <span class="info-label">密码:</span>
-                        <span style="color: #f59e0b;">${escapeHtml(pwd)}</span>
-                    </div>` : ''}
+            return `
+        <div class="result-item" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
+            <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+            </button>
+
+            <div class="drama-title">${escapeHtml(name)}</div>
+
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label">来源:</span>
+                    <span style="color: ${type === 'baidu' ? '#06a7ff' : type === 'quark' ? '#ff9500' : '#aaa'};">
+                        ${escapeHtml(TYPE_LABEL[type] || type)}
+                    </span>
                 </div>
-            </div>`;
+
+                <div class="info-item">
+                    <span class="info-label">链接:</span>
+                    <a href="${escapeHtml(link)}" target="_blank" class="info-link">
+                        ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}
+                        ${escapeHtml(link)}
+                    </a>
+                </div>
+
+                ${pwd ? `<div class="info-item">
+                    <span class="info-label">密码:</span>
+                    <span style="color: #f59e0b;">${escapeHtml(pwd)}</span>
+                </div>` : ''}
+            </div>
+
+            <div class="result-actions">
+                <button type="button" class="resource-action-btn" data-action="copy-link" data-link="${escapeHtml(link)}">复制链接</button>
+
+                ${pwd ? `<button type="button" class="resource-action-btn" data-action="copy-pwd" data-pwd="${escapeHtml(pwd)}">复制密码</button>` : ''}
+
+                <button
+                    type="button"
+                    class="resource-action-btn ${fav ? 'is-favorited' : ''}"
+                    data-action="favorite"
+                    data-name="${escapeHtml(name)}"
+                    data-link="${escapeHtml(link)}"
+                    data-pwd="${escapeHtml(pwd)}"
+                    data-type="${escapeHtml(type)}"
+                >${fav ? '取消收藏' : '收藏'}</button>
+
+                <button
+                    type="button"
+                    class="resource-action-btn ${broken ? 'is-broken' : ''}"
+                    data-action="broken"
+                    data-name="${escapeHtml(name)}"
+                    data-link="${escapeHtml(link)}"
+                    data-type="${escapeHtml(type)}"
+                >${broken ? '已标记失效' : '失效反馈'}</button>
+            </div>
+        </div>
+    `;
         }
 
         function showLoading() { resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`; }
@@ -5097,6 +5709,40 @@
             setTimeout(updatePageScrollbar, 300);
         }
 
+        // ==================== 收藏 / 历史事件 ====================
+        if (searchHistoryList) {
+            searchHistoryList.addEventListener('click', (e) => {
+                const chip = e.target.closest('.history-chip');
+                if (!chip) return;
+
+                const keyword = chip.dataset.historyKeyword || '';
+                if (!keyword) return;
+
+                performSearch(keyword, {
+                    immediate: true,
+                    retryIfEmpty: true
+                });
+            });
+        }
+
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', clearSearchHistory);
+        }
+
+        if (favoriteSearchInput) {
+            favoriteSearchInput.addEventListener('input', renderFavorites);
+        }
+
+        if (clearFavoritesBtn) {
+            clearFavoritesBtn.addEventListener('click', clearFavorites);
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.resource-action-btn');
+            if (!btn || btn.dataset.bound === '1') return;
+            bindResourceActionEvents();
+        });
+
         // ==================== 初始化 ====================
         initRouter();
         bindAppTitleRefresh();
@@ -5106,6 +5752,8 @@
         bindApiBuilderEvents();
         updateHelpApiUrls();
         checkUrlParams();
+        renderSearchHistory();
+        renderFavorites();
 
         // ==================== 用户条例每次打开 / 刷新都弹出 ====================
         showPolicyModalOnEveryPageLoad();
