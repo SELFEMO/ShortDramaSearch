@@ -1517,6 +1517,14 @@
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <h2 class="font-display" style="font-size: 2rem;">每日影视资源</h2>
                     <p style="margin-top: 0.5rem;">仅更新每日最新影视资源和一些热门资源（短剧除外，短剧有单独的接口）</p>
+
+                    <p class="user-policy-tip">
+                        使用该网页/程序
+                        <strong style="color: var(--accent)">默认遵守</strong>
+                        <span class="user-policy-link" onclick="openPolicyModal()">
+                            用户使用条例
+                        </span>
+                    </p>
                 </div>
                 <div class="daily-toolbar">
                     <input type="text" id="dailySearchInput" class="daily-search-input" placeholder="在今日影视资源中检索..." autocomplete="off">
@@ -1534,6 +1542,14 @@
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <h2 class="font-display" style="font-size: 2rem;">福利热度榜</h2>
                     <p style="margin-top: 0.5rem;">实时更新短剧与夸克热搜榜单，双击或点击按钮可跳转搜索</p>
+
+                    <p class="user-policy-tip">
+                        使用该网页/程序
+                        <strong style="color: var(--accent)">默认遵守</strong>
+                        <span class="user-policy-link" onclick="openPolicyModal()">
+                            用户使用条例
+                        </span>
+                    </p>
                 </div>
                 <div class="rank-tabs">
                     <button class="rank-tab active" data-source="drama">短剧热度榜</button>
@@ -2262,26 +2278,10 @@
         // ==================== 用户条例弹窗逻辑 ====================
         const policyModalOverlay = document.getElementById('policyModalOverlay');
 
-        // function openPolicyModal() {
-        //     if (!policyModalOverlay) return;
-        //
-        //     hidePageScrollbarImmediately();
-        //     document.body.classList.add('scrollbar-locked');
-        //     policyModalOverlay.classList.add('show');
-        //     document.body.style.overflow = 'hidden';
-        // }
-        // function closePolicyModal() {
-        //     if (!policyModalOverlay) return;
-        //
-        //     policyModalOverlay.classList.remove('show');
-        //     document.body.style.overflow = '';
-        //     document.body.classList.remove('scrollbar-locked');
-        //
-        //     setTimeout(updatePageScrollbar, 50);
-        // }
         function openPolicyModal() {
             showModalAnimated(policyModalOverlay);
         }
+
         function closePolicyModal() {
             hideModalAnimated(policyModalOverlay);
         }
@@ -2289,6 +2289,50 @@
         function rejectPolicy() {
             window.location.href = 'about:blank';
         }
+
+        /*
+         * 用户条例弹窗自动弹出规则：
+         * 1. 每次正常打开网页都弹。
+         * 2. 每次刷新网页都弹。
+         * 3. 不再使用 localStorage 记忆用户是否确认。
+         * 4. 支持 #/、#/daily、#/rank 三个页面刷新后都弹。
+         * 5. 如果是 ?format=json 的 API 输出模式，不弹窗，避免破坏 JSON 返回。
+         */
+        let policyAutoOpenedForThisPageLoad = false;
+
+        function shouldAutoOpenPolicyModal() {
+            const params = new URLSearchParams(window.location.search);
+            const format = (params.get('format') || '').toLowerCase();
+
+            return format !== 'json';
+        }
+
+        function showPolicyModalOnEveryPageLoad() {
+            if (!shouldAutoOpenPolicyModal()) return;
+            if (policyAutoOpenedForThisPageLoad) return;
+
+            policyAutoOpenedForThisPageLoad = true;
+
+            /*
+             * 延迟一点打开：
+             * 让路由、页面切换、URL 参数搜索、榜单初始化先完成，
+             * 避免弹窗和首屏渲染抢同一帧，移动端更稳定。
+             */
+            setTimeout(() => {
+                openPolicyModal();
+            }, 600);
+        }
+
+        /*
+         * 处理部分手机浏览器 / Safari 的 bfcache 场景：
+         * 用户从别的页面返回时，如果页面是从缓存恢复，也重新弹出。
+         */
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                policyAutoOpenedForThisPageLoad = false;
+                showPolicyModalOnEveryPageLoad();
+            }
+        });
 
         // if (policyModalOverlay) {
         //     policyModalOverlay.addEventListener('click', (e) => {
@@ -3803,24 +3847,8 @@
         loadVtquarkTags();
         checkUrlParams();
 
-        // ==================== 用户条例首次弹出 ====================
-        const USER_POLICY_KEY = 'shortdrama_user_policy_confirmed_v1';
-
-        setTimeout(() => {
-            const confirmed = localStorage.getItem(USER_POLICY_KEY);
-
-            if (!confirmed) {
-                openPolicyModal();
-            }
-        }, 600);
-
-        // 重写确认关闭
-        const oldClosePolicyModal = closePolicyModal;
-
-        closePolicyModal = function () {
-            localStorage.setItem(USER_POLICY_KEY, '1');
-            oldClosePolicyModal();
-        };
+        // ==================== 用户条例每次打开 / 刷新都弹出 ====================
+        showPolicyModalOnEveryPageLoad();
     </script>
 </body>
 </html>
