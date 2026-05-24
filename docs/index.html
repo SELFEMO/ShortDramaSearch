@@ -690,6 +690,226 @@
             .daily-refresh-btn { width: 100%; justify-content: center; }
         }
 
+        /* ==================== API 生成器页面 ==================== */
+        .api-builder-page {
+            padding-top: 1rem;
+        }
+
+        .api-builder-card {
+            background: rgba(26, 26, 36, 0.72);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+            backdrop-filter: blur(10px);
+            margin-bottom: 1rem;
+        }
+
+        .api-builder-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--fg);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-builder-form {
+            display: grid;
+            grid-template-columns: 1fr 220px;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .api-builder-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .api-builder-label {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .api-builder-input,
+        .api-builder-select,
+        .api-builder-url {
+            width: 100%;
+            padding: 11px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--fg);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .api-builder-select option {
+            background: #1a1a24;
+            color: var(--fg);
+        }
+
+        .api-builder-input:focus,
+        .api-builder-select:focus,
+        .api-builder-url:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .api-builder-url-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .api-builder-url {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: #e7e7ef;
+        }
+
+        .api-builder-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .api-builder-btn {
+            min-height: 40px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .api-builder-btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .api-builder-btn-primary:hover {
+            background: #ff8555;
+            transform: translateY(-1px);
+        }
+
+        .api-builder-btn-ghost {
+            background: rgba(255,255,255,0.06);
+            color: #ddd;
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .api-builder-btn-ghost:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+
+        .api-builder-btn:disabled,
+        .api-builder-btn.is-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none !important;
+        }
+
+        .api-builder-hint {
+            margin-top: 8px;
+            color: #8a8a96;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .api-builder-hint code {
+            color: var(--accent);
+            background: rgba(255,107,53,0.08);
+            padding: 1px 5px;
+            border-radius: 5px;
+        }
+
+        .api-preview-status {
+            min-height: 20px;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .api-preview-status.is-loading {
+            color: #ffb085;
+        }
+
+        .api-preview-status.is-success {
+            color: #7dd3a8;
+        }
+
+        .api-preview-status.is-error {
+            color: var(--error);
+        }
+
+        .api-preview-output {
+            min-height: 260px;
+            max-height: 520px;
+            overflow: auto;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.32);
+            color: #d8d8e2;
+            font-size: 13px;
+            line-height: 1.55;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .api-preview-output::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .api-preview-output::-webkit-scrollbar-thumb {
+            background: rgba(255,107,53,0.6);
+            border-radius: 999px;
+        }
+
+        @media (max-width: 768px) {
+            .api-builder-form {
+                grid-template-columns: 1fr;
+            }
+
+            .api-builder-url-row {
+                grid-template-columns: 1fr;
+            }
+
+            .api-builder-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .api-builder-btn {
+                width: 100%;
+            }
+
+            .api-preview-output {
+                max-height: 420px;
+                font-size: 12px;
+            }
+        }
+
         /* 帮助弹窗样式 */
         /*.help-modal-overlay {*/
         /*    position: fixed; inset: 0;*/
@@ -1408,6 +1628,7 @@
             <div class="nav-link active" data-page="search">聚合搜索</div>
             <div class="nav-link" data-page="daily">每日影视</div>
             <div class="nav-link" data-page="rank">热度榜</div>
+            <div class="nav-link" data-page="api">API生成器</div>
             <div class="nav-link" id="helpBtn">帮助</div>
 
             <a
@@ -1508,6 +1729,111 @@
                         聚合资源搜索接口所有网盘类型与磁力/电驴链接。
                     </p>
                     <p>选择"全局聚合"将一次性查询所有支持类型。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-api" class="page">
+            <div class="api-builder-page">
+                <div class="header" style="margin-bottom: 1.5rem;">
+                    <h2 class="font-display" style="font-size: 2rem;">API生成器</h2>
+                    <p style="margin-top: 0.5rem;">配置关键词和搜索来源，一键生成 API 链接，并预览最多 5 条 JSON 结果。</p>
+
+                    <p class="user-policy-tip">
+                        使用该网页/程序
+                        <strong style="color: var(--accent)">默认遵守</strong>
+                        <span class="user-policy-link" onclick="openPolicyModal()">
+                            用户使用条例
+                        </span>
+                    </p>
+                </div>
+
+                <div class="api-builder-card">
+                    <div class="api-builder-card-title">⚙️ 生成配置</div>
+
+                    <div class="api-builder-form">
+                        <div class="api-builder-field">
+                            <label class="api-builder-label" for="apiKeywordInput">搜索关键词</label>
+                            <input
+                                    type="text"
+                                    id="apiKeywordInput"
+                                    class="api-builder-input"
+                                    placeholder="例如：飞驰人生3 / 庆余年 / 墨雨云间"
+                                    autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="api-builder-field">
+                            <label class="api-builder-label" for="apiFromSelect">搜索来源</label>
+                            <select id="apiFromSelect" class="api-builder-select">
+                                <option value="all">全局聚合</option>
+                                <option value="netdisk">网盘聚合</option>
+                                <option value="baidu">百度网盘</option>
+                                <option value="quark">夸克网盘</option>
+                                <option value="aliyun">阿里云盘</option>
+                                <option value="tianyi">天翼云盘</option>
+                                <option value="uc">UC网盘</option>
+                                <option value="mobile">移动云盘</option>
+                                <option value="115">115网盘</option>
+                                <option value="pikpak">PikPak</option>
+                                <option value="xunlei">迅雷网盘</option>
+                                <option value="123">123网盘</option>
+                                <option value="magnet">磁力链接</option>
+                                <option value="ed2k">电驴链接</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="api-builder-url-row">
+                        <input
+                                type="text"
+                                id="apiGeneratedUrl"
+                                class="api-builder-url"
+                                readonly
+                                placeholder="生成后的 API 链接会显示在这里"
+                        >
+
+                        <button id="apiCopyBtn" class="api-builder-btn api-builder-btn-ghost" type="button">
+                            复制链接
+                        </button>
+
+                        <a
+                                id="apiOpenLink"
+                                class="api-builder-btn api-builder-btn-ghost is-disabled"
+                                href="javascript:void(0)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                        >
+                            打开链接
+                        </a>
+                    </div>
+
+                    <div class="api-builder-actions">
+                        <button id="apiGenerateBtn" class="api-builder-btn api-builder-btn-primary" type="button">
+                            生成 API 链接
+                        </button>
+
+                        <button id="apiPreviewBtn" class="api-builder-btn api-builder-btn-ghost" type="button">
+                            预览 JSON 结果
+                        </button>
+                    </div>
+
+                    <p class="api-builder-hint">
+                        实际 API 格式：
+                        <code>?q=关键词&amp;from=来源&amp;format=json</code>。
+                        预览区最多展示 5 条结果，并尽量从不同网盘来源中抽样，方便对比字段差异。
+                        真实 API 链接返回完整结果，不受预览数量限制。
+                    </p>
+                </div>
+
+                <div class="api-builder-card">
+                    <div class="api-builder-card-title">👀 JSON 预览</div>
+                    <div id="apiPreviewStatus" class="api-preview-status">请输入关键词后点击“预览 JSON 结果”。</div>
+                    <pre id="apiPreviewOutput" class="api-preview-output">{
+  "code": 0,
+  "msg": "waiting",
+  "tip": "这里会显示预览 JSON，最多 5 条搜索结果。"
+}</pre>
                 </div>
             </div>
         </section>
@@ -1638,9 +1964,30 @@
         const rankListContainer = document.getElementById('rankListContainer');
         const appTitleEl = document.getElementById('appTitle');
 
+        const apiKeywordInput = document.getElementById('apiKeywordInput');
+        const apiFromSelect = document.getElementById('apiFromSelect');
+        const apiGeneratedUrl = document.getElementById('apiGeneratedUrl');
+        const apiGenerateBtn = document.getElementById('apiGenerateBtn');
+        const apiCopyBtn = document.getElementById('apiCopyBtn');
+        const apiOpenLink = document.getElementById('apiOpenLink');
+        const apiPreviewBtn = document.getElementById('apiPreviewBtn');
+        const apiPreviewStatus = document.getElementById('apiPreviewStatus');
+        const apiPreviewOutput = document.getElementById('apiPreviewOutput');
+
         // ==================== 路由与工具函数 ====================
-        const pages = { search: document.getElementById('page-search'), daily: document.getElementById('page-daily'), rank: document.getElementById('page-rank') };
-        const titles = { search: '酷乐短剧 / 影视资源 · <span>聚合搜索</span>', daily: '酷乐短剧 / 影视资源 · <span>每日影视</span>', rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>' };
+        const pages = {
+            search: document.getElementById('page-search'),
+            api: document.getElementById('page-api'),
+            daily: document.getElementById('page-daily'),
+            rank: document.getElementById('page-rank')
+        };
+
+        const titles = {
+            search: '酷乐短剧 / 影视资源 · <span>聚合搜索</span>',
+            api: '酷乐短剧 / 影视资源 · <span>API生成器</span>',
+            daily: '酷乐短剧 / 影视资源 · <span>每日影视</span>',
+            rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>'
+        };
 
         // function navigateTo(pageName) {
         //     Object.keys(pages).forEach(key => pages[key].classList.toggle('active', key === pageName));
@@ -1676,6 +2023,7 @@
         function getPageFromHash() {
             const hash = window.location.hash || '#/';
 
+            if (hash.startsWith('#/api')) return 'api';
             if (hash.startsWith('#/daily')) return 'daily';
             if (hash.startsWith('#/rank')) return 'rank';
 
@@ -1683,6 +2031,7 @@
         }
 
         function getHashFromPage(pageName) {
+            if (pageName === 'api') return '#/api';
             if (pageName === 'daily') return '#/daily';
             if (pageName === 'rank') return '#/rank';
             return '#/';
@@ -1705,6 +2054,12 @@
             });
 
             appTitleEl.innerHTML = titles[finalPage] || titles.search;
+
+            if (finalPage === 'api') {
+                setTimeout(() => {
+                    updateApiGeneratedUrl();
+                }, 50);
+            }
 
             if (finalPage === 'daily') loadDailyResources();
             if (finalPage === 'rank') initRankPage();
@@ -3524,6 +3879,309 @@
         dailySearchInput.addEventListener('input', () => { const k = dailySearchInput.value.trim().toLowerCase(); filteredDaily = k ? dailyData.filter(i => (i.name || '').toLowerCase().includes(k) || (i.viewlink || '').toLowerCase().includes(k)) : dailyData; renderDailyResults(filteredDaily); });
         dailyRefreshBtn.addEventListener('click', () => { window.location.hash = '#/daily'; window.location.reload(); });
 
+        // ==================== API 生成器逻辑 ====================
+        function getCurrentPageBaseUrl() {
+            return window.location.href.split(/[?#]/)[0];
+        }
+
+        function buildApiGeneratorUrl() {
+            if (!apiKeywordInput || !apiFromSelect) return '';
+
+            const keyword = normalizeSearchKeyword(apiKeywordInput.value);
+            const from = apiFromSelect.value || 'all';
+
+            if (!keyword) return '';
+
+            const params = new URLSearchParams();
+            params.set('q', keyword);
+            params.set('from', from);
+            params.set('format', 'json');
+
+            return `${getCurrentPageBaseUrl()}?${params.toString()}`;
+        }
+
+        function setApiBuilderStatus(message, type = 'muted') {
+            if (!apiPreviewStatus) return;
+
+            apiPreviewStatus.textContent = message || '';
+            apiPreviewStatus.className = `api-preview-status is-${type}`;
+        }
+
+        function setApiGeneratedUrl(url) {
+            if (apiGeneratedUrl) {
+                apiGeneratedUrl.value = url || '';
+            }
+
+            if (apiOpenLink) {
+                if (url) {
+                    apiOpenLink.href = url;
+                    apiOpenLink.classList.remove('is-disabled');
+                } else {
+                    apiOpenLink.href = 'javascript:void(0)';
+                    apiOpenLink.classList.add('is-disabled');
+                }
+            }
+        }
+
+        function updateApiGeneratedUrl(options = {}) {
+            const url = buildApiGeneratorUrl();
+            setApiGeneratedUrl(url);
+
+            if (options.showHint) {
+                if (url) {
+                    setApiBuilderStatus('API 链接已生成。可以复制、打开或预览 JSON。', 'success');
+                } else {
+                    setApiBuilderStatus('请先输入搜索关键词。', 'error');
+                }
+            }
+
+            return url;
+        }
+
+        async function copyTextToClipboard(text) {
+            if (!text) return false;
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch (e) {}
+
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', 'readonly');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                const ok = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                return ok;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function copyApiGeneratedUrl() {
+            const url = updateApiGeneratedUrl();
+
+            if (!url) {
+                setApiBuilderStatus('请先输入搜索关键词，再复制 API 链接。', 'error');
+                return;
+            }
+
+            const ok = await copyTextToClipboard(url);
+
+            if (ok) {
+                setApiBuilderStatus('API 链接已复制。', 'success');
+            } else {
+                setApiBuilderStatus('复制失败，请手动选中链接复制。', 'error');
+            }
+        }
+
+        function getOrderedPreviewTypes(typeList) {
+            const preferred = [
+                'baidu',
+                'quark',
+                'aliyun',
+                'tianyi',
+                'uc',
+                'mobile',
+                '115',
+                'pikpak',
+                'xunlei',
+                '123',
+                'magnet',
+                'ed2k'
+            ];
+
+            const safeList = Array.isArray(typeList) ? typeList : [];
+
+            return [
+                ...preferred.filter(type => safeList.includes(type)),
+                ...safeList.filter(type => !preferred.includes(type))
+            ];
+        }
+
+        function cleanPreviewItem(item) {
+            const fixed = normalizeResourceItem({ ...(item || {}) });
+
+            delete fixed._searchTerm;
+
+            return fixed;
+        }
+
+        function buildLimitedPreviewData(mergedByType, typeList, limit = 5) {
+            const previewData = {};
+            const cursors = {};
+            const orderedTypes = getOrderedPreviewTypes(typeList);
+
+            let previewCount = 0;
+            let hasMore = true;
+
+            while (previewCount < limit && hasMore) {
+                hasMore = false;
+
+                for (const type of orderedTypes) {
+                    if (previewCount >= limit) break;
+
+                    const list = Array.isArray(mergedByType[type]) ? mergedByType[type] : [];
+                    const cursor = cursors[type] || 0;
+
+                    if (cursor >= list.length) continue;
+
+                    if (!previewData[type]) previewData[type] = [];
+
+                    previewData[type].push(cleanPreviewItem(list[cursor]));
+                    cursors[type] = cursor + 1;
+                    previewCount++;
+                    hasMore = true;
+                }
+            }
+
+            return {
+                previewData,
+                previewCount,
+                previewTypes: Object.keys(previewData)
+            };
+        }
+
+        function renderApiPreviewJson(payload) {
+            if (!apiPreviewOutput) return;
+
+            apiPreviewOutput.textContent = JSON.stringify(payload, null, 2);
+        }
+
+        async function previewApiFromBuilder() {
+            if (!apiKeywordInput || !apiFromSelect) return;
+
+            const keyword = normalizeSearchKeyword(apiKeywordInput.value);
+            const from = apiFromSelect.value || 'all';
+            const url = updateApiGeneratedUrl();
+
+            if (!keyword || !url) {
+                setApiBuilderStatus('请先输入搜索关键词。', 'error');
+
+                renderApiPreviewJson({
+                    code: -1,
+                    msg: 'missing keyword',
+                    tip: '请输入关键词后再预览 JSON。'
+                });
+
+                return;
+            }
+
+            const oldText = apiPreviewBtn ? apiPreviewBtn.textContent : '';
+
+            if (apiPreviewBtn) {
+                apiPreviewBtn.disabled = true;
+                apiPreviewBtn.textContent = '预览中...';
+            }
+
+            setApiBuilderStatus('正在请求接口并生成预览...', 'loading');
+
+            renderApiPreviewJson({
+                code: 0,
+                msg: 'loading',
+                keyword,
+                type: from
+            });
+
+            try {
+                const { mergedByType, total, typeList } = await fetchAndMergeData(keyword, from);
+                const { previewData, previewCount, previewTypes } = buildLimitedPreviewData(mergedByType, typeList, 5);
+
+                const payload = {
+                    code: 0,
+                    msg: 'success',
+                    keyword,
+                    type: from,
+                    total,
+                    preview_count: previewCount,
+                    preview_types: previewTypes,
+                    preview_note: '这里只预览最多 5 条结果，并尽量从不同来源中抽样。真实 API 链接会返回完整 data。',
+                    api_url: url,
+                    data: previewData
+                };
+
+                renderApiPreviewJson(payload);
+
+                if (previewCount > 0) {
+                    setApiBuilderStatus(`预览完成：真实结果共 ${total} 条，这里显示 ${previewCount} 条。`, 'success');
+                } else {
+                    setApiBuilderStatus('接口请求成功，但没有搜索到相关结果。', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+
+                renderApiPreviewJson({
+                    code: -1,
+                    msg: error.message || error.errorType || 'preview error',
+                    keyword,
+                    type: from,
+                    api_url: url
+                });
+
+                setApiBuilderStatus('预览失败，请检查关键词、网络或第三方接口状态。', 'error');
+            } finally {
+                if (apiPreviewBtn) {
+                    apiPreviewBtn.disabled = false;
+                    apiPreviewBtn.textContent = oldText || '预览 JSON 结果';
+                }
+            }
+        }
+
+        function bindApiBuilderEvents() {
+            if (!apiKeywordInput || !apiFromSelect) return;
+
+            apiKeywordInput.addEventListener('input', () => {
+                updateApiGeneratedUrl();
+            });
+
+            apiFromSelect.addEventListener('change', () => {
+                updateApiGeneratedUrl({ showHint: true });
+            });
+
+            apiKeywordInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    previewApiFromBuilder();
+                }
+            });
+
+            if (apiGenerateBtn) {
+                apiGenerateBtn.addEventListener('click', () => {
+                    updateApiGeneratedUrl({ showHint: true });
+                });
+            }
+
+            if (apiCopyBtn) {
+                apiCopyBtn.addEventListener('click', copyApiGeneratedUrl);
+            }
+
+            if (apiPreviewBtn) {
+                apiPreviewBtn.addEventListener('click', previewApiFromBuilder);
+            }
+
+            if (apiOpenLink) {
+                apiOpenLink.addEventListener('click', e => {
+                    const url = updateApiGeneratedUrl();
+
+                    if (!url) {
+                        e.preventDefault();
+                        setApiBuilderStatus('请先输入搜索关键词，再打开 API 链接。', 'error');
+                    }
+                });
+            }
+
+            updateApiGeneratedUrl();
+        }
+
         // ==================== URL 参数自动搜索与 API 模式 ====================
         async function checkUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -3845,6 +4503,7 @@
         bindPageScrollbarEvents();
         loadRankTags();
         loadVtquarkTags();
+        bindApiBuilderEvents();
         checkUrlParams();
 
         // ==================== 用户条例每次打开 / 刷新都弹出 ====================
