@@ -1903,7 +1903,7 @@
                 <div class="help-modal-content">
                     <p>欢迎使用 <strong>酷乐短剧 / 影视资源聚合搜索</strong> API。</p>
                     <p>您可以通过访问以下 URL 参数直接调用搜索 API：</p>
-                    <pre>https://selfemo.github.io/ShortDramaSearch/?q=关键词&from=来源&format=json</pre>
+                    <pre id="helpApiTemplateUrl">正在生成当前网页 API 地址...</pre>
 
                     <p><strong>参数说明：</strong></p>
                     <ul>
@@ -1919,7 +1919,7 @@
                     </ul>
 
                     <p>示例 API 调用：</p>
-                    <pre>https://selfemo.github.io/ShortDramaSearch/?q=飞驰人生3&from=netdisk&format=json</pre>
+                    <pre id="helpApiExampleUrl">正在生成当前网页 API 示例...</pre>
 
                     <p>API 将返回如下 JSON 数据示例：</p>
                     <pre>{
@@ -1976,6 +1976,9 @@
         const apiPreviewBtn = document.getElementById('apiPreviewBtn');
         const apiPreviewStatus = document.getElementById('apiPreviewStatus');
         const apiPreviewOutput = document.getElementById('apiPreviewOutput');
+
+        const helpApiTemplateUrl = document.getElementById('helpApiTemplateUrl');
+        const helpApiExampleUrl = document.getElementById('helpApiExampleUrl');
 
         // ==================== 路由与工具函数 ====================
         const pages = {
@@ -3883,8 +3886,29 @@
         dailyRefreshBtn.addEventListener('click', () => { window.location.hash = '#/daily'; window.location.reload(); });
 
         // ==================== API 生成器逻辑 ====================
+        // function getCurrentPageBaseUrl() {
+        //     return window.location.href.split(/[?#]/)[0];
+        // }
         function getCurrentPageBaseUrl() {
-            return window.location.href.split(/[?#]/)[0];
+            const currentUrl = new URL(window.location.href);
+            let pathname = currentUrl.pathname || '/';
+
+            /*
+             * 兼容几种部署方式：
+             * 1. https://selfemo.github.io/ShortDramaSearch/
+             * 2. https://selfemo.github.io/ShortDramaSearch/index.html
+             * 3. https://your-domain.com/
+             * 4. https://your-domain.com/index.html
+             *
+             * 目标：统一得到“当前项目根地址”，避免写死 GitHub Pages 地址。
+             */
+            pathname = pathname.replace(/\/index\.html?$/i, '/');
+
+            if (!pathname.endsWith('/')) {
+                pathname += '/';
+            }
+
+            return `${currentUrl.origin}${pathname}`;
         }
 
         function buildApiGeneratorUrl() {
@@ -4183,6 +4207,23 @@
             }
 
             updateApiGeneratedUrl();
+        }
+
+        function updateHelpApiUrls() {
+            const baseUrl = getCurrentPageBaseUrl();
+
+            if (helpApiTemplateUrl) {
+                helpApiTemplateUrl.textContent = `${baseUrl}?q=关键词&from=来源&format=json`;
+            }
+
+            if (helpApiExampleUrl) {
+                const params = new URLSearchParams();
+                params.set('q', '飞驰人生3');
+                params.set('from', 'netdisk');
+                params.set('format', 'json');
+
+                helpApiExampleUrl.textContent = `${baseUrl}?${params.toString()}`;
+            }
         }
 
         // ==================== URL 参数自动搜索与 API 模式 ====================
@@ -4507,6 +4548,7 @@
         loadRankTags();
         loadVtquarkTags();
         bindApiBuilderEvents();
+        updateHelpApiUrls();
         checkUrlParams();
 
         // ==================== 用户条例每次打开 / 刷新都弹出 ====================
