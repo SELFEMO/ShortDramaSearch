@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>酷乐短剧 / 影视资源聚合搜索</title>
+    <title>酷乐短剧 / 影视资源 Neo</title>
     
     <meta name="referrer" content="no-referrer">
 
     <script>
         (function () {
             const MANUAL_THEME_KEY = 'kuleu_theme_manual';
+            const THEME_MODE_KEY = 'kuleu_theme_mode';
             const LEGACY_THEME_KEY = 'kuleu_theme';
 
             function safeStorageGet(key) {
@@ -35,17 +36,46 @@
 
             safeStorageRemove(LEGACY_THEME_KEY);
 
+            const themeMode = safeStorageGet(THEME_MODE_KEY);
             const manualTheme = safeStorageGet(MANUAL_THEME_KEY);
-            const theme = manualTheme === 'light' || manualTheme === 'dark'
-                ? manualTheme
-                : getSystemThemeEarly();
+            const hasManualTheme = themeMode === 'manual' && (manualTheme === 'light' || manualTheme === 'dark');
 
+            if (!hasManualTheme) {
+                safeStorageRemove(MANUAL_THEME_KEY);
+            }
+
+            // 中文：只有新版显式写入手动模式时才使用缓存主题，否则首屏始终跟随当前设备系统主题。
+            // English: Cached themes are honored only after the new explicit manual mode is set; otherwise first paint follows the current device theme.
+            const theme = hasManualTheme ? manualTheme : getSystemThemeEarly();
             const root = document.documentElement;
             root.setAttribute('data-theme', theme);
+            root.setAttribute('data-theme-source', hasManualTheme ? 'manual' : 'system');
             root.classList.toggle('theme-light', theme === 'light');
             root.style.colorScheme = theme;
         })();
     </script>
+
+    <script>
+        (function () {
+            function getInitialNeoPageFromHash() {
+                const hash = window.location.hash || '#/';
+                if (hash === '#/api') return 'api';
+                if (hash === '#/daily') return 'daily';
+                if (hash === '#/rank') return 'rank';
+                if (hash === '#/favorites') return 'favorites';
+                return 'search';
+            }
+
+            const page = getInitialNeoPageFromHash();
+            const root = document.documentElement;
+
+            // 中文：首屏渲染前先把当前 hash 对应页面写到 html，避免默认搜索页先闪出后再被路由脚本二次切换。
+            // English: The initial hash route is written before first paint so the default search page does not flash before the router syncs.
+            root.classList.add(`neo-route-${page}`);
+            root.setAttribute('data-neo-route', page);
+        })();
+    </script>
+
 
     <link rel="icon" type="image/x-icon" href="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -248,6 +278,30 @@
         .main-content { position: relative; z-index: 10; min-height: 100vh; padding: 2rem 1rem; max-width: 900px; margin: 0 auto; }
         .page { display: none; }
         .page.active { display: block; }
+
+        /*
+         * 中文：Neo 首屏由 hash 决定应该先显示哪个页面，防止 HTML 默认 active 页面先出现、JS 初始化后再切换造成闪屏。
+         * English: Neo first paint is driven by the hash route to prevent the default active page from flashing before JavaScript router sync.
+         */
+        html[class*="neo-route-"] body.neo-ui .page {
+            display: none !important;
+        }
+
+        html.neo-route-search body.neo-ui #page-search,
+        html.neo-route-api body.neo-ui #page-api,
+        html.neo-route-daily body.neo-ui #page-daily,
+        html.neo-route-rank body.neo-ui #page-rank,
+        html.neo-route-favorites body.neo-ui #page-favorites {
+            display: block !important;
+        }
+
+        html.neo-router-ready body.neo-ui .page {
+            display: none !important;
+        }
+
+        html.neo-router-ready body.neo-ui .page.active {
+            display: block !important;
+        }
 
         .header { text-align: center; margin-bottom: 2.5rem; display: flex; flex-direction: column; align-items: center; }
         .header-top { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem; }
@@ -2104,6 +2158,1059 @@
             }
         }
 
+
+
+        /* ==================== Neo UI：独立新版界面整体设计 ==================== */
+        /* 中文：新版放在 neo.html 中独立加载，避免把旧版主页强行塞进一个 section 后造成宽度受限。 */
+        /* English: The redesign lives in neo.html so the old page remains stable and the new layout can use the full viewport. */
+        /* 中文：视觉方向改为“克制的媒体资料库控制台”，用版式、层级与微交互动效提升质感，而不是堆叠霓虹特效。 */
+        /* English: The visual direction is a restrained media-library console, relying on hierarchy, rhythm, and subtle motion instead of stacked neon effects. */
+        body.neo-ui {
+            --bg: #0b0c0f;
+            --bg-secondary: #111318;
+            --fg: #f5f1e8;
+            --muted: #9ba1ad;
+            --accent: #f97316;
+            --accent-glow: rgba(249, 115, 22, 0.22);
+            --card: rgba(22, 24, 30, 0.78);
+            --border: rgba(245, 241, 232, 0.12);
+            --neo-ink: #f5f1e8;
+            --neo-ink-soft: rgba(245, 241, 232, 0.72);
+            --neo-subtle: rgba(245, 241, 232, 0.08);
+            --neo-surface: rgba(22, 24, 30, 0.78);
+            --neo-surface-strong: rgba(27, 29, 36, 0.94);
+            --neo-line: rgba(245, 241, 232, 0.12);
+            --neo-copper: #f97316;
+            --neo-copper-soft: rgba(249, 115, 22, 0.14);
+            --neo-sage: #9ca986;
+            --neo-blue: #8ab4f8;
+            --neo-radius-lg: 28px;
+            --neo-radius-md: 18px;
+            --neo-radius-sm: 12px;
+            --neo-shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.34);
+            --neo-shadow-card: 0 18px 46px rgba(0, 0, 0, 0.22);
+            background: var(--bg);
+            color: var(--fg);
+            letter-spacing: -0.012em;
+            text-rendering: geometricPrecision;
+        }
+
+        html.theme-light body.neo-ui {
+            --bg: #f6f1e8;
+            --bg-secondary: #fffaf2;
+            --fg: #191714;
+            --muted: #68707d;
+            --accent: #c75f19;
+            --accent-glow: rgba(199, 95, 25, 0.18);
+            --card: rgba(255, 250, 242, 0.82);
+            --border: rgba(25, 23, 20, 0.12);
+            --neo-ink: #191714;
+            --neo-ink-soft: rgba(25, 23, 20, 0.72);
+            --neo-subtle: rgba(25, 23, 20, 0.06);
+            --neo-surface: rgba(255, 250, 242, 0.82);
+            --neo-surface-strong: rgba(255, 253, 248, 0.94);
+            --neo-line: rgba(25, 23, 20, 0.12);
+            --neo-copper: #c75f19;
+            --neo-copper-soft: rgba(199, 95, 25, 0.12);
+            --neo-sage: #6f7f5b;
+            --neo-blue: #2563eb;
+            --neo-shadow-soft: 0 24px 70px rgba(78, 60, 35, 0.14);
+            --neo-shadow-card: 0 16px 38px rgba(78, 60, 35, 0.10);
+            background: var(--bg);
+        }
+
+        body.neo-ui::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                    linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px),
+                    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(circle at 50% 18%, black 0%, rgba(0,0,0,0.7) 34%, transparent 74%);
+            opacity: 0.26;
+        }
+
+        html.theme-light body.neo-ui::before {
+            background:
+                    linear-gradient(90deg, rgba(25,23,20,0.05) 1px, transparent 1px),
+                    linear-gradient(rgba(25,23,20,0.04) 1px, transparent 1px);
+            opacity: 0.42;
+        }
+
+        .neo-ui .bg-pattern {
+            background:
+                    radial-gradient(circle at 18% 10%, rgba(249, 115, 22, 0.18), transparent 32%),
+                    radial-gradient(circle at 82% 16%, rgba(156, 169, 134, 0.14), transparent 30%),
+                    radial-gradient(circle at 50% 92%, rgba(138, 180, 248, 0.10), transparent 34%),
+                    linear-gradient(180deg, #0b0c0f 0%, #111318 52%, #08090c 100%);
+        }
+
+        html.theme-light .neo-ui .bg-pattern {
+            background:
+                    radial-gradient(circle at 18% 10%, rgba(199, 95, 25, 0.13), transparent 32%),
+                    radial-gradient(circle at 82% 16%, rgba(111, 127, 91, 0.14), transparent 30%),
+                    radial-gradient(circle at 50% 92%, rgba(37, 99, 235, 0.08), transparent 34%),
+                    linear-gradient(180deg, #f6f1e8 0%, #fffaf2 52%, #eee7db 100%);
+        }
+
+        .neo-ui .floating-orb {
+            opacity: 0.16;
+            filter: blur(96px);
+        }
+
+        .neo-ui .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: var(--neo-copper);
+            top: -210px;
+            right: -170px;
+        }
+
+        .neo-ui .orb-2 {
+            width: 440px;
+            height: 440px;
+            background: var(--neo-sage);
+            left: -170px;
+            bottom: 4vh;
+        }
+
+        .neo-ui .app-nav {
+            position: sticky;
+            top: 14px;
+            z-index: 60;
+            width: min(100% - 28px, 1360px);
+            margin: 14px auto 0;
+            min-height: 66px;
+            padding: 10px 12px 10px 18px;
+            border: 1px solid var(--neo-line);
+            border-radius: 22px;
+            background: var(--neo-surface-strong);
+            box-shadow: var(--neo-shadow-card), inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(22px) saturate(1.18);
+        }
+
+        .neo-ui .app-title {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .neo-ui .app-title span {
+            color: var(--neo-copper);
+        }
+
+        .neo-ui .app-nav-links {
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .neo-ui .nav-link {
+            min-height: 36px;
+            border-radius: 999px;
+            border-color: transparent;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .neo-ui .nav-link:hover {
+            color: var(--fg);
+            border-color: var(--neo-line);
+            background: var(--neo-subtle);
+        }
+
+        .neo-ui .nav-link.active {
+            color: var(--fg);
+            border-color: var(--neo-line);
+            background: var(--neo-subtle);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        .neo-ui .neo-entry-link {
+            color: var(--fg) !important;
+            border-color: var(--neo-line) !important;
+            background: var(--neo-subtle) !important;
+            box-shadow: none !important;
+        }
+
+        .neo-ui .neo-entry-link::before {
+            display: none;
+        }
+
+        .neo-ui .main-content {
+            position: relative;
+            z-index: 10;
+            width: min(100% - clamp(22px, 5vw, 84px), 1360px);
+            max-width: none;
+            margin: 0 auto;
+            padding: clamp(34px, 5vw, 72px) 0 86px;
+        }
+
+        .neo-ui #page-search.active {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        .neo-ui #page-search .header {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-end;
+            gap: 18px;
+            text-align: left;
+            margin-bottom: 0;
+            padding: clamp(28px, 5vw, 62px);
+            min-height: clamp(340px, 42vw, 520px);
+            border: 1px solid var(--neo-line);
+            border-radius: var(--neo-radius-lg);
+            background:
+                    linear-gradient(135deg, rgba(255,255,255,0.09), transparent 42%),
+                    radial-gradient(circle at 10% 0%, rgba(249,115,22,0.16), transparent 30%),
+                    radial-gradient(circle at 92% 18%, rgba(138,180,248,0.10), transparent 28%),
+                    var(--neo-surface);
+            box-shadow: var(--neo-shadow-soft), inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(24px) saturate(1.14);
+            overflow: hidden;
+        }
+
+        .neo-ui #page-search .header::before {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: calc(var(--neo-radius-lg) - 1px);
+            pointer-events: none;
+            background:
+                    linear-gradient(90deg, transparent, rgba(249,115,22,0.22), transparent) top / 100% 1px no-repeat,
+                    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 26%),
+                    radial-gradient(circle at 84% 18%, rgba(249,115,22,0.20), transparent 28%);
+            animation: neoBorderSweep 7s ease-in-out infinite;
+        }
+
+        .neo-ui #page-search .header::after {
+            content: '';
+            position: absolute;
+            right: clamp(18px, 4vw, 44px);
+            top: clamp(18px, 4vw, 44px);
+            width: clamp(110px, 18vw, 220px);
+            aspect-ratio: 1;
+            border-radius: 999px;
+            border: 1px solid var(--neo-line);
+            background:
+                    conic-gradient(from 180deg, transparent, rgba(249,115,22,0.28), transparent 48%, rgba(138,180,248,0.16), transparent),
+                    radial-gradient(circle, transparent 48%, var(--neo-subtle) 49%, transparent 58%);
+            opacity: 0.42;
+            pointer-events: none;
+            animation: neoOrbitMark 16s linear infinite;
+        }
+
+        .neo-ui .header-top {
+            position: relative;
+            z-index: 1;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .neo-ui .title-logo {
+            width: 46px;
+            height: 46px;
+            border-radius: 15px;
+            background: var(--neo-subtle);
+            border: 1px solid var(--neo-line);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .neo-ui #page-search .header h1 {
+            position: relative;
+            z-index: 1;
+            max-width: min(100%, 980px);
+            color: var(--fg);
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: clamp(2.05rem, 4.8vw, 4.35rem);
+            line-height: 1.04;
+            letter-spacing: -0.075em;
+            text-wrap: balance;
+            overflow-wrap: anywhere;
+            background: linear-gradient(110deg, var(--fg) 0%, var(--fg) 46%, var(--neo-copper) 62%, var(--fg) 78%);
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: neoTitleSheen 8s ease-in-out infinite;
+        }
+
+        .neo-ui .header p {
+            position: relative;
+            z-index: 1;
+            max-width: 650px;
+            color: var(--neo-ink-soft);
+            line-height: 1.75;
+        }
+
+        .neo-ui .header p[style] {
+            color: var(--muted) !important;
+        }
+
+        .neo-ui .user-policy-tip {
+            max-width: 650px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--neo-line);
+        }
+
+        .neo-ui #page-search .search-box {
+            margin: 0;
+            width: 100%;
+            z-index: 2;
+        }
+
+        .neo-ui .search-box,
+        .neo-ui .api-builder-card,
+        .neo-ui .history-panel,
+        .neo-ui .tags-container,
+        .neo-ui .result-section,
+        .neo-ui .favorite-item,
+        .neo-ui .api-preview-link-item {
+            border-radius: var(--neo-radius-md);
+            border-color: var(--neo-line);
+            background: var(--neo-surface);
+            box-shadow: var(--neo-shadow-card), inset 0 1px 0 rgba(255,255,255,0.07);
+            backdrop-filter: blur(18px) saturate(1.05);
+        }
+
+        .neo-ui .search-box {
+            overflow: visible;
+            border-radius: 24px;
+        }
+
+        .neo-ui .search-box:focus-within {
+            border-color: rgba(249,115,22,0.48);
+            box-shadow: 0 0 0 5px rgba(249,115,22,0.11), var(--neo-shadow-card);
+        }
+
+        .neo-ui .search-input {
+            min-height: 68px;
+            padding-left: 24px;
+            padding-right: 190px;
+            color: var(--fg);
+            font-size: 17px;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+        }
+
+        .neo-ui .search-input::placeholder {
+            color: var(--muted);
+        }
+
+        .neo-ui .type-select {
+            min-height: 42px;
+            border-radius: 14px;
+            background: var(--neo-subtle);
+            border-color: var(--neo-line);
+            color: var(--fg);
+        }
+
+        .neo-ui .type-select option,
+        html.theme-light .neo-ui .type-select option {
+            background: var(--bg-secondary);
+            color: var(--fg);
+        }
+
+        .neo-ui .search-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: var(--neo-copper);
+            box-shadow: 0 14px 32px rgba(249,115,22,0.24);
+        }
+
+        .neo-ui .search-btn:hover,
+        .neo-ui .daily-refresh-btn:hover,
+        .neo-ui .api-builder-btn-primary:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.04);
+        }
+
+        .neo-ui .history-panel {
+            width: 100%;
+            margin: 0;
+            padding: 14px;
+        }
+
+        .neo-ui .extra-toolbar {
+            width: 100%;
+            margin: 0;
+            justify-content: flex-start;
+        }
+
+        .neo-ui .extra-btn,
+        .neo-ui .resource-action-btn,
+        .neo-ui .api-preview-small-btn,
+        .neo-ui .api-builder-btn,
+        .neo-ui .daily-refresh-btn,
+        .neo-ui .history-clear-btn,
+        .neo-ui .favorite-clear-btn {
+            border-radius: 999px;
+            border-color: var(--neo-line);
+            background: var(--neo-subtle);
+            color: var(--fg);
+            font-weight: 700;
+        }
+
+        .neo-ui .api-builder-btn-primary,
+        .neo-ui .daily-refresh-btn {
+            border-color: transparent;
+            background: var(--neo-copper);
+            color: #fff;
+        }
+
+        .neo-ui #page-search .tags-container {
+            width: 100%;
+            margin: 4px 0 0;
+            padding: 18px;
+        }
+
+        .neo-ui .tags-header,
+        .neo-ui .vtquark-header,
+        .neo-ui .result-stats,
+        .neo-ui .history-header {
+            color: var(--muted);
+        }
+
+        .neo-ui .tags-title strong,
+        .neo-ui .vtquark-title strong,
+        .neo-ui .result-stats span {
+            color: var(--neo-copper);
+        }
+
+        .neo-ui .tag,
+        .neo-ui .history-chip {
+            border-radius: 999px;
+            background: var(--neo-subtle);
+            border-color: var(--neo-line);
+            color: var(--neo-ink-soft);
+        }
+
+        .neo-ui .tag:hover,
+        .neo-ui .history-chip:hover,
+        .neo-ui .api-preview-small-btn:hover,
+        .neo-ui .extra-btn:hover,
+        .neo-ui .resource-action-btn:hover {
+            border-color: rgba(249,115,22,0.42);
+            color: var(--fg);
+            background: var(--neo-copper-soft);
+            transform: translateY(-1px);
+        }
+
+        .neo-ui #page-search #resultsArea {
+            width: 100%;
+            min-height: 0;
+            margin-top: 10px;
+            padding: clamp(18px, 3vw, 26px);
+            border: 1px solid var(--neo-line);
+            border-radius: var(--neo-radius-lg);
+            background: var(--neo-surface);
+            box-shadow: var(--neo-shadow-soft), inset 0 1px 0 rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px) saturate(1.04);
+        }
+
+        /*
+         * 中文：初始空状态只需要一个等比例提示卡片，不能再保留外层结果容器的大高度。
+         * English: The initial idle state should show a balanced hint card only, not a tall framed result container.
+         */
+        .neo-ui #page-search #resultsArea.is-idle {
+            display: flex;
+            justify-content: center;
+            min-height: 0 !important;
+            margin-top: 8px;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+
+        .neo-ui .status-message {
+            min-height: 132px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-radius: 22px;
+            color: var(--muted);
+            background: linear-gradient(135deg, var(--neo-subtle), transparent);
+            border: 1px dashed var(--neo-line);
+        }
+
+        .neo-ui #page-search #resultsArea.is-idle .status-message {
+            width: min(100%, 980px);
+            min-height: 0 !important;
+            margin: 0 auto;
+            padding: clamp(24px, 3.6vw, 34px) clamp(20px, 4vw, 42px);
+            border-radius: 24px;
+            background:
+                    linear-gradient(135deg, rgba(255,255,255,0.075), transparent 52%),
+                    radial-gradient(circle at 0% 0%, rgba(249,115,22,0.12), transparent 38%),
+                    var(--neo-surface);
+            border: 1px solid var(--neo-line);
+            box-shadow:
+                    0 18px 45px rgba(0,0,0,0.18),
+                    inset 0 1px 0 rgba(255,255,255,0.07);
+            backdrop-filter: blur(18px) saturate(1.04);
+        }
+
+        html.theme-light .neo-ui #page-search #resultsArea.is-idle .status-message {
+            background:
+                    linear-gradient(135deg, rgba(255,255,255,0.72), transparent 54%),
+                    radial-gradient(circle at 0% 0%, rgba(194,92,38,0.10), transparent 38%),
+                    var(--neo-surface);
+            box-shadow:
+                    0 18px 42px rgba(67,43,26,0.10),
+                    inset 0 1px 0 rgba(255,255,255,0.86);
+        }
+
+        .neo-ui #page-search #resultsArea.is-busy .status-message,
+        .neo-ui #page-search #resultsArea.is-feedback .status-message {
+            min-height: clamp(132px, 18vw, 190px);
+        }
+
+        .neo-ui .result-section {
+            overflow: hidden;
+        }
+
+        .neo-ui .section-header {
+            background: transparent;
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--neo-line);
+        }
+
+        .neo-ui .section-header:hover {
+            background: var(--neo-subtle);
+        }
+
+        .neo-ui .result-list {
+            gap: 12px;
+            padding: 14px;
+            background: rgba(0,0,0,0.12);
+        }
+
+        html.theme-light .neo-ui .result-list {
+            background: rgba(25,23,20,0.035);
+        }
+
+        .neo-ui .result-item {
+            border-radius: 18px;
+            background: var(--neo-surface-strong);
+            border-color: var(--neo-line);
+        }
+
+        .neo-ui .result-item:hover {
+            border-color: rgba(249,115,22,0.36);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+        }
+
+        .neo-ui .drama-title {
+            font-size: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .neo-ui .drama-title::before {
+            content: '◆';
+            color: var(--neo-copper);
+            font-size: 11px;
+            transform: translateY(-1px);
+        }
+
+        .neo-ui .info-list {
+            border-left-color: var(--neo-line);
+        }
+
+        .neo-ui .info-link,
+        .neo-ui .api-link,
+        .neo-ui .user-policy-link,
+        .neo-ui .tags-toggle,
+        .neo-ui .vtquark-toggle {
+            color: var(--neo-copper) !important;
+        }
+
+        .neo-ui .api-link {
+            background: var(--neo-copper-soft);
+            color: var(--neo-copper) !important;
+            box-shadow: none;
+        }
+
+        .neo-ui .daily-page,
+        .neo-ui .rank-page,
+        .neo-ui .api-builder-page,
+        .neo-ui .favorites-page {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        .neo-ui #page-api .header,
+        .neo-ui #page-daily .header,
+        .neo-ui #page-rank .header,
+        .neo-ui #page-favorites .header {
+            align-items: flex-start;
+            text-align: left;
+            padding: clamp(24px, 4vw, 38px);
+            border: 1px solid var(--neo-line);
+            border-radius: var(--neo-radius-lg);
+            background: var(--neo-surface);
+            box-shadow: var(--neo-shadow-card), inset 0 1px 0 rgba(255,255,255,0.07);
+            backdrop-filter: blur(18px);
+        }
+
+        .neo-ui #page-api .header .header-top,
+        .neo-ui #page-daily .header .header-top,
+        .neo-ui #page-rank .header .header-top,
+        .neo-ui #page-favorites .header .header-top {
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .neo-ui #page-api .header h2,
+        .neo-ui #page-daily .header h2,
+        .neo-ui #page-rank .header h2,
+        .neo-ui #page-favorites .header h2 {
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--fg);
+            letter-spacing: -0.055em;
+        }
+
+        .neo-ui .api-builder-form {
+            grid-template-columns: minmax(0, 1fr) 240px;
+        }
+
+        .neo-ui .api-builder-input,
+        .neo-ui .api-builder-select,
+        .neo-ui .api-builder-url,
+        .neo-ui .daily-search-input,
+        .neo-ui .rank-search-input {
+            border-radius: 14px;
+            border-color: var(--neo-line);
+            background: var(--neo-subtle);
+            color: var(--fg);
+        }
+
+        .neo-ui .api-preview-output {
+            border-color: var(--neo-line);
+            background: rgba(0,0,0,0.22);
+        }
+
+        html.theme-light .neo-ui .api-preview-output {
+            background: rgba(255,255,255,0.58);
+        }
+
+        .neo-ui .rank-tabs {
+            border-bottom-color: var(--neo-line);
+        }
+
+        .neo-ui .rank-tab {
+            border-radius: 999px;
+        }
+
+        .neo-ui .rank-tab.active {
+            background: var(--neo-copper);
+            border-color: var(--neo-copper);
+            color: #fff;
+        }
+
+        .neo-ui .theme-switch {
+            border-color: var(--neo-line) !important;
+            background: var(--neo-subtle) !important;
+        }
+
+        .neo-ui .theme-switch-track {
+            box-shadow: inset 0 0 0 1px var(--neo-line);
+        }
+
+        /* ==================== Neo UI：高级微动效层 ==================== */
+        /* 中文：动效集中放在视觉层，不改业务逻辑，避免搜索、路由与 API 功能受到影响。 */
+        /* English: Motion stays in the presentation layer so search, routing, and API logic remain untouched. */
+        @keyframes neoPageRise {
+            from { opacity: 0; transform: translate3d(0, 18px, 0); filter: blur(8px); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+        }
+
+        @keyframes neoTitleSheen {
+            0%, 46%, 100% { background-position: 0% 50%; }
+            62% { background-position: 100% 50%; }
+        }
+
+        @keyframes neoBorderSweep {
+            0%, 100% { opacity: 0.72; filter: saturate(1); }
+            50% { opacity: 1; filter: saturate(1.35); }
+        }
+
+        @keyframes neoOrbitMark {
+            from { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.035); }
+            to { transform: rotate(360deg) scale(1); }
+        }
+
+        @keyframes neoPanelIn {
+            from { opacity: 0; transform: translate3d(0, 24px, 0) scale(0.985); }
+            to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        }
+
+        @keyframes neoGlowDrift {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            33% { transform: translate3d(26px, -18px, 0) scale(1.06); }
+            66% { transform: translate3d(-16px, 22px, 0) scale(0.97); }
+        }
+
+        .neo-ui .app-nav {
+            animation: neoPageRise 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .neo-ui .main-content {
+            animation: neoPageRise 0.72s 0.06s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .neo-ui .floating-orb {
+            animation: neoGlowDrift 18s ease-in-out infinite;
+        }
+
+        .neo-ui #page-search .header,
+        .neo-ui .search-box,
+        .neo-ui .history-panel,
+        .neo-ui .extra-toolbar,
+        .neo-ui #page-search .tags-container,
+        .neo-ui #page-search #resultsArea {
+            animation: neoPanelIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .neo-ui .search-box { animation-delay: 0.08s; }
+        .neo-ui .history-panel { animation-delay: 0.12s; }
+        .neo-ui .extra-toolbar { animation-delay: 0.16s; }
+        .neo-ui #page-search .tags-container { animation-delay: 0.2s; }
+        .neo-ui #page-search #resultsArea { animation-delay: 0.24s; }
+
+        .neo-ui .search-btn,
+        .neo-ui .api-builder-btn-primary,
+        .neo-ui .daily-refresh-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .neo-ui .search-btn::after,
+        .neo-ui .api-builder-btn-primary::after,
+        .neo-ui .daily-refresh-btn::after {
+            content: '';
+            position: absolute;
+            inset: -40% -80%;
+            background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.34), transparent 65%);
+            transform: translateX(-70%) rotate(8deg);
+            transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .neo-ui .search-btn:hover::after,
+        .neo-ui .api-builder-btn-primary:hover::after,
+        .neo-ui .daily-refresh-btn:hover::after {
+            transform: translateX(70%) rotate(8deg);
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .neo-ui .nav-link,
+            .neo-ui .search-btn,
+            .neo-ui .extra-btn,
+            .neo-ui .tag,
+            .neo-ui .history-chip,
+            .neo-ui .result-item,
+            .neo-ui .api-preview-small-btn,
+            .neo-ui .resource-action-btn {
+                transition:
+                        transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                        border-color 0.32s ease,
+                        background 0.32s ease,
+                        box-shadow 0.32s ease,
+                        color 0.32s ease,
+                        filter 0.32s ease;
+            }
+        }
+
+
+        /* ==================== Neo UI：页面切换与主题切换增强动效 ==================== */
+        /*
+         * 中文：路由和主题切换使用 View Transition 与轻量级兜底动画，提升现代感而不改动业务数据流。
+         * English: Route and theme transitions use View Transition plus lightweight fallbacks to improve polish without changing business data flow.
+         * 中文：本轮将位移距离压小、时长拉长，避免切换时产生“往前窜”的突兀感。
+         * English: This pass reduces travel distance and lengthens duration to prevent jumpy route transitions.
+         */
+        @keyframes neoRouteOld {
+            from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+            to { opacity: 0; transform: translate3d(0, -8px, 0) scale(0.992); filter: blur(4px); }
+        }
+
+        @keyframes neoRouteNew {
+            from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.994); filter: blur(6px); clip-path: inset(3% 0 0 0 round 18px); }
+            to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); clip-path: inset(0 0 0 0 round 0); }
+        }
+
+        @keyframes neoThemeOld {
+            from { opacity: 1; filter: blur(0) saturate(1); transform: scale(1); }
+            to { opacity: 0.36; filter: blur(18px) saturate(0.92); transform: scale(1.015); }
+        }
+
+        @keyframes neoThemeNew {
+            from { opacity: 0; filter: blur(18px) saturate(1.35); transform: scale(0.985); clip-path: circle(0% at 50% 0%); }
+            to { opacity: 1; filter: blur(0) saturate(1); transform: scale(1); clip-path: circle(145% at 50% 0%); }
+        }
+
+        @keyframes neoThemeWash {
+            0% { opacity: 0; transform: scale(0.96); }
+            35% { opacity: 0.72; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.08); }
+        }
+
+        @keyframes neoActivePulse {
+            0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.28); }
+            100% { box-shadow: 0 0 0 14px rgba(249,115,22,0); }
+        }
+
+        @keyframes neoSwitchPulse {
+            0% { transform: translateY(0) scale(1); }
+            46% { transform: translateY(-1px) scale(1.035); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        html.route-switching::view-transition-old(root) {
+            animation: neoRouteOld 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        html.route-switching::view-transition-new(root) {
+            animation: neoRouteNew 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        html.theme-switching::view-transition-old(root) {
+            animation: neoThemeOld 0.64s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        html.theme-switching::view-transition-new(root) {
+            animation: neoThemeNew 0.88s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        html.theme-switching body.neo-ui::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            background:
+                    radial-gradient(circle at 50% 0%, rgba(249,115,22,0.30), transparent 30%),
+                    radial-gradient(circle at 18% 18%, rgba(138,180,248,0.16), transparent 26%),
+                    linear-gradient(135deg, transparent, rgba(255,255,255,0.08), transparent);
+            mix-blend-mode: screen;
+            animation: neoThemeWash 0.88s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        html.theme-light.theme-switching body.neo-ui::after {
+            background:
+                    radial-gradient(circle at 50% 0%, rgba(194,92,38,0.18), transparent 32%),
+                    radial-gradient(circle at 18% 18%, rgba(82,121,168,0.10), transparent 26%),
+                    linear-gradient(135deg, transparent, rgba(255,255,255,0.45), transparent);
+            mix-blend-mode: multiply;
+        }
+
+        html.theme-switching .neo-ui .theme-switch {
+            animation: neoSwitchPulse 0.74s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .neo-ui .nav-link[data-page] {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .neo-ui .nav-link[data-page]::before {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            z-index: -1;
+            border-radius: inherit;
+            background:
+                    radial-gradient(circle at var(--neo-pointer-x, 50%) var(--neo-pointer-y, 50%), rgba(249,115,22,0.26), transparent 34%),
+                    linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+            opacity: 0;
+            transform: scale(0.86);
+            transition:
+                    opacity 0.28s ease,
+                    transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .neo-ui .nav-link[data-page]::after {
+            content: '';
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 5px;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, var(--neo-copper), transparent);
+            opacity: 0;
+            transform: scaleX(0.35);
+            transition:
+                    opacity 0.28s ease,
+                    transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .neo-ui .nav-link[data-page]:hover::before,
+        .neo-ui .nav-link[data-page].active::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .neo-ui .nav-link[data-page].active::after {
+            opacity: 1;
+            transform: scaleX(1);
+        }
+
+        .neo-ui .nav-link[data-page].active {
+            animation: neoActivePulse 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /*
+         * 中文：不要让 .page.active 自动带入场动画；否则首屏与 hash 路由同步时会像“加载后又刷新一次”。
+         * English: Page activation no longer animates by default; otherwise first-paint route sync looks like a second refresh.
+         */
+        html.neo-fallback-route .neo-ui .page.active {
+            animation: neoRouteNew 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html.route-switching::view-transition-old(root),
+            html.route-switching::view-transition-new(root),
+            html.theme-switching::view-transition-old(root),
+            html.theme-switching::view-transition-new(root),
+            html.theme-switching body.neo-ui::after,
+            html.theme-switching .neo-ui .theme-switch,
+            html.neo-fallback-route .neo-ui .page.active,
+            .neo-ui .nav-link[data-page].active {
+                animation: none !important;
+            }
+        }
+
+
+        @media (max-width: 980px) {
+            .neo-ui .app-nav {
+                top: 8px;
+                width: min(100% - 18px, 100%);
+                padding: 12px;
+            }
+
+            .neo-ui .app-nav-links {
+                justify-content: center;
+            }
+
+            .neo-ui #page-search .header {
+                min-height: 360px;
+            }
+
+            .neo-ui #page-search .header::after {
+                width: 132px;
+            }
+
+            .neo-ui #page-search .search-box {
+                width: 100%;
+                margin-top: 0;
+            }
+
+            .neo-ui .history-panel,
+            .neo-ui .extra-toolbar,
+            .neo-ui #page-search .tags-container {
+                width: 100%;
+            }
+
+            .neo-ui .api-builder-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .neo-ui .main-content {
+                width: min(100% - 20px, 100%);
+                padding-top: 24px;
+            }
+
+            .neo-ui .app-nav {
+                border-radius: 20px;
+            }
+
+            .neo-ui #page-search .header {
+                padding: 22px;
+                border-radius: 24px;
+            }
+
+            .neo-ui #page-search .header h1 {
+                font-size: clamp(1.82rem, 9vw, 2.55rem) !important;
+                letter-spacing: -0.055em;
+            }
+
+            .neo-ui .search-input {
+                min-height: 62px;
+                padding-right: 112px;
+                font-size: 15px;
+            }
+
+            .neo-ui .search-tools {
+                gap: 4px;
+            }
+
+            .neo-ui .type-select {
+                min-width: 72px;
+                max-width: 84px;
+            }
+
+            .neo-ui .search-btn {
+                width: 42px;
+                height: 42px;
+                border-radius: 13px;
+            }
+
+            .neo-ui #page-search #resultsArea {
+                padding: 14px;
+                border-radius: 24px;
+            }
+        }
+
+        /* ==================== Neo 新版稳定性提醒弹窗 ==================== */
+        .neo-notice-modal-box {
+            max-width: 680px;
+        }
+
+        .neo-notice-modal-overlay .policy-modal-title::before {
+            content: '◇';
+            margin-right: 8px;
+            color: var(--neo-copper);
+        }
+
+        .neo-notice-legacy-link {
+            color: var(--neo-copper) !important;
+            word-break: break-all;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .neo-notice-action-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
         /* ==================== 推荐增强功能：主题 / 导入导出 / 批量复制 ==================== */
         html[data-theme="dark"] {
             color-scheme: dark;
@@ -2488,8 +3595,8 @@
 
         /* ==================== 深浅模式最终方案：页面快照过渡，真实元素不动 ==================== */
         :root {
-            --theme-vt-duration: 1000ms;
-            --theme-vt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --theme-vt-duration: 900ms;
+            --theme-vt-ease: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         @media (max-width: 768px) {
@@ -2555,7 +3662,7 @@
 
         @media (max-width: 768px) {
             :root {
-                --theme-vt-duration: 120ms;
+                --theme-vt-duration: 560ms;
             }
         }
 
@@ -2718,7 +3825,7 @@
         }
     </style>
 </head>
-<body>
+<body class="neo-ui">
     <div class="bg-pattern"></div>
     <div class="floating-orb orb-1"></div>
     <div class="floating-orb orb-2"></div>
@@ -2728,6 +3835,37 @@
     <!-- ==================== 主页自定义滚动条 ==================== -->
     <div id="pageCustomScrollbar" class="page-custom-scrollbar" aria-hidden="true">
         <div id="pageCustomScrollbarThumb" class="page-custom-scrollbar-thumb"></div>
+    </div>
+
+    <!-- ==================== Neo 新版稳定性提醒弹窗 ==================== -->
+    <div id="neoNoticeModalOverlay" class="policy-modal-overlay neo-notice-modal-overlay">
+        <div class="policy-modal-box neo-notice-modal-box">
+            <div class="policy-modal-header">
+                <div class="policy-modal-title">新版界面提醒</div>
+            </div>
+            <div class="policy-modal-content">
+                <p>
+                    您正在进入 <span class="policy-highlight">酷乐短剧 / 影视资源 Neo</span> 新版界面。
+                    新版仍处于持续优化阶段，部分设备或浏览器可能出现样式错位、交互异常或功能不可用等不稳定情况。
+                </p>
+                <p>
+                    如果新版界面无法正常使用，请返回旧版页面继续搜索：
+                    <br>
+                    <a id="neoNoticeLegacyLink" class="neo-notice-legacy-link" href="./index.html">返回旧版界面</a>
+                </p>
+                <p>
+                    建议优先使用最新版 Chrome、Edge、Safari 或系统 WebView，以获得更稳定的视觉与动效体验。
+                </p>
+            </div>
+            <div class="policy-modal-actions">
+                <a id="neoNoticeLegacyBtn" class="policy-btn policy-btn-reject neo-notice-action-link" href="./index.html">
+                    返回旧版
+                </a>
+                <button class="policy-btn policy-btn-confirm" onclick="closeNeoNoticeModal()">
+                    继续体验新版
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ==================== 用户条例弹窗 ==================== -->
@@ -2823,7 +3961,7 @@
     </div>
 
     <nav class="app-nav">
-        <div id="appTitle" class="app-title font-display">酷乐短剧 / 影视资源 · <span>聚合搜索</span></div>
+        <div id="appTitle" class="app-title font-display">酷乐短剧/影视资源<span> Neo</span></div>
         <div class="app-nav-links">
             <div class="nav-link active" data-page="search">聚合搜索</div>
             <div class="nav-link" data-page="api">API生成器</div>
@@ -2843,7 +3981,7 @@
                     </span>
                 </span>
             </button>
-            <a class="nav-link neo-entry-link" href="./neo.html" title="进入新版界面"><span>新版界面</span></a>
+            <a class="nav-link neo-entry-link" href="./index.html" title="返回旧版界面"><span>旧版界面</span></a>
 
             <a
                     class="nav-link github-nav-link"
@@ -2948,7 +4086,7 @@
                     <div class="vtquark-list" id="vtquarkTagsList"></div>
                 </div>
             </div>
-            <div id="resultsArea">
+            <div id="resultsArea" class="is-idle">
                 <div class="status-message" id="initialState">
                     <p>
                         已适配
@@ -3234,6 +4372,18 @@
         const titleLogo = document.getElementById('titleLogo');
         const searchStatus = document.getElementById('searchStatus');
         const typeSelect = document.getElementById('typeSelect');
+
+        function setResultsAreaMode(mode) {
+            if (!resultsArea) return;
+
+            // 中文：结果区按状态切换外框样式，避免初始空状态出现上下比例失衡的“大下巴”。
+            // English: Result-area framing is state-based so the initial idle hint never inherits an oversized search-result shell.
+            resultsArea.classList.remove('is-idle', 'is-busy', 'has-results', 'is-feedback');
+
+            if (mode) {
+                resultsArea.classList.add(mode);
+            }
+        }
         const dailySearchInput = document.getElementById('dailySearchInput');
         const dailyRefreshBtn = document.getElementById('dailyRefreshBtn');
         const dailyStats = document.getElementById('dailyStats');
@@ -3277,11 +4427,11 @@
         };
 
         const titles = {
-            search: '酷乐短剧 / 影视资源 · <span>聚合搜索</span>',
-            api: '酷乐短剧 / 影视资源 · <span>API生成器</span>',
-            daily: '酷乐短剧 / 影视资源 · <span>每日影视</span>',
-            rank: '酷乐短剧 / 影视资源 · <span>热度榜</span>',
-            favorites: '酷乐短剧 / 影视资源 · <span>我的收藏</span>'
+            search: '酷乐短剧 / 影视资源 Neo · <span>聚合搜索</span>',
+            api: '酷乐短剧 / 影视资源 Neo · <span>API生成器</span>',
+            daily: '酷乐短剧 / 影视资源 Neo · <span>每日影视</span>',
+            rank: '酷乐短剧 / 影视资源 Neo · <span>热度榜</span>',
+            favorites: '酷乐短剧 / 影视资源 Neo · <span>我的收藏</span>'
         };
 
         function getPageFromHash() {
@@ -3301,44 +4451,128 @@
             return '#/';
         }
 
-        function navigateTo(pageName) {
+        function syncNeoRouteClass(pageName) {
             const finalPage = pages[pageName] ? pageName : 'search';
+            const root = document.documentElement;
+            const routeNames = ['search', 'api', 'daily', 'rank', 'favorites'];
 
-            Object.keys(pages).forEach(key => {
-                pages[key].classList.toggle('active', key === finalPage);
+            routeNames.forEach(key => {
+                root.classList.toggle(`neo-route-${key}`, key === finalPage);
             });
 
-            /*
-             * 关键修复：
-             * 这里只处理真正的页面导航按钮。
-             * GitHub / 帮助 没有 data-page，不参与 active 状态。
-             */
-            document.querySelectorAll('.nav-link[data-page]').forEach(link => {
-                link.classList.toggle('active', link.dataset.page === finalPage);
-            });
-
-            appTitleEl.innerHTML = titles[finalPage] || titles.search;
-
-            if (finalPage === 'api') {
-                setTimeout(() => {
-                    updateApiGeneratedUrl();
-                }, 50);
-            }
-
-            if (finalPage === 'daily') loadDailyResources();
-            if (finalPage === 'rank') initRankPage();
-
-            /*
-             * 移动端某些浏览器会残留 hover / focus 状态，
-             * 主动 blur 可以避免两个按钮看起来同时被选中。
-             */
-            if (document.activeElement && document.activeElement.blur) {
-                document.activeElement.blur();
-            }
+            // 中文：路由类与实际页面状态保持同步，CSS 首屏兜底和 JS 路由不会互相打架。
+            // English: The route class stays aligned with the actual page so first-paint CSS and the JS router never fight each other.
+            root.setAttribute('data-neo-route', finalPage);
         }
 
-        let suppressNextHashNavigate = false;
+        function navigateTo(pageName, options = {}) {
+            const finalPage = pages[pageName] ? pageName : 'search';
+            const currentPage = document.body ? document.body.dataset.neoPage : '';
+            const isSamePage = currentPage === finalPage;
+
+            if (isSamePage && options.force !== true) {
+                syncNeoRouteClass(finalPage);
+                document.documentElement.classList.add('neo-router-ready');
+                updatePageScrollbar();
+                return;
+            }
+
+            const shouldAnimate =
+                options.animate !== false &&
+                currentPage &&
+                currentPage !== finalPage &&
+                document.body &&
+                document.body.classList.contains('neo-ui') &&
+                !prefersReducedMotion();
+
+            const applyNavigationState = () => {
+                Object.keys(pages).forEach(key => {
+                    pages[key].classList.toggle('active', key === finalPage);
+                });
+
+                /*
+                 * 关键修复：
+                 * 这里只处理真正的页面导航按钮。
+                 * GitHub / 帮助 没有 data-page，不参与 active 状态。
+                 */
+                document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+                    link.classList.toggle('active', link.dataset.page === finalPage);
+                });
+
+                appTitleEl.innerHTML = titles[finalPage] || titles.search;
+                syncNeoRouteClass(finalPage);
+                document.documentElement.classList.add('neo-router-ready');
+
+                if (document.body) {
+                    document.body.dataset.neoPage = finalPage;
+                }
+
+                if (finalPage === 'api') {
+                    setTimeout(() => {
+                        updateApiGeneratedUrl();
+                    }, 50);
+                }
+
+                if (finalPage === 'daily') loadDailyResources();
+                if (finalPage === 'rank') initRankPage();
+
+                /*
+                 * 移动端某些浏览器会残留 hover / focus 状态，
+                 * 主动 blur 可以避免两个按钮看起来同时被选中。
+                 */
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+            };
+
+            if (shouldAnimate && document.startViewTransition) {
+                document.documentElement.classList.add('route-switching');
+
+                // 中文：只在真实页面切换时启用 View Transition，避免同一路由或初始化阶段重复播放动画。
+                // English: View Transition is used only for real route changes so same-route and initial sync never replay animations.
+                const transition = document.startViewTransition(applyNavigationState);
+
+                transition.finished.finally(() => {
+                    document.documentElement.classList.remove('route-switching');
+                    updatePageScrollbar();
+                });
+
+                return;
+            }
+
+            if (shouldAnimate) {
+                document.documentElement.classList.add('neo-fallback-route');
+                applyNavigationState();
+
+                window.setTimeout(() => {
+                    document.documentElement.classList.remove('neo-fallback-route');
+                    updatePageScrollbar();
+                }, 640);
+
+                return;
+            }
+
+            applyNavigationState();
+            updatePageScrollbar();
+        }
+
+        let lastHandledHash = window.location.hash || '#/';
         let lastTouchNavTime = 0;
+
+        function pushNeoRouteHash(targetHash) {
+            if (window.location.hash === targetHash) return;
+
+            if (window.history && window.history.pushState) {
+                // 中文：使用 pushState 更新 hash，避免 hashchange 立即再次触发 navigateTo，造成页面像加载了两遍。
+                // English: pushState updates the hash without firing hashchange immediately, preventing the route from rendering twice.
+                window.history.pushState(null, '', targetHash);
+                lastHandledHash = targetHash;
+                return;
+            }
+
+            lastHandledHash = targetHash;
+            window.location.hash = targetHash;
+        }
 
         function switchPageByNav(pageName) {
             if (!pages[pageName]) return;
@@ -3350,28 +4584,46 @@
              * 这样移动端第一次点击就会马上切换，不需要再点第二次。
              */
             navigateTo(pageName);
+            pushNeoRouteHash(targetHash);
+        }
 
-            if (window.location.hash !== targetHash) {
-                suppressNextHashNavigate = true;
-                window.location.hash = targetHash;
+        function bindNeoNavPointerMotion() {
+            const navLinks = document.querySelectorAll('.neo-ui .nav-link[data-page]');
 
-                setTimeout(() => {
-                    suppressNextHashNavigate = false;
-                }, 0);
-            }
+            navLinks.forEach(link => {
+                if (link.dataset.neoPointerBound === '1') return;
+                link.dataset.neoPointerBound = '1';
+
+                link.addEventListener('pointermove', event => {
+                    const rect = link.getBoundingClientRect();
+                    const x = ((event.clientX - rect.left) / rect.width) * 100;
+                    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+                    // 中文：让导航高光跟随指针移动，增加现代交互感，同时只写 CSS 变量避免重排。
+                    // English: The nav highlight follows the pointer through CSS variables, adding polish without forcing layout recalculation.
+                    link.style.setProperty('--neo-pointer-x', `${x.toFixed(2)}%`);
+                    link.style.setProperty('--neo-pointer-y', `${y.toFixed(2)}%`);
+                });
+            });
         }
 
         function initRouter() {
-            navigateTo(getPageFromHash());
+            navigateTo(getPageFromHash(), { animate: false });
 
-            window.addEventListener('hashchange', () => {
-                if (suppressNextHashNavigate) {
-                    suppressNextHashNavigate = false;
+            const handleHistoryRouteChange = () => {
+                const currentHash = window.location.hash || '#/';
+                if (currentHash === lastHandledHash && document.body && document.body.dataset.neoPage === getPageFromHash()) {
                     return;
                 }
 
+                lastHandledHash = currentHash;
                 navigateTo(getPageFromHash());
-            });
+            };
+
+            window.addEventListener('hashchange', handleHistoryRouteChange);
+            window.addEventListener('popstate', handleHistoryRouteChange);
+
+            bindNeoNavPointerMotion();
 
             const navLinksContainer = document.querySelector('.app-nav-links');
             if (!navLinksContainer) return;
@@ -4315,6 +5567,64 @@
             modalTimers.set(overlay, timer);
         }
 
+        // ==================== Neo 新版稳定性提醒弹窗逻辑 ====================
+        const neoNoticeModalOverlay = document.getElementById('neoNoticeModalOverlay');
+        const neoNoticeLegacyLink = document.getElementById('neoNoticeLegacyLink');
+        const neoNoticeLegacyBtn = document.getElementById('neoNoticeLegacyBtn');
+        let neoNoticeClosedForThisPageLoad = false;
+
+        function getLegacyPageUrl() {
+            const legacyUrl = new URL('./index.html', window.location.href);
+
+            // 中文：保留当前查询参数和 hash，用户从新版返回旧版时不丢失正在访问的入口状态。
+            // English: Preserve the current query and hash so returning to the old UI keeps the current entry state.
+            legacyUrl.search = window.location.search;
+            legacyUrl.hash = window.location.hash;
+
+            return legacyUrl.href;
+        }
+
+        function syncNeoNoticeLegacyUrl() {
+            const legacyUrl = getLegacyPageUrl();
+
+            if (neoNoticeLegacyLink) {
+                neoNoticeLegacyLink.href = legacyUrl;
+                neoNoticeLegacyLink.textContent = legacyUrl;
+            }
+
+            if (neoNoticeLegacyBtn) {
+                neoNoticeLegacyBtn.href = legacyUrl;
+            }
+        }
+
+        function openNeoNoticeModal() {
+            syncNeoNoticeLegacyUrl();
+            showModalAnimated(neoNoticeModalOverlay);
+        }
+
+        function closeNeoNoticeModal() {
+            neoNoticeClosedForThisPageLoad = true;
+
+            // 中文：新版提醒关闭后再弹出用户条例，避免两个自动弹窗同时抢占焦点。
+            // English: Show the policy modal after the Neo notice closes so two automatic dialogs do not compete for focus.
+            hideModalAnimated(neoNoticeModalOverlay, () => {
+                showPolicyModalOnEveryPageLoad();
+            });
+        }
+
+        function shouldAutoOpenNeoNoticeModal() {
+            return shouldAutoOpenPolicyModal();
+        }
+
+        function showNeoNoticeModalOnPageLoad() {
+            if (!shouldAutoOpenNeoNoticeModal()) return;
+            if (neoNoticeClosedForThisPageLoad) return;
+
+            setTimeout(() => {
+                openNeoNoticeModal();
+            }, 420);
+        }
+
         // ==================== 用户条例弹窗逻辑 ====================
         const policyModalOverlay = document.getElementById('policyModalOverlay');
 
@@ -4370,7 +5680,8 @@
         window.addEventListener('pageshow', event => {
             if (event.persisted) {
                 policyAutoOpenedForThisPageLoad = false;
-                showPolicyModalOnEveryPageLoad();
+                neoNoticeClosedForThisPageLoad = false;
+                showNeoNoticeModalOnPageLoad();
             }
         });
 
@@ -4590,6 +5901,7 @@
                 const { mergedByType, total, typeList, apiStatus } = result;
 
                 if (apiStatus && apiStatus.failedReason === 'rate_limited') {
+                    setResultsAreaMode('is-feedback');
                     resultsArea.innerHTML = `
                 <div class="status-message">
                     <p style="color: var(--error);">接口请求过于频繁</p>
@@ -4601,6 +5913,7 @@
                 }
 
                 if (typeList.length === 0 || total === 0) {
+                    setResultsAreaMode('is-feedback');
                     resultsArea.innerHTML = `<div class="status-message"><p>未找到相关结果。</p></div>`;
                     showStatus('未找到相关结果');
                     return;
@@ -4617,6 +5930,7 @@
                 console.error(error);
 
                 if (error && error.errorType === 'rate_limited') {
+                    setResultsAreaMode('is-feedback');
                     resultsArea.innerHTML = `
                 <div class="status-message">
                     <p style="color: var(--error);">接口请求过于频繁</p>
@@ -4627,6 +5941,7 @@
                     return;
                 }
 
+                setResultsAreaMode('is-feedback');
                 resultsArea.innerHTML = `<div class="status-message"><p style="color: var(--error);">发生错误</p></div>`;
             } finally {
                 if (searchId === searchSequence) {
@@ -5111,6 +6426,7 @@
                 html += `</div></div>`;
             });
 
+            setResultsAreaMode('has-results');
             resultsArea.innerHTML = html;
 
             bindSectionToggleEvents();
@@ -5203,7 +6519,10 @@
     `;
         }
 
-        function showLoading() { resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`; }
+        function showLoading() {
+            setResultsAreaMode('is-busy');
+            resultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在搜索...</p></div>`;
+        }
 
         // ==================== 主页热度榜逻辑 ====================
         let rankData = [];
@@ -6923,6 +8242,7 @@
         }
 
         const THEME_MANUAL_KEY = 'kuleu_theme_manual';
+        const THEME_MODE_KEY = 'kuleu_theme_mode';
         const THEME_LEGACY_KEY = 'kuleu_theme';
 
         /*
@@ -6937,43 +8257,70 @@
         let systemThemeMediaQuery = null;
         let systemThemeListenerBound = false;
 
+        function getThemeMode() {
+            return safeGetLocalStorage(THEME_MODE_KEY) === 'manual' ? 'manual' : 'system';
+        }
+
         function getInitialTheme() {
             const manualTheme = normalizeTheme(safeGetLocalStorage(THEME_MANUAL_KEY));
-            return manualTheme || getSystemTheme();
+
+            if (getThemeMode() === 'manual' && manualTheme) {
+                return manualTheme;
+            }
+
+            // 中文：旧版本只写入 kuleu_theme_manual，容易导致网页永久停在旧主题；这里清掉旧缓存，恢复默认跟随设备。
+            // English: Older builds wrote only kuleu_theme_manual, which could pin the page to a stale theme; clearing it restores device-following by default.
+            safeRemoveLocalStorage(THEME_MANUAL_KEY);
+            safeRemoveLocalStorage(THEME_MODE_KEY);
+            return getSystemTheme();
         }
 
         function updateThemeToggleButton(theme) {
             if (!themeToggleBtn) return;
 
             const isLight = theme === 'light';
+            const themeSource = getThemeMode();
+            const modeLabel = themeSource === 'manual' ? '手动主题' : '跟随系统';
+            const nextLabel = isLight ? '深色图标' : '浅色图标';
 
-            // 中文：按钮只显示浅色/深色图标，不再写“开灯/关灯”，避免主题含义被误读。
-            // English: The switch exposes light/dark icons only, avoiding misleading on/off wording in the UI.
+            // 中文：按钮只显示浅色/深色图标，同时在无障碍标签里说明当前是否跟随系统。
+            // English: The switch keeps the visible UI icon-only while exposing system/manual state through accessible labels.
             themeToggleBtn.dataset.currentTheme = isLight ? 'light' : 'dark';
-            themeToggleBtn.title = isLight ? '当前为浅色图标，点击切换为深色图标' : '当前为深色图标，点击切换为浅色图标';
-            themeToggleBtn.setAttribute('aria-label', isLight ? '当前为浅色图标，点击切换为深色图标' : '当前为深色图标，点击切换为浅色图标');
+            themeToggleBtn.dataset.themeSource = themeSource;
+            themeToggleBtn.title = `${modeLabel}：当前为${isLight ? '浅色图标' : '深色图标'}，点击切换为${nextLabel}`;
+            themeToggleBtn.setAttribute('aria-label', `${modeLabel}：当前为${isLight ? '浅色图标' : '深色图标'}，点击切换为${nextLabel}`);
             themeToggleBtn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
         }
 
         function applyTheme(theme, options = {}) {
-            const { save = false, showToast = false } = options;
+            const { save = false, showToast = false, source = null } = options;
             const nextTheme = normalizeTheme(theme) || getSystemTheme();
+            const nextSource = source === 'manual' || source === 'system'
+                ? source
+                : (save ? 'manual' : getThemeMode());
             const isLight = nextTheme === 'light';
             const root = document.documentElement;
 
             root.classList.toggle('theme-light', isLight);
             root.setAttribute('data-theme', nextTheme);
+            root.setAttribute('data-theme-source', nextSource);
             root.style.colorScheme = nextTheme;
 
             if (document.body) {
                 document.body.classList.toggle('theme-light', isLight);
             }
 
-            updateThemeToggleButton(nextTheme);
-
             if (save) {
                 safeSetLocalStorage(THEME_MANUAL_KEY, nextTheme);
+                safeSetLocalStorage(THEME_MODE_KEY, 'manual');
             }
+
+            if (nextSource === 'system') {
+                safeRemoveLocalStorage(THEME_MANUAL_KEY);
+                safeRemoveLocalStorage(THEME_MODE_KEY);
+            }
+
+            updateThemeToggleButton(nextTheme);
 
             if (showToast) {
                 showStatus(isLight ? '已切换为浅色模式' : '已切换为深色模式');
@@ -7078,7 +8425,8 @@
             // 这里仅同步 body class 与按钮文字，不会产生可见跳变。
             applyTheme(getInitialTheme(), {
                 save: false,
-                showToast: false
+                showToast: false,
+                source: getThemeMode()
             });
 
             if (themeToggleBtn && themeToggleBtn.dataset.themeBound !== '1') {
@@ -7284,9 +8632,13 @@
         renderFavorites();
         bindExtraFeatureEvents();
 
-        // ==================== 用户条例每次打开 / 刷新都弹出 ====================
-        showPolicyModalOnEveryPageLoad();
+        // ==================== 新版稳定性提醒与用户条例每次打开 / 刷新都弹出 ====================
+        showNeoNoticeModalOnPageLoad();
     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
