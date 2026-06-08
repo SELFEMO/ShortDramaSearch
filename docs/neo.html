@@ -2189,6 +2189,9 @@
             --neo-radius-sm: 12px;
             --neo-shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.34);
             --neo-shadow-card: 0 18px 46px rgba(0, 0, 0, 0.22);
+            --neo-section-gap: clamp(48px, 5.2vw, 76px);
+            --neo-panel-padding: clamp(28px, 3.2vw, 42px);
+            --neo-chip-gap: clamp(12px, 1.2vw, 16px);
             background: var(--bg);
             color: var(--fg);
             letter-spacing: -0.012em;
@@ -2353,10 +2356,28 @@
             padding: clamp(34px, 5vw, 72px) 0 86px;
         }
 
+        /*
+         * 中文：首页卡片采用统一纵向节奏，避免搜索框、热度框、结果框视觉上黏在一起。
+         * English: The search page uses a consistent vertical rhythm so the search, hot-tags, and result panels do not visually stick together.
+         */
         .neo-ui #page-search.active {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
-            gap: 18px;
+            gap: var(--neo-section-gap);
+        }
+
+        /*
+         * 中文：进一步拉开首页主要区块之间的空气感；上一版只靠 grid gap，视觉上仍会被大卡片阴影和工具按钮挤在一起。
+         * English: Extra block-level breathing room is added because grid gap alone still lets large cards and toolbar buttons feel visually crowded.
+         */
+        .neo-ui #page-search > .search-box,
+        .neo-ui #page-search > .tags-container,
+        .neo-ui #page-search > #resultsArea {
+            margin-block: clamp(6px, 1vw, 14px);
+        }
+
+        .neo-ui #page-search > .extra-toolbar {
+            margin-block: clamp(2px, 0.8vw, 10px);
         }
 
         .neo-ui #page-search .header {
@@ -2545,13 +2566,15 @@
         .neo-ui .history-panel {
             width: 100%;
             margin: 0;
-            padding: 14px;
+            padding: clamp(22px, 2.6vw, 32px);
         }
 
         .neo-ui .extra-toolbar {
             width: 100%;
             margin: 0;
             justify-content: flex-start;
+            gap: clamp(12px, 1.4vw, 18px);
+            padding-inline: clamp(2px, 0.8vw, 10px);
         }
 
         .neo-ui .extra-btn,
@@ -2577,8 +2600,8 @@
 
         .neo-ui #page-search .tags-container {
             width: 100%;
-            margin: 4px 0 0;
-            padding: 18px;
+            margin: 0;
+            padding: var(--neo-panel-padding);
         }
 
         .neo-ui .tags-header,
@@ -2586,6 +2609,24 @@
         .neo-ui .result-stats,
         .neo-ui .history-header {
             color: var(--muted);
+        }
+
+        .neo-ui #page-search .tags-header {
+            margin-bottom: clamp(20px, 2.4vw, 28px);
+        }
+
+        .neo-ui #page-search .tags-list,
+        .neo-ui #page-search .vtquark-list {
+            gap: var(--neo-chip-gap);
+        }
+
+        .neo-ui #page-search .vtquark-section {
+            margin-top: clamp(28px, 3.4vw, 42px);
+            padding-top: clamp(22px, 2.6vw, 32px);
+        }
+
+        .neo-ui #page-search .vtquark-header {
+            margin-bottom: clamp(18px, 2vw, 24px);
         }
 
         .neo-ui .tags-title strong,
@@ -2616,8 +2657,8 @@
         .neo-ui #page-search #resultsArea {
             width: 100%;
             min-height: 0;
-            margin-top: 10px;
-            padding: clamp(18px, 3vw, 26px);
+            margin-top: 0;
+            padding: var(--neo-panel-padding);
             border: 1px solid var(--neo-line);
             border-radius: var(--neo-radius-lg);
             background: var(--neo-surface);
@@ -2633,7 +2674,7 @@
             display: flex;
             justify-content: center;
             min-height: 0 !important;
-            margin-top: 8px;
+            margin-top: 0;
             padding: 0 !important;
             border: 0 !important;
             background: transparent !important;
@@ -2699,8 +2740,8 @@
         }
 
         .neo-ui .result-list {
-            gap: 12px;
-            padding: 14px;
+            gap: 16px;
+            padding: 18px;
             background: rgba(0,0,0,0.12);
         }
 
@@ -3145,6 +3186,12 @@
                 padding-top: 24px;
             }
 
+            body.neo-ui {
+                --neo-section-gap: clamp(34px, 8vw, 48px);
+                --neo-panel-padding: 22px;
+                --neo-chip-gap: 10px;
+            }
+
             .neo-ui .app-nav {
                 border-radius: 20px;
             }
@@ -3180,9 +3227,23 @@
                 border-radius: 13px;
             }
 
+            .neo-ui #page-search.active {
+                gap: var(--neo-section-gap);
+            }
+
+            .neo-ui #page-search > .search-box,
+            .neo-ui #page-search > .tags-container,
+            .neo-ui #page-search > #resultsArea {
+                margin-block: 4px;
+            }
+
             .neo-ui #page-search #resultsArea {
-                padding: 14px;
+                padding: 18px;
                 border-radius: 24px;
+            }
+
+            .neo-ui #page-search #resultsArea.is-idle {
+                padding: 0 !important;
             }
         }
 
@@ -3823,6 +3884,103 @@
             background: #fff7f7;
             border-color: rgba(220, 38, 38, 0.28);
         }
+
+        /* ==================== Neo 首页关键区块最终节奏修正 ==================== */
+        /*
+         * 中文：上一轮为了制造空气层把顶部搜索框和热度框底部间距拉得过大；这里改成接近工具按钮组上下留白的中等间距。
+         * English: The previous pass made the hero-to-search and hot-panel-to-results spacing too large; this final pass keeps them close to the toolbar rhythm.
+         */
+        .neo-ui #page-search.active {
+            row-gap: clamp(22px, 2.4vw, 34px);
+        }
+
+        .neo-ui #page-search > .search-box {
+            margin-top: clamp(10px, 1.4vw, 20px) !important;
+            margin-bottom: 0 !important;
+        }
+
+        /*
+         * 中文：最近搜索面板紧跟搜索框时需要一层可见但不过度的空隙，同时缩小内边距，避免内容外像套了一圈空白外壳。
+         * English: The recent-search panel needs a visible but modest gap after the search box, and smaller padding prevents an oversized empty shell around the content.
+         */
+        .neo-ui #page-search > .history-panel {
+            margin-top: clamp(10px, 1.2vw, 16px) !important;
+            margin-bottom: 0 !important;
+            padding: clamp(12px, 1.35vw, 18px) clamp(14px, 1.8vw, 22px) !important;
+            min-height: 0 !important;
+        }
+
+        .neo-ui #page-search > .history-panel .history-header {
+            margin-bottom: 8px;
+        }
+
+        .neo-ui #page-search > .history-panel .history-list {
+            gap: 8px;
+        }
+
+        .neo-ui #page-search > .history-panel .history-list:empty {
+            display: none;
+        }
+
+        .neo-ui #page-search > .history-panel:has(.history-list:empty) .history-header {
+            margin-bottom: 0;
+        }
+
+        .neo-ui #page-search > .extra-toolbar {
+            margin-block: clamp(8px, 1vw, 14px) !important;
+        }
+
+        .neo-ui #page-search > .tags-container {
+            margin-top: 0 !important;
+            margin-bottom: clamp(14px, 1.7vw, 24px) !important;
+        }
+
+        .neo-ui #page-search > #resultsArea {
+            margin-top: 0 !important;
+        }
+
+        @media (max-width: 980px) {
+            .neo-ui #page-search.active {
+                row-gap: clamp(20px, 4vw, 30px);
+            }
+
+            .neo-ui #page-search > .search-box {
+                margin-top: clamp(8px, 2.4vw, 16px) !important;
+            }
+
+            .neo-ui #page-search > .history-panel {
+                margin-top: clamp(8px, 2vw, 14px) !important;
+                padding: 12px 14px !important;
+            }
+
+            .neo-ui #page-search > .tags-container {
+                margin-bottom: clamp(12px, 3vw, 20px) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .neo-ui #page-search.active {
+                row-gap: clamp(18px, 5vw, 26px);
+            }
+
+            .neo-ui #page-search > .search-box {
+                margin-top: clamp(6px, 2.8vw, 12px) !important;
+            }
+
+            .neo-ui #page-search > .history-panel {
+                margin-top: clamp(8px, 3vw, 12px) !important;
+                padding: 11px 12px !important;
+            }
+
+            .neo-ui #page-search > .extra-toolbar {
+                margin-block: 8px !important;
+            }
+
+            .neo-ui #page-search > .tags-container {
+                margin-bottom: clamp(10px, 3.5vw, 16px) !important;
+            }
+        }
+
     </style>
 </head>
 <body class="neo-ui">
@@ -8635,6 +8793,8 @@
         // ==================== 新版稳定性提醒与用户条例每次打开 / 刷新都弹出 ====================
         showNeoNoticeModalOnPageLoad();
     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
