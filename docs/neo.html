@@ -6049,6 +6049,26 @@
             gap: 0 !important;
             overflow: hidden !important;
         }
+
+
+        /* ==================== Neo 移动端搜索标签上边距修复 / Neo mobile search label top-gap fix ==================== */
+        @media (max-width: 768px) {
+            /*
+             * 中文：SEARCH 标签是 search-box 的上浮伪元素，实际会向上溢出约 12px；移动端旧 margin-top 只有 6-12px，导致标签贴住上一张 Hero 卡片的下边界。
+             * English: The SEARCH label is a floating pseudo-element of the search box and overflows upward by about 12px; the old 6-12px mobile margin made it stick to the bottom edge of the previous Hero card.
+             */
+            .neo-ui #page-search > .search-box {
+                margin-top: clamp(28px, 7vw, 36px) !important;
+            }
+
+            /*
+             * 中文：只给伪元素预留视觉安全区，不改变输入框本体尺寸，避免搜索栏整体高度被再次撑大。
+             * English: This reserves visual clearance only for the pseudo label without changing the input box size, avoiding another increase in the search bar height.
+             */
+            .neo-ui .search-box::before {
+                top: -12px !important;
+            }
+        }
 </style>
 </head>
 <body class="neo-ui">
