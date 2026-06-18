@@ -138,20 +138,38 @@ $^3$ 当键入网址（请求示例）类似于 ```https://selfemo.github.io/Sho
 
 ## 🚀 [Flask 版本](https://github.com/SELFEMO/ShortDramaSearch/tree/master/flask_version)
 
+Flask 版本已按 `docs/index.html` 的 GitHub Pages 页面重构：页面结构、视觉样式和交互逻辑直接对齐在线版，同时由 Flask 提供同源 API 代理与 `format=json` 直出能力，避免浏览器 CORS 或公开代理不稳定导致功能缺失。
+
 ### 主要功能
 
-- **无刷新搜索** - 使用Ajax技术实现页面无刷新搜索
-- **实时状态反馈** - 搜索过程中显示加载状态
-- **优雅的错误处理** - 网络错误和API错误友好提示
-- **响应式界面** - 适配桌面和移动设备
-- **简洁美观的UI** - 现代化的卡片式设计
+- **完整复刻 GitHub Pages 入口** - 保留聚合搜索、API 生成器、每日影视、热度榜、我的收藏、用户条例、二维码、深浅主题、搜索历史、收藏导入导出等页面能力。
+- **同源接口代理** - 前端通过 `/api/kuleu/*` 调用 Flask，再由 Flask 请求酷乐 API，减少浏览器跨域限制和公开 CORS 代理失败带来的影响。
+- **网页 API 模式** - 支持 `?q=关键词&from=来源&format=json` 直接返回 JSON，字段结构与在线网页 API 保持一致。
+- **API 生成器可本地使用** - 生成的链接会指向当前 Flask 服务地址，可复制、打开并预览最多 5 条 JSON 结果。
+- **多来源聚合搜索** - 支持 `all`、`netdisk`、`baidu`、`quark`、`aliyun`、`tianyi`、`uc`、`mobile`、`115`、`pikpak`、`xunlei`、`123`、`magnet`、`ed2k`。
+- **提取码安全修正** - 服务端会优先从链接中的 `pwd` 参数恢复提取码，并保持字符串类型，避免 `32e7` 等内容被误解析为数字。
+- **兼容旧接口入口** - 保留 `/search` POST 路由用于兼容旧调试页调用，但新版页面不再依赖旧版表格 UI。
+
+### 文件结构
+
+```text
+flask_version/
+├── app.py                         # Flask 服务端入口、同源代理、JSON API 模式
+├── static/
+│   └── index.assets/
+│       ├── app.js                  # 从 docs/index.html 拆分并改为同源代理的前端逻辑
+│       └── style.css               # 从 docs/index.html 拆分的完整样式
+└── templates/
+    └── index.html                  # GitHub Pages 版页面结构的 Flask/Jinja 模板
+```
 
 ### 安装步骤
 
 #### 前提条件
 
-- Python 3.7 或更高版本
+- Python 3.8 或更高版本
 - pip 包管理工具
+- 可以访问第三方酷乐 API 的网络环境
 
 #### 1. 安装依赖
 
@@ -167,43 +185,100 @@ python flask_version/app.py
 
 #### 3. 访问应用
 
-打开浏览器访问 `http://localhost:5000`
+打开浏览器访问：
+
+```text
+http://localhost:5000
+```
 
 ### 使用说明
 
-#### 基本搜索
+#### 聚合搜索
 
-1. 在搜索框中输入短剧名称
-2. 页面自动发送Ajax请求，无需点击按钮
-3. 搜索结果实时显示在页面下方
+1. 在首页输入短剧或影视资源关键词。
+2. 选择搜索来源，例如 `全局聚合`、`网盘聚合`、`百度网盘`、`夸克网盘` 等。
+3. 点击搜索按钮或按 Enter，页面会按来源分组展示结果。
+4. 可对结果执行收藏、二维码分享、复制当前结果链接、标记疑似失效、质量评分等操作。
 
-#### 界面功能
+#### API 生成器
 
-- **搜索框** - 输入关键词后自动搜索
-- **结果统计** - 显示找到的结果数量
-- **资源卡片** - 每个结果以卡片形式展示，包含：
-    - 🎭 短剧完整名称
-    - 📅 更新时间
-    - 🔗 百度网盘链接（新标签页打开）
+1. 进入页面顶部的 **API生成器**。
+2. 输入关键词并选择来源。
+3. 点击 **生成 API 链接** 或 **预览 JSON 结果**。
+4. 生成链接格式如下：
+
+```text
+http://localhost:5000/?q=飞驰人生3&from=netdisk&format=json
+```
+
+#### 直接 JSON API
+
+Flask 入口页支持与 GitHub Pages 版相同的参数：
+
+| 参数名 | 别名 | 是否必填 | 说明 | 默认值 |
+| :--- | :--- | :--- | :--- | :--- |
+| `q` | `search`、`name`、`s`、`keyword` | 是 | 搜索关键词，支持空格拆词补召回 | 无 |
+| `from` | `type` | 否 | 搜索来源，支持 `all`、`netdisk` 及单一来源 | `all` |
+| `format` | 无 | 是 | 设置为 `json` 时直接返回 JSON | 网页模式 |
+
+示例：
+
+```bash
+curl "http://localhost:5000/?q=飞驰人生3&from=netdisk&format=json"
+```
+
+返回结构示例：
+
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "keyword": "飞驰人生3",
+  "type": "netdisk",
+  "total": 6,
+  "data": {
+    "quark": [],
+    "baidu": []
+  }
+}
+```
+
+### 同源代理接口
+
+新版前端主要使用以下 Flask 代理接口：
+
+| 路由 | 说明 |
+| :--- | :--- |
+| `/api/kuleu/jhsj?type=all&name=关键词` | 聚合资源搜索代理 |
+| `/api/kuleu/yingshi?baidu` | 每日影视百度源代理 |
+| `/api/kuleu/yingshi?quark` | 每日影视夸克源代理 |
+| `/api/kuleu/shortdramarank` | 短剧热度榜代理 |
+| `/api/kuleu/vtquark?tag=短剧` | 夸克热搜榜代理 |
+| `/api/kuleu/ico?url=...` | 站点图标转发 |
+| `/api/kuleu/qrcode?text=...` | 二维码图片转发 |
+| `/api/search?q=关键词&from=来源` | Flask 服务端聚合后的 JSON 搜索接口 |
+| `/api/daily` | Flask 服务端合并后的每日影视接口 |
+| `/api/health` | 本地健康检查 |
 
 ### 自定义配置
 
-修改 `flask_version/app.py` 中的配置：
+可在 `flask_version/app.py` 顶部修改运行和请求参数：
 
 ```python
-# API接口配置 和 搜索参数
-api_url = "https://api.kuleu.com/api/bddj"
-params = {
-    "text": search_name
-}
+BASE_API = "https://api.kuleu.com/api"
+REQUEST_TIMEOUT = 15
+REQUEST_RETRIES = 2
+SEARCH_RESULT_LIMIT = 200
+SEARCH_RETRY_ATTEMPTS = 3
+SEARCH_RETRY_DELAY = 0.7
+CACHE_TTL_SECONDS = 60
+```
 
-# Flask应用配置
-if __name__ == '__main__':
-    app.run(
-        debug=True,  # 调试模式
-        host='0.0.0.0',  # 监听地址
-        port=5000  # 端口号
-    )
+本地端口在文件末尾调整：
+
+```python
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
 ```
 
 ---
@@ -618,7 +693,14 @@ ShortDramaSearch/
 **本地部署：**
 
 ```bash
+pip install flask requests
 python flask_version/app.py
+```
+
+访问 `http://localhost:5000`。如需 JSON API，可访问：
+
+```text
+http://localhost:5000/?q=飞驰人生3&from=netdisk&format=json
 ```
 
 ### Streamlit版本部署
