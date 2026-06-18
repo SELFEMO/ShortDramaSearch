@@ -438,6 +438,39 @@
                 const navLinksContainer = document.querySelector('.app-nav-links');
                 if (!navLinksContainer) return;
 
+                let suppressNextNavGhostClick = false;
+                let suppressNextNavGhostClickTimer = null;
+
+                function armNavGhostClickGuard() {
+                    suppressNextNavGhostClick = true;
+
+                    if (suppressNextNavGhostClickTimer) {
+                        window.clearTimeout(suppressNextNavGhostClickTimer);
+                    }
+
+                    // 中文：移动端点击菜单项后会立刻切换页面并收起浮层，部分浏览器随后还会派发一次合成 click；这里短暂拦截该 click，避免误点到新页面相同坐标下的按钮。
+                    // English: Mobile browsers may dispatch a synthetic click after a menu item changes route and closes the dropdown; this short guard blocks that click so it cannot hit a control at the same coordinates on the new page.
+                    suppressNextNavGhostClickTimer = window.setTimeout(() => {
+                        suppressNextNavGhostClick = false;
+                        suppressNextNavGhostClickTimer = null;
+                    }, 720);
+                }
+
+                document.addEventListener('click', event => {
+                    if (!suppressNextNavGhostClick) return;
+                    if (navLinksContainer.contains(event.target)) return;
+
+                    suppressNextNavGhostClick = false;
+                    if (suppressNextNavGhostClickTimer) {
+                        window.clearTimeout(suppressNextNavGhostClickTimer);
+                        suppressNextNavGhostClickTimer = null;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                }, true);
+
                 /*
                      * 移动端优先用 pointerup，避免部分浏览器第一次 tap 只触发 hover。
                      */
@@ -448,7 +481,12 @@
                     if (!link) return;
 
                     e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof e.stopImmediatePropagation === 'function') {
+                        e.stopImmediatePropagation();
+                    }
                     lastTouchNavTime = Date.now();
+                    armNavGhostClickGuard();
 
                     switchPageByNav(link.dataset.page);
                 }, { passive: false });
@@ -461,12 +499,13 @@
                     const link = e.target.closest('.nav-link[data-page]');
                     if (!link) return;
 
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     if (Date.now() - lastTouchNavTime < 500) {
-                        e.preventDefault();
                         return;
                     }
 
-                    e.preventDefault();
                     switchPageByNav(link.dataset.page);
                 });
             }
@@ -4884,7 +4923,9 @@
                     event.stopPropagation();
 
                     if (!document.body.classList.contains('neo-nav-condensed')) {
-                        if (!canUseCondensedNav()) return;
+                        // 中文：移动端短页面也必须允许用户打开菜单，否则“我的收藏”空页面无法切换到其它页面；桌面端仍保留可滚动距离保护。
+                        // English: Short mobile pages must still allow opening the menu, otherwise an empty Favorites page cannot navigate elsewhere; desktop keeps the scroll-distance guard.
+                        if (!isMobileCondensedNav() && !canUseCondensedNav()) return;
                         enterCondensedState();
                     }
 

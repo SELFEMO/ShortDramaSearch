@@ -1113,7 +1113,8 @@ html:not(.theme-light) .neo-idle-card::before {
 .api-builder-hint {
     margin-top: 14px;
     color: var(--muted);
-    line-height: 1.7;
+    font-size: 12px;
+    line-height: 1.62;
     font-weight: 750;
 }
 
@@ -2645,5 +2646,428 @@ html:not(.theme-light) .theme-switch-thumb {
         padding: 20px;
         border-radius: 22px;
         box-shadow: 4px 4px 0 var(--border);
+    }
+}
+
+/* ==================== Console mobile menu final guard / 控制台移动端菜单最终保护 ==================== */
+/* 中文：移动端菜单是临时浮层，不应该铺满屏幕或让点击穿透到切换后的页面；这里用窄浮层和透明点击护罩隔离菜单交互。
+   English: The mobile menu is a temporary popover, so it should not cover the full screen or let taps pass through to the newly routed page; a narrow popover and transparent guard isolate the interaction. */
+@media (max-width: 768px) {
+    body.console-ui.neo-nav-menu-open::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 620;
+        background: transparent;
+    }
+
+    body.console-ui .app-nav {
+        z-index: 700;
+    }
+
+    body.console-ui .app-nav-links {
+        left: auto !important;
+        right: 10px !important;
+        top: calc(100% + 8px) !important;
+        width: min(172px, calc(100vw - 24px)) !important;
+        max-width: min(172px, calc(100vw - 24px)) !important;
+        min-width: 0 !important;
+        padding: 10px !important;
+        gap: 7px !important;
+        align-items: stretch !important;
+        border-radius: 20px !important;
+        overflow: visible !important;
+        z-index: 730;
+    }
+
+    body.console-ui .app-nav-links .nav-link {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        padding: 8px 10px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        border-radius: 14px !important;
+        -webkit-text-stroke: 0 !important;
+        font-size: 16px !important;
+        line-height: 1.12 !important;
+        letter-spacing: -0.035em !important;
+    }
+
+    body.console-ui .app-nav-links .nav-link[data-page]::before {
+        display: none !important;
+    }
+
+    body.console-ui .app-nav-links .nav-link.active {
+        background: var(--fg) !important;
+        color: var(--bg) !important;
+        transform: none !important;
+    }
+
+    body.console-ui .app-nav-links .nav-button,
+    body.console-ui .app-nav-links .neo-entry-link,
+    body.console-ui .app-nav-links .github-nav-link,
+    body.console-ui .app-nav-links .theme-switch {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        align-self: stretch !important;
+    }
+
+    body.console-ui .app-nav-links .github-nav-link {
+        gap: 6px;
+    }
+}
+
+/* ==================== Console mobile content polish / 控制台移动端内容容器优化 ==================== */
+/* 中文：首页功能卡和历史记录在移动端要按内容宽度组织，避免桌面卡片比例被硬套到窄屏后产生大面积空白。
+   English: Hero cards and history chips should size to their content on mobile, avoiding large blank areas caused by applying desktop card proportions to narrow screens. */
+@media (max-width: 768px) {
+    body.console-ui .neo-hero-shell {
+        display: block !important;
+        min-height: 0 !important;
+    }
+
+    body.console-ui .neo-hero-panel {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        min-height: 0 !important;
+        padding: 14px !important;
+        overflow: hidden !important;
+    }
+
+    body.console-ui .neo-orbit-stack {
+        display: none !important;
+    }
+
+    body.console-ui .neo-scan-card,
+    body.console-ui .neo-scan-card-main,
+    body.console-ui .neo-scan-card-sub {
+        grid-column: auto !important;
+        min-height: 74px !important;
+        padding: 15px 18px !important;
+        align-items: center !important;
+        justify-items: start !important;
+        text-align: left !important;
+    }
+
+    body.console-ui .neo-scan-card strong {
+        font-size: clamp(24px, 8vw, 34px) !important;
+        line-height: 0.95 !important;
+    }
+
+    body.console-ui .neo-source-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    body.console-ui .history-panel:not(.show) {
+        display: none !important;
+    }
+
+    body.console-ui .history-panel.show {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        gap: 12px !important;
+        padding: 16px !important;
+    }
+
+    body.console-ui .history-list {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding: 10px !important;
+    }
+
+    body.console-ui .history-chip,
+    body.console-ui .history-item {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: 100% !important;
+        min-height: 36px !important;
+        padding: 7px 12px 7px 9px !important;
+        border-radius: 999px !important;
+        box-shadow: none !important;
+    }
+
+    body.console-ui .history-chip::before,
+    body.console-ui .history-item::before {
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+    }
+}
+
+/* ==================== Console mobile form controls / 控制台移动端表单控件修复 ==================== */
+/* 中文：API 预览按钮和每日刷新按钮是操作控件，必须让文字与图标居中且限制 SVG 尺寸，避免图标撑破按钮。
+   English: API preview buttons and the Daily refresh button are action controls, so text and icons must be centered and SVG dimensions constrained to prevent layout blowouts. */
+.api-builder-btn,
+.api-preview-small-btn,
+.daily-refresh-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    line-height: 1.15 !important;
+}
+
+.daily-refresh-btn svg,
+#dailyRefreshBtn svg {
+    width: 18px !important;
+    height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    min-width: 18px !important;
+    flex: 0 0 18px !important;
+    display: block !important;
+}
+
+@media (max-width: 768px) {
+    body.console-ui .api-builder-url-actions,
+    body.console-ui .api-builder-actions {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    body.console-ui .api-builder-btn,
+    body.console-ui .api-preview-small-btn {
+        width: 100% !important;
+    }
+
+    body.console-ui .daily-toolbar {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        gap: 10px !important;
+        align-items: center !important;
+    }
+
+    body.console-ui .daily-refresh-btn {
+        width: auto !important;
+        min-width: 78px !important;
+        max-width: 112px !important;
+        padding: 8px 12px !important;
+        gap: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+    }
+}
+
+
+/* ==================== Console search / rank state display refinements / 控制台搜索与热榜状态展示优化 ==================== */
+/* 中文：空状态与加载态是页面反馈卡片，不能像普通文本贴在长条容器左侧，否则在深色主题下层级不清。 */
+/* English: Empty and loading states are feedback cards rather than plain text at the edge of a long bar, which keeps hierarchy clear in dark mode. */
+.status-message-empty,
+.status-message-loading {
+    display: grid;
+    gap: 7px;
+    width: min(440px, 100%);
+    min-height: 104px;
+    align-content: center;
+    justify-items: start;
+    margin: 18px 0;
+    padding: 22px 24px;
+}
+
+.status-message-empty strong,
+.status-message-loading strong {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 10px;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 0.12em;
+}
+
+.status-message-empty p,
+.status-message-loading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.55;
+}
+
+/* 中文：首页热榜标题承担区域识别功能，因此提升字号、边界和上下间距，避免次级热榜贴近分隔线。 */
+/* English: Home ranking titles identify sections, so stronger sizing, borders, and spacing prevent secondary rankings from crowding the divider. */
+.tags-title,
+.vtquark-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 1000;
+    letter-spacing: 0.03em;
+}
+
+.tags-title strong,
+.vtquark-title strong {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.tags-header,
+.vtquark-header {
+    align-items: center;
+}
+
+.vtquark-section {
+    margin-top: 30px;
+    padding-top: 28px;
+}
+
+.vtquark-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.vtquark-status {
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 2px solid var(--border-soft);
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    font-size: 12px;
+    font-weight: 1000;
+    line-height: 1;
+}
+
+#rankListContainer .status-message-empty,
+#rankListContainer .status-message-loading {
+    margin-left: 0;
+}
+
+@media (max-width: 640px) {
+    .status-message-empty,
+    .status-message-loading {
+        width: 100%;
+        min-height: 96px;
+        padding: 18px;
+    }
+
+    .tags-title,
+    .vtquark-title {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .vtquark-section {
+        margin-top: 24px;
+        padding-top: 24px;
+    }
+
+    .vtquark-header {
+        align-items: flex-start;
+    }
+}
+
+
+/* ==================== API help modal hierarchy / API说明弹窗层级优化 ==================== */
+/* 中文：API说明弹窗里的参数说明是一个独立信息组，增加上方间距并用结构化列表区分一级与二级内容。
+   English: The API help parameters are an independent information group, so spacing and structured lists clarify primary and secondary levels. */
+.api-builder-hint {
+    font-size: 12px;
+    line-height: 1.62;
+}
+
+.help-param-section {
+    margin-top: 22px;
+    padding: 16px;
+    border: 2px solid var(--border-soft);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+}
+
+.help-section-title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 1000;
+    line-height: 1.2;
+}
+
+.help-param-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.help-param-list > li {
+    position: relative;
+    padding-left: 22px;
+    line-height: 1.7;
+}
+
+.help-param-list > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.74em;
+    width: 7px;
+    height: 7px;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--accent);
+    transform: translateY(-50%);
+}
+
+.help-param-sublist {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding-left: 20px;
+    list-style: none;
+    color: var(--muted);
+}
+
+.help-param-sublist > li {
+    position: relative;
+    padding-left: 18px;
+}
+
+.help-param-sublist > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.82em;
+    width: 6px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transform: translateY(-50%);
+}
+
+@media (max-width: 640px) {
+    .api-builder-hint {
+        font-size: 11.5px;
+    }
+
+    .help-param-section {
+        margin-top: 18px;
+        padding: 14px;
+        border-radius: 16px;
     }
 }

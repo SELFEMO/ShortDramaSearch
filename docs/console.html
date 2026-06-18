@@ -7,7 +7,7 @@
 
     <meta name="referrer" content="no-referrer">
 
-    <script src="console.assets/console.js" data-kuleu-script-phase="bootstrap"></script>
+    <script src="console.assets/app.js" data-kuleu-script-phase="bootstrap"></script>
 
     
 
@@ -17,7 +17,7 @@
 
     <!-- 中文：Console 是 ClickConsole 启发式控制台入口名，含义明确且不会被误解为同步功能。 -->
     <!-- English: Console is the ClickConsole-inspired control-panel entry name, making the purpose clear without implying a console feature. -->
-    <link rel="stylesheet" href="console.assets/console.css">
+    <link rel="stylesheet" href="console.assets/style.css">
 
     
 </head>
@@ -499,7 +499,7 @@
             </div>
             <div class="daily-toolbar">
                 <input type="text" id="dailySearchInput" class="daily-search-input" placeholder="在今日影视资源中检索..." autocomplete="off">
-                <button id="dailyRefreshBtn" class="daily-refresh-btn">
+                <button id="dailyRefreshBtn" class="daily-refresh-btn" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 刷新
                 </button>
             </div>
@@ -573,18 +573,20 @@
                 <p>您可以通过访问以下 URL 参数直接调用搜索 API：</p>
                 <pre id="helpApiTemplateUrl">正在生成当前网页 API 地址...</pre>
 
-                <p><strong>参数说明：</strong></p>
-                <ul>
-                    <li><code>q / name / s</code>：搜索关键词（可中英文），支持空格拆分</li>
-                    <li><code>from</code>：搜索来源，默认 <code>all</code>，可选：
-                        <ul>
-                            <li>聚合类：all, netdisk</li>
-                            <li>网盘类：baidu, quark, aliyun, tianyi, uc, mobile, 115, pikpak, xunlei, 123</li>
-                            <li>链接类：magnet, ed2k</li>
-                        </ul>
-                    </li>
-                    <li><code>format</code>：输出格式，<code>json</code> 为纯 JSON，其他值为网页模式</li>
-                </ul>
+                <section class="help-param-section" aria-labelledby="helpParamTitle">
+                    <h3 id="helpParamTitle" class="help-section-title">参数说明</h3>
+                    <ul class="help-param-list">
+                        <li><code>q / name / s</code>：搜索关键词（可中英文），支持空格拆分</li>
+                        <li><code>from</code>：搜索来源，默认 <code>all</code>，可选：
+                            <ul class="help-param-sublist">
+                                <li>聚合类：all, netdisk</li>
+                                <li>网盘类：baidu, quark, aliyun, tianyi, uc, mobile, 115, pikpak, xunlei, 123</li>
+                                <li>链接类：magnet, ed2k</li>
+                            </ul>
+                        </li>
+                        <li><code>format</code>：输出格式，<code>json</code> 为纯 JSON，其他值为网页模式</li>
+                    </ul>
+                </section>
 
                 <p>示例 API 调用：</p>
                 <pre id="helpApiExampleUrl">正在生成当前网页 API 示例...</pre>
@@ -607,6 +609,6 @@
     </div>
 </div>
 
-<script src="console.assets/console.js" data-kuleu-script-phase="main"></script>
+<script src="console.assets/app.js" data-kuleu-script-phase="main"></script>
 </body>
 </html>
