@@ -3676,6 +3676,11 @@
 
                 // ==================== 推荐增强功能：主题 / 导入导出 / 批量复制 ====================
                 const themeToggleBtn = document.getElementById('themeToggleBtn');
+                const neoEntrySplit = document.getElementById('neoEntrySplit');
+                const neoEntryPrimary = document.getElementById('neoEntryPrimary');
+                const neoEntryPrimaryLabel = document.getElementById('neoEntryPrimaryLabel');
+                const neoEntryMenuBtn = document.getElementById('neoEntryMenuBtn');
+                const neoEntryMenu = document.getElementById('neoEntryMenu');
                 const copyCurrentLinksBtn = document.getElementById('copyCurrentLinksBtn');
 
                 const exportHistoryBtn = document.getElementById('exportHistoryBtn');
@@ -3931,6 +3936,126 @@
                     bindSystemThemeAutoSync();
                 }
 
+
+                const NEW_UI_DEFAULT_KEY = 'kuleu_new_ui_default';
+                const NEW_UI_OPTIONS = {
+                    neo: {
+                        href: './neo.html',
+                        label: 'Neo 新版界面',
+                        buttonLabel: '新版界面'
+                    },
+                    console: {
+                        href: './console.html',
+                        label: 'Console 控制台界面',
+                        buttonLabel: '控制台版'
+                    }
+                };
+
+                function normalizeNewUiKey(key) {
+                    return Object.prototype.hasOwnProperty.call(NEW_UI_OPTIONS, key) ? key : 'neo';
+                }
+
+                function getDefaultNewUiKey() {
+                    return normalizeNewUiKey(safeGetLocalStorage(NEW_UI_DEFAULT_KEY));
+                }
+
+                function setDefaultNewUiKey(key) {
+                    safeSetLocalStorage(NEW_UI_DEFAULT_KEY, normalizeNewUiKey(key));
+                }
+
+                function closeNewUiMenu() {
+                    if (!neoEntrySplit || !neoEntryMenuBtn) return;
+
+                    neoEntrySplit.classList.remove('is-open');
+                    neoEntryMenuBtn.setAttribute('aria-expanded', 'false');
+                }
+
+                function openNewUiMenu() {
+                    if (!neoEntrySplit || !neoEntryMenuBtn) return;
+
+                    neoEntrySplit.classList.add('is-open');
+                    neoEntryMenuBtn.setAttribute('aria-expanded', 'true');
+                }
+
+                function updateNewUiEntry(key = getDefaultNewUiKey()) {
+                    if (!neoEntryPrimary) return;
+
+                    const nextKey = normalizeNewUiKey(key);
+                    const option = NEW_UI_OPTIONS[nextKey];
+
+                    neoEntryPrimary.href = option.href;
+                    neoEntryPrimary.title = `进入${option.label}`;
+
+                    if (neoEntryPrimaryLabel) {
+                        neoEntryPrimaryLabel.textContent = option.buttonLabel;
+                    }
+
+                    if (neoEntryMenuBtn) {
+                        neoEntryMenuBtn.setAttribute('aria-label', `当前默认新版界面：${option.label}，点击选择其他新版界面`);
+                    }
+
+                    if (neoEntryMenu) {
+                        neoEntryMenu.querySelectorAll('[data-new-ui-key]').forEach(item => {
+                            const isActive = item.getAttribute('data-new-ui-key') === nextKey;
+                            item.classList.toggle('is-active', isActive);
+                            item.setAttribute('aria-current', isActive ? 'true' : 'false');
+                        });
+                    }
+                }
+
+                function initNewUiEntrySelector() {
+                    if (!neoEntrySplit || !neoEntryPrimary || !neoEntryMenuBtn || !neoEntryMenu) return;
+                    if (neoEntrySplit.dataset.bound === '1') return;
+
+                    neoEntrySplit.dataset.bound = '1';
+                    updateNewUiEntry();
+
+                    neoEntryMenuBtn.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        if (neoEntrySplit.classList.contains('is-open')) {
+                            closeNewUiMenu();
+                        } else {
+                            openNewUiMenu();
+                        }
+                    });
+
+                    neoEntryMenu.addEventListener('click', event => {
+                        const optionBtn = event.target.closest('[data-new-ui-key]');
+                        if (!optionBtn) return;
+
+                        const nextKey = normalizeNewUiKey(optionBtn.getAttribute('data-new-ui-key'));
+                        const option = NEW_UI_OPTIONS[nextKey];
+
+                        // 中文：下拉项既是“切换新版入口”的即时动作，也是“记住默认新版入口”的设置，避免用户每次都重新选择。
+                        // English: A dropdown choice both opens that new UI immediately and saves it as the default entry, so users do not need to choose it again next time.
+                        event.preventDefault();
+                        setDefaultNewUiKey(nextKey);
+                        updateNewUiEntry(nextKey);
+                        closeNewUiMenu();
+                        window.location.href = option.href;
+                    });
+
+                    document.addEventListener('click', event => {
+                        if (!neoEntrySplit.contains(event.target)) {
+                            closeNewUiMenu();
+                        }
+                    });
+
+                    document.addEventListener('keydown', event => {
+                        if (event.key === 'Escape') {
+                            closeNewUiMenu();
+                        }
+                    });
+
+                    window.addEventListener('storage', event => {
+                        if (event.key === NEW_UI_DEFAULT_KEY) {
+                            updateNewUiEntry(event.newValue);
+                        }
+                    });
+                }
+
                 function exportSearchHistoryData() {
                     const data = {
                         type: 'kuleu_search_history',
@@ -4077,6 +4202,7 @@
 
                 function bindExtraFeatureEvents() {
                     initThemeToggle();
+                    initNewUiEntrySelector();
 
                     if (copyCurrentLinksBtn) {
                         copyCurrentLinksBtn.addEventListener('click', copyCurrentResultLinks);
