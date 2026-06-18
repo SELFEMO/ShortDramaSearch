@@ -1,6 +1,6 @@
 # 🎬 [短剧/影视资源聚合搜索](https://github.com/SELFEMO/ShortDramaSearch)
 
-一个多版本的短剧搜索应用，提供Flask、Streamlit、Desktop和在线网页（Online-Webpage）四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
+一个多版本的短剧/电视剧/电影资源搜索应用，提供Flask、Streamlit、Desktop和在线网页（Online-Webpage）四种实现方式，可以快速搜索短剧资源并获取百度网盘链接。
 
 $^*$***注意：2026重构版本仍处于开发阶段（目前适配最好的版本为：Web在线版本），功能可能不稳定且界面并未完善，同时存在一些暂时无法修改的问题（Bug），欢迎贡献修复代码！***
 
