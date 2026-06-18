@@ -212,18 +212,25 @@ if __name__ == '__main__':
 
 ### 主要功能
 
-- **交互式界面** - Streamlit原生组件提供流畅体验
-- **数据统计** - 详细的搜索结果统计信息
-- **数据导出** - 支持导出CSV格式的搜索结果
-- **侧边栏导航** - 清晰的功能区域划分
-- **扩展功能** - 最近更新统计、批量操作等
+- **真实多页面结构** - 页面文件位于 `pages/`，不再依靠 `st.session_state.page` 在单文件内模拟切页。
+- **API 层抽离** - 搜索、榜单、每日影视、二维码、JSON 解析和预览抽样统一放入 `services/api_client.py` 与 `services/normalizers.py`。
+- **组件映射对齐** - `services/component_map.py` 明确记录 `docs/index.html` 的 `searchInput`、`resultsArea`、`apiGeneratedUrl`、`dailyResultsArea`、`rankListContainer`、`favoritesList` 等 DOM 组件在 Streamlit 中的对应实现。
+- **不依赖 docs 路径** - Streamlit 运行时不会读取 `docs/index.html`，也不会把 HTML 文件当模板使用；所有能力均通过 Python 组件重新实现。
+- **深色单主题界面** - 只保留深色模式，`.streamlit/config.toml` 固定为 dark theme，避免浅色模式造成视觉和组件尺寸不一致。
+- **聚合搜索完整迁移** - 支持 `all`、`netdisk` 以及百度、夸克、阿里、天翼、UC、移动、115、PikPak、迅雷、123、磁力、电驴等单来源搜索。
+- **关键词补搜策略** - 保留网页版本的“完整关键词优先 + 空格拆词补搜”策略，用于提升长标题资源召回率。
+- **提取码安全处理** - `pwd` 字段始终按字符串保存，并优先从链接参数恢复，避免类似 `32e7` 被误解析为数字。
+- **结果管理能力** - 支持按来源分组展示、收藏、疑似失效反馈、隐藏失效资源、本地质量评分、二维码、复制文本和 TXT 导出。
+- **导入导出能力** - 搜索结果支持 CSV / JSON / TXT 下载，搜索历史和收藏支持 JSON 导入导出。
+- **URL 参数兼容** - 入口页支持 `?q=关键词&from=all&format=json`；非 JSON 查询会自动带入聚合搜索页，JSON 查询会显示等价 JSON 视图并提供下载。
+- **直接运行兼容** - 推荐使用 `streamlit run`；如果误用 `python streamlit_version/app.py`，程序会自动切换到 Streamlit runtime，避免 `missing ScriptRunContext` 警告刷屏。
 
 ### 安装步骤
 
 #### 前提条件
 
-- Python 3.7 或更高版本
-- pip 包管理工具
+- Python 3.8 或更高版本
+- pip 或 conda 环境管理工具
 
 #### 1. 安装依赖
 
@@ -231,25 +238,49 @@ if __name__ == '__main__':
 pip install streamlit requests pandas
 ```
 
-#### 2. 运行应用
+#### 2. 推荐运行方式
+
+在项目根目录执行：
 
 ```bash
 streamlit run streamlit_version/app.py
 ```
 
-#### 3. 访问应用
+也可以使用当前 Python 环境的模块方式运行，适合多个 Python 环境并存的场景：
 
-打开浏览器访问 `http://localhost:8501`or `http://localhost:7777`（根据Streamlit版本不同可能端口不同）。
-
-或者，通过命令指定端口：
 ```bash
-streamlit run streamlit_version/app.py --server.port 7777
+python -m streamlit run streamlit_version/app.py
 ```
 
-或者，通过配置文件指定端口：
-```bash
-# 在 .streamlit/config.toml 中添加以下内容
+如果在 IDE 中误点运行按钮，或直接执行下面命令，新版 `app.py` 会自动转交给 `python -m streamlit run`：
 
+```bash
+python streamlit_version/app.py
+```
+
+#### 3. 访问应用
+
+当前仓库的 `streamlit_version/.streamlit/config.toml` 默认端口为 `7777`，因此通常访问：
+
+```text
+http://localhost:7777
+```
+
+如果临时指定端口运行：
+
+```bash
+streamlit run streamlit_version/app.py --server.port 8501
+```
+
+则访问：
+
+```text
+http://localhost:8501
+```
+
+当前配置文件内容如下：
+
+```toml
 [server]
 port = 7777
 headless = true
@@ -257,49 +288,130 @@ headless = true
 [browser]
 gatherUsageStats = false
 
+[theme]
+base = "dark"
+primaryColor = "#ff6b35"
+backgroundColor = "#0a0a0f"
+secondaryBackgroundColor = "#16161f"
+textColor = "#f0f0f5"
 ```
 
 ### 使用说明
 
-#### 基本搜索
+#### 聚合搜索
 
-1. 在搜索框中输入短剧名称
-2. 点击"🔍 搜索短剧"按钮
-3. 查看搜索结果和统计信息
+1. 进入“聚合搜索”页面。
+2. 输入短剧、影视或资源关键词。
+3. 在“搜索来源”中选择 `全局聚合`、`网盘聚合` 或单一来源。
+4. 点击“🔍 搜索”，或在搜索框中按回车，即可查看按来源分组的结果。
+5. 对任意结果可执行打开链接、收藏、失效反馈、质量评分、查看二维码和复制链接文本。
 
-#### 界面功能
+#### API 生成器
 
-- **搜索区域** - 文本输入框和搜索按钮
-- **统计面板** - 显示总结果数、最近更新数量等
-- **可展开列表** - 点击每个结果展开查看详情
-- **数据导出** - 下载CSV格式的完整结果
-- **侧边栏** - 使用说明和搜索示例
+1. 打开“API 生成器”。
+2. 输入关键词与来源类型。
+3. 复制生成的 `?q=...&from=...&format=json` 链接。
+4. 点击“预览 JSON 结果”可查看最多 5 条轮询抽样预览，并下载预览 JSON。
 
-#### 数据导出
+#### 每日影视
 
-- 点击"下载CSV格式数据"按钮
-- 获取包含所有搜索结果的CSV文件
-- 文件自动按搜索关键词和时间命名
+- 打开“每日影视”页面后点击“加载 / 刷新每日影视资源”。
+- 页面会合并百度和夸克每日影视接口数据。
+- 支持页面内关键词过滤，以及 CSV / JSON 导出。
+
+#### 热度榜
+
+- “热度榜”页面包含短剧热度榜与夸克热搜榜。
+- 点击榜单条目的“搜索”按钮会自动进入聚合搜索页，并使用全局聚合查询该标题。
+
+#### 我的收藏
+
+- 搜索结果和每日影视结果均可收藏。
+- 收藏页支持关键词过滤、导出收藏、导入收藏、清空收藏、失效标记和质量评分。
+- 收藏与搜索历史保存在当前 Streamlit 会话状态中，刷新或重启服务后可能丢失；需要长期保存时请及时导出 JSON。
+
+#### 用户条例 / 组件对齐说明
+
+- “用户条例”页展示使用边界、免责说明和功能对齐范围。
+- 每个业务页面都提供“组件映射 / docs/index.html alignment”折叠区，用于查看该页面与 `docs/index.html` 中 DOM 组件的对应关系。
+
+### URL 参数说明
+
+Streamlit 版本支持网页版本同名参数：
+
+```text
+?q=搜索关键词&from=all&format=json
+```
+
+可用参数：
+
+- `q` / `s` / `name` / `keyword` / `search`：搜索关键词。
+- `from`：搜索来源，支持 `all`、`netdisk`、`baidu`、`quark`、`aliyun`、`tianyi`、`uc`、`mobile`、`115`、`pikpak`、`xunlei`、`123`、`magnet`、`ed2k`。
+- `format=json`：进入等价 JSON 结果页并提供下载。
+
+示例：
+
+```text
+http://localhost:7777/?q=庆余年&from=all&format=json
+```
+
+### 常见问题
+
+#### 为什么入口 `app.py` 几乎没有业务代码？
+
+新版采用 Streamlit 多页面架构，`app.py` 只保留启动保护、URL 参数兼容和入口跳转。这样做可以避免单文件越来越大，也让 `pages/` 与 `services/` 的职责更清晰。
+
+#### 为什么没有直接读取 `docs/index.html`？
+
+Streamlit 版的目标是复刻 GitHub Pages 功能，而不是把 HTML 文件当模板嵌入。运行时读取 `docs/index.html` 会让部署路径变脆弱，也会把前端 DOM 生命周期和 Streamlit 生命周期混在一起，因此新版使用 `services/component_map.py` 维护静态组件映射，并用 Python 组件重新实现对应功能。
+
+#### 为什么现在没有浅色模式？
+
+当前 Streamlit 版的目标是保持与 GitHub Pages 深色视觉体验一致，并减少部署环境默认主题差异带来的尺寸和对比度问题。因此本版本移除了浅色模式入口，并通过配置文件固定为 dark theme。
+
+#### 直接运行出现 `missing ScriptRunContext` 怎么办？
+
+Streamlit 官方推荐通过 `streamlit run your_app.py` 启动应用。当前版本已经在 `services/runtime.py` 中加入自动启动保护：如果检测到你使用 `python streamlit_version/app.py` 裸跑，会自动重新调用 `python -m streamlit run streamlit_version/app.py`。
+
+如果仍然无法打开页面，请确认当前环境已经安装 Streamlit：
+
+```bash
+python -m pip show streamlit
+```
+
+未安装时执行：
+
+```bash
+python -m pip install streamlit requests pandas
+```
+
+#### 为什么 `format=json` 不是浏览器纯文本响应？
+
+GitHub Pages 版本可以直接在浏览器中改写页面内容；Streamlit 运行在自己的应用框架内，不能像静态 HTML 一样直接替换 HTTP 响应体。因此 Streamlit 版本提供等价 JSON 视图和下载按钮，数据结构与 API 生成器保持一致。
 
 ### 自定义配置
 
-修改 `streamlit_version/app.py` 中的配置：
+常用 API 与来源配置集中在：
+
+```text
+streamlit_version/services/constants.py
+```
+
+常用配置项包括：
 
 ```python
-# 页面配置
-st.set_page_config(
-    page_title="短剧搜索",  # 页面标题
-    page_icon="🎬",  # 页面图标
-    layout="wide",  # 布局模式
-    initial_sidebar_state="expanded"  # 侧边栏状态
-)
-
-# API配置
-api_url = "https://api.kuleu.com/api/bddj"
-params = {
-    "text": search_name
-}
+JHSJ_API = "https://api.kuleu.com/api/jhsj"
+YINGSHI_API = "https://api.kuleu.com/api/yingshi"
+SHORTDRAMA_RANK_API = "https://api.kuleu.com/api/shortdramarank"
+VTQUARK_API = "https://api.kuleu.com/api/vtquark"
+QRCODE_API = "https://api.kuleu.com/api/qrcode"
+SEARCH_TIMEOUT = 15
+RANK_TIMEOUT = 10
+MAX_SEARCH_TOTAL = 200
+MAX_HISTORY = 30
 ```
+
+---
 
 ## 🖥️ [Desktop 版本 (Qt5)](https://github.com/SELFEMO/ShortDramaSearch/tree/master/desktop_version)
 
@@ -427,7 +539,25 @@ ShortDramaSearch/
 │       └── index.html             # 主页面模板
 │
 ├── streamlit_version/             # Streamlit版本
-│   └── app.py                     # Streamlit主应用文件
+│   ├── app.py                     # Streamlit入口：启动保护、URL参数与页面跳转
+│   ├── .streamlit/                # Streamlit配置
+│   │   └── config.toml            # 深色主题与默认端口
+│   ├── pages/                     # Streamlit多页面文件
+│   │   ├── 1_search.py            # 聚合搜索页
+│   │   ├── 2_api.py               # API生成器页
+│   │   ├── 3_daily.py             # 每日影视页
+│   │   ├── 4_rank.py              # 热度榜页
+│   │   ├── 5_favorites.py         # 我的收藏页
+│   │   └── 6_policy.py            # 用户条例页
+│   └── services/                  # 业务服务层与通用UI组件
+│       ├── api_client.py          # API请求、榜单、每日影视与预览数据
+│       ├── component_map.py       # docs/index.html组件静态映射
+│       ├── constants.py           # 常量、来源、页面配置
+│       ├── normalizers.py         # 数据清洗与提取码修复
+│       ├── pages.py               # 页面渲染逻辑
+│       ├── runtime.py             # 启动与URL参数工具
+│       ├── state.py               # 会话状态管理
+│       └── ui.py                  # 深色主题、侧边栏与结果卡片
 │
 └── desktop_version/               # 桌面应用版本
     ├── main.py                    # 应用入口点
@@ -462,7 +592,9 @@ ShortDramaSearch/
     - **flask_version/app.py** - Flask后端逻辑，处理API请求和路由
     - **flask_version/templates/index.html** - 前端界面，包含HTML、CSS和JavaScript
 - **streamlit_version** - Streamlit版本主目录
-    - **streamlit_version/app.py** - 完整的Streamlit应用，包含UI和业务逻辑
+    - **streamlit_version/app.py** - Streamlit入口文件，负责启动保护、URL参数兼容和跳转到多页面入口
+    - **streamlit_version/pages/** - 聚合搜索、API生成器、每日影视、热度榜、我的收藏和用户条例页面
+    - **streamlit_version/services/** - API层、数据清洗、状态管理、组件映射和通用UI组件
 - **desktop_version** - 桌面应用主目录
     - **desktop_version/main.py** - 桌面应用入口，初始化应用和主窗口
     - **desktop_version/ui/main_window.py** - 主窗口类，定义界面布局和交互
