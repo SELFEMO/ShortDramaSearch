@@ -4178,6 +4178,30 @@
             background: rgba(255, 251, 244, 0.76);
         }
 
+        .neo-scan-card-link {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+            transition:
+                    border-color 0.22s ease,
+                    background 0.22s ease,
+                    box-shadow 0.22s ease,
+                    transform 0.22s ease;
+        }
+
+        .neo-scan-card-link:hover,
+        .neo-scan-card-link:focus-visible {
+            border-color: rgba(236, 177, 118, 0.72);
+            background: rgba(236, 177, 118, 0.12);
+            box-shadow: 0 22px 58px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.14);
+            outline: none;
+            transform: translateY(-2px);
+        }
+
+        .neo-scan-card-link:active {
+            transform: translateY(0) scale(0.99);
+        }
+
         .neo-scan-card-main {
             left: 8%;
             top: 10%;
@@ -4240,7 +4264,8 @@
             gap: 8px;
         }
 
-        .neo-source-grid span {
+        .neo-source-grid span,
+        .neo-source-grid .neo-source-chip {
             min-width: 0;
             padding: 9px 8px;
             border-radius: 999px;
@@ -4251,6 +4276,32 @@
             font-weight: 900;
             letter-spacing: 0.08em;
             text-align: center;
+        }
+
+        .neo-source-grid .neo-source-chip {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            font-family: inherit;
+            line-height: 1.2;
+            transition:
+                    border-color 0.22s ease,
+                    background 0.22s ease,
+                    color 0.22s ease,
+                    transform 0.22s ease;
+        }
+
+        .neo-source-grid .neo-source-chip:hover,
+        .neo-source-grid .neo-source-chip:focus-visible {
+            border-color: rgba(236, 177, 118, 0.72);
+            background: rgba(236, 177, 118, 0.14);
+            color: var(--neo-ink);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .neo-source-grid .neo-source-chip:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .neo-ui .search-box {
@@ -6292,24 +6343,27 @@
                 </p>
             </div>
 
-            <div class="neo-hero-panel" aria-hidden="true">
-                <!-- 中文：右侧视觉面板只使用静态 DOM 和 CSS 动效，不依赖接口数据，避免首屏设计影响真实搜索性能。 -->
-                <!-- English: The right visual panel uses only static DOM and CSS motion so the first-screen design never slows real search calls. -->
+            <div class="neo-hero-panel" aria-label="Neo 功能快捷入口">
+                <!-- 中文：右侧视觉面板现在包含可点击快捷入口，因此移除 aria-hidden，避免辅助技术忽略真实交互控件。 -->
+                <!-- English: The right visual panel now contains clickable shortcuts, so aria-hidden is removed to keep real controls visible to assistive technology. -->
                 <div class="neo-scan-card neo-scan-card-main">
                     <span class="neo-scan-label">聚合检索</span>
                     <strong>12+</strong>
                     <span>网盘 / 链接类型</span>
                 </div>
-                <div class="neo-scan-card neo-scan-card-sub">
+                <a class="neo-scan-card neo-scan-card-sub neo-scan-card-link" href="#/api" title="打开 API 生成器" aria-label="打开 API 生成器，查看 JSON 调用方式">
                     <span class="neo-scan-label">API 模式</span>
                     <strong>JSON</strong>
                     <span>?q=关键词&amp;format=json</span>
-                </div>
+                </a>
                 <div class="neo-orbit-stack">
                     <span></span><span></span><span></span>
                 </div>
-                <div class="neo-source-grid">
-                    <span>BAIDU</span><span>QUARK</span><span>ALIYUN</span><span>MAGNET</span>
+                <div class="neo-source-grid" aria-label="快速切换搜索来源">
+                    <button type="button" class="neo-source-chip" data-neo-source="baidu" title="切换到百度网盘搜索">BAIDU</button>
+                    <button type="button" class="neo-source-chip" data-neo-source="quark" title="切换到夸克网盘搜索">QUARK</button>
+                    <button type="button" class="neo-source-chip" data-neo-source="aliyun" title="切换到阿里云盘搜索">ALIYUN</button>
+                    <button type="button" class="neo-source-chip" data-neo-source="magnet" title="切换到磁力链接搜索">MAGNET</button>
                 </div>
             </div>
         </div>
@@ -7914,6 +7968,51 @@
         modalTimers.set(overlay, timer);
     }
 
+    function switchModalAnimated(fromOverlay, toOverlay, beforeShow) {
+        if (!toOverlay) {
+            hideModalAnimated(fromOverlay);
+            return;
+        }
+
+        const fromTimer = fromOverlay ? modalTimers.get(fromOverlay) : null;
+        const toTimer = modalTimers.get(toOverlay);
+
+        if (fromTimer) {
+            clearTimeout(fromTimer);
+            modalTimers.delete(fromOverlay);
+        }
+
+        if (toTimer) {
+            clearTimeout(toTimer);
+            modalTimers.delete(toOverlay);
+        }
+
+        if (typeof beforeShow === 'function') {
+            beforeShow();
+        }
+
+        if (activeModalCount === 0) {
+            lockPageForModal();
+        } else {
+            // 中文：弹窗切换时沿用已有页面锁，不重复累加 activeModalCount，避免最终关闭后 body 仍保持 overflow:hidden 导致页面无法滚动。
+            // English: Modal handoff reuses the existing page lock without incrementing activeModalCount again, preventing body overflow:hidden from surviving after the final close.
+            hidePageScrollbarImmediately();
+            document.body.classList.add('modal-open');
+            document.body.classList.add('scrollbar-locked');
+            document.body.style.overflow = 'hidden';
+        }
+
+        if (fromOverlay) {
+            fromOverlay.classList.remove('show');
+        }
+
+        // 中文：两个启动弹窗共用一次页面锁定并在下一帧切换，避免关闭第一个后再等待第二个定时器造成明显空档。
+        // English: The two startup dialogs share one page lock and switch on the next frame, avoiding the visible gap caused by waiting for a second timer after the first dialog closes.
+        requestAnimationFrame(() => {
+            toOverlay.classList.add('show');
+        });
+    }
+
     // ==================== Neo 新版稳定性提醒弹窗逻辑 ====================
     const neoNoticeModalOverlay = document.getElementById('neoNoticeModalOverlay');
     const neoNoticeLegacyLink = document.getElementById('neoNoticeLegacyLink');
@@ -7952,11 +8051,16 @@
     function closeNeoNoticeModal() {
         neoNoticeClosedForThisPageLoad = true;
 
-        // 中文：新版提醒关闭后再弹出用户条例，避免两个自动弹窗同时抢占焦点。
-        // English: Show the policy modal after the Neo notice closes so two automatic dialogs do not compete for focus.
-        hideModalAnimated(neoNoticeModalOverlay, () => {
-            showPolicyModalOnEveryPageLoad();
-        });
+        if (shouldAutoOpenPolicyModal() && !policyAutoOpenedForThisPageLoad) {
+            policyAutoOpenedForThisPageLoad = true;
+
+            // 中文：启动流程仍保持“新版提醒 -> 用户条例”的阅读顺序，但直接切换到条例弹窗，减少静态页首屏等待。
+            // English: The startup flow keeps the required "Neo notice -> policy" reading order, but switches directly to the policy dialog to reduce static-page startup waiting.
+            switchModalAnimated(neoNoticeModalOverlay, policyModalOverlay);
+            return;
+        }
+
+        hideModalAnimated(neoNoticeModalOverlay);
     }
 
     function shouldAutoOpenNeoNoticeModal() {
@@ -7967,9 +8071,11 @@
         if (!shouldAutoOpenNeoNoticeModal()) return;
         if (neoNoticeClosedForThisPageLoad) return;
 
+        // 中文：初始化脚本已完成路由、榜单和 URL 参数处理，这里只保留短延迟给浏览器完成首帧绘制，避免旧的 420ms 等待拖慢弹窗流程。
+        // English: Routing, ranking, and URL parameter initialization have already run, so only a short delay is kept for first paint instead of the old 420ms wait.
         setTimeout(() => {
             openNeoNoticeModal();
-        }, 420);
+        }, 120);
     }
 
     // ==================== 用户条例弹窗逻辑 ====================
@@ -8010,14 +8116,11 @@
 
         policyAutoOpenedForThisPageLoad = true;
 
-        /*
-             * 延迟一点打开：
-             * 让路由、页面切换、URL 参数搜索、榜单初始化先完成，
-             * 避免弹窗和首屏渲染抢同一帧，移动端更稳定。
-             */
-        setTimeout(() => {
+        // 中文：条例弹窗可能由页面恢复或手动入口触发，此处只做下一帧打开，启动链路则由 switchModalAnimated 直接切换。
+        // English: The policy dialog may be triggered by page restore or manual entry, so it opens on the next frame while startup uses switchModalAnimated for an immediate handoff.
+        requestAnimationFrame(() => {
             openPolicyModal();
-        }, 600);
+        });
     }
 
     /*
@@ -8268,8 +8371,8 @@
 
             renderGroupedResults(mergedByType, typeList, term, total, apiStatus);
 
-            autoCollapseRankTagsAfterFirstSuccessfulSearch();
-
+            // 中文：Neo 新版把热度榜视为持续可用的搜索入口，搜索成功后不自动收起，避免用户需要反复手动展开。
+            // English: Neo treats the ranking list as a persistent search entry, so it is not auto-collapsed after a successful search to avoid repeated manual expansion.
             showStatus(`共找到 ${total} 条结果`);
         } catch (error) {
             if (searchId !== searchSequence) return;
@@ -8878,11 +8981,10 @@
     /**
      * 短剧热度榜状态：
      * - 首次打开网页：默认展开前 10 条
-     * - 第一次搜索成功后：自动完全收起
+     * - Neo 新版搜索成功后保持当前展开状态，不再沿用旧版自动折叠机制
      */
     let showAllRank = false;
     let rankTagsCollapsed = false;
-    let hasAutoCollapsedRankAfterSearch = false;
 
     let showVtquark = false;
 
@@ -9165,16 +9267,6 @@
         setVtquarkToggleText(showVtquark ? '收起' : '展开查看', showVtquark ? 'up' : 'down');
     }
 
-    function autoCollapseRankTagsAfterFirstSuccessfulSearch() {
-        if (hasAutoCollapsedRankAfterSearch) return;
-
-        hasAutoCollapsedRankAfterSearch = true;
-        rankTagsCollapsed = true;
-        showAllRank = false;
-
-        renderRankTags(true);
-    }
-
     function searchFromRankKeyword(keyword) {
         const term = normalizeSearchKeyword(keyword);
 
@@ -9200,6 +9292,50 @@
                 retryIfEmpty: true
             });
         }, 0);
+    }
+
+    function bindNeoSourceGridLinks() {
+        const sourceGrid = document.querySelector('.neo-source-grid');
+        if (!sourceGrid) return;
+
+        const sourceLabels = {
+            baidu: '百度网盘',
+            quark: '夸克网盘',
+            aliyun: '阿里云盘',
+            magnet: '磁力链接'
+        };
+
+        sourceGrid.addEventListener('click', event => {
+            const chip = event.target.closest('[data-neo-source]');
+            if (!chip) return;
+
+            const source = chip.getAttribute('data-neo-source');
+            if (!source || !TYPE_PRESETS[source]) return;
+
+            if (window.location.hash !== '#/' && window.location.hash !== '') {
+                window.location.hash = '#/';
+            } else {
+                navigateTo('search');
+            }
+
+            typeSelect.value = source;
+            currentPreset = source;
+
+            const term = normalizeSearchKeyword(searchInput.value);
+            const label = sourceLabels[source] || TYPE_LABEL[source] || source;
+
+            // 中文：来源标签的职责是快速切换搜索范围；如果已有关键词就立即重搜，否则聚焦输入框减少下一步操作成本。
+            // English: Source chips are quick search-scope switches; with an existing keyword they re-search immediately, otherwise they focus the input to reduce the next action.
+            if (term) {
+                performSearch(term, {
+                    immediate: true,
+                    retryIfEmpty: true
+                });
+            } else {
+                searchInput.focus();
+                showStatus(`已切换到${label}，请输入关键词搜索`);
+            }
+        });
     }
 
     const toggleMoreRankEl = document.getElementById('toggleMoreRank');
@@ -11267,6 +11403,7 @@
     loadRankTags();
     loadVtquarkTags();
     bindApiBuilderEvents();
+    bindNeoSourceGridLinks();
     updateHelpApiUrls();
     checkUrlParams();
     renderSearchHistory();
@@ -11276,6 +11413,8 @@
     // ==================== 新版稳定性提醒与用户条例每次打开 / 刷新都弹出 ====================
     showNeoNoticeModalOnPageLoad();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
