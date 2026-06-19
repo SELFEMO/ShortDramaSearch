@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import sys
 import platform
-import subprocess
+import sys
 from PyInstaller.__main__ import run
 
 
+def add_data_arg(source: str, target: str) -> str:
+    # 中文：PyInstaller 在 Windows 与类 Unix 系统使用不同分隔符，集中封装避免手写配置出错。
+    # English: PyInstaller uses different data separators on Windows and Unix-like systems, so centralizing this avoids platform mistakes.
+    sep = ";" if platform.system() == "Windows" else ":"
+    return f"{source}{sep}{target}"
+
+
 def build_app():
-    """构建应用程序"""
-
-    # 平台特定配置
     system = platform.system()
-
     if system == "Windows":
         build_windows()
     elif system == "Darwin":
@@ -25,67 +26,32 @@ def build_app():
         sys.exit(1)
 
 
-def build_windows():
-    """构建Windows版本"""
-    print("构建Windows版本...")
-
-    opts = [
-        'main.py',
-        '--name=ShortDramaSearch',
-        '--windowed',
-        '--onefile',
-        # '--icon=resources/icons/app.ico',  # Windows图标
-        '--icon=resources/icons/API.ico',  # Windows图标
-        '--add-data=resources;resources',  # 包含所有资源文件
-        '--add-data=ui:ui',  # 包含UI模块
-        '--add-data=core:core',  # 包含核心模块
-        '--clean',
-        '--noconfirm'
+def common_opts(name: str, icon: str):
+    return [
+        "main.py",
+        f"--name={name}",
+        "--windowed",
+        "--onefile",
+        f"--icon={icon}",
+        f"--add-data={add_data_arg('resources', 'resources')}",
+        "--clean",
+        "--noconfirm",
     ]
 
-    run(opts)
+
+def build_windows():
+    print("构建 Windows PyQt5 桌面版...")
+    run(common_opts("ShortDramaSearch", "resources/icons/API.ico"))
 
 
 def build_macos():
-    """构建macOS版本"""
-    print("构建macOS版本...")
-
-    opts = [
-        'main.py',
-        '--name=ShortDramaSearch',
-        '--windowed',
-        '--onefile',
-        # '--icon=resources/icons/app.icns',  # macOS图标
-        '--icon=resources/icons/API.icns',  # macOS图标
-        '--add-data=resources:resources',  # 包含所有资源文件
-        '--add-data=ui:ui',  # 包含UI模块
-        '--add-data=core:core',  # 包含核心模块
-        '--clean',
-        '--noconfirm'
-    ]
-
-    run(opts)
+    print("构建 macOS PyQt5 桌面版...")
+    run(common_opts("ShortDramaSearch", "resources/icons/API.icns"))
 
 
 def build_linux():
-    """构建Linux版本"""
-    print("构建Linux版本...")
-
-    opts = [
-        'main.py',
-        '--name=short-drama-search',
-        '--windowed',
-        '--onefile',
-        # '--icon=resources/icons/app.png',  # Linux图标
-        '--icon=resources/icons/API.png',  # Linux图标
-        '--add-data=resources:resources',  # 包含所有资源文件
-        '--add-data=ui:ui',  # 包含UI模块
-        '--add-data=core:core',  # 包含核心模块
-        '--clean',
-        '--noconfirm'
-    ]
-
-    run(opts)
+    print("构建 Linux PyQt5 桌面版...")
+    run(common_opts("short-drama-search", "resources/icons/API.png"))
 
 
 if __name__ == "__main__":

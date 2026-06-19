@@ -377,20 +377,53 @@ textColor = "#f0f0f5"
 
 ### 主要功能
 
-- **跨平台桌面应用** - 支持Windows、macOS和Linux系统
-- **原生界面体验** - 使用Qt5框架提供流畅的桌面应用体验
-- **异步搜索处理** - 搜索过程在后台线程执行，避免界面冻结
-- **本地数据缓存** - 自动缓存搜索结果，提升重复搜索速度
-- **一键打开链接** - 直接调用系统默认浏览器打开网盘链接
-- **搜索历史记录** - 自动保存搜索历史，方便再次查看
-- **现代化UI设计** - 使用表格展示结果，支持交替行颜色和悬停效果
+- **PyQt5 控件实现** - 使用 `QTabWidget`、`QListWidget` 卡片列表、`QDialog` 等 PyQt5 控件实现页面。
+- **分辨率与 DPI 自适应** - 启动时读取主屏幕分辨率、可用工作区和系统 DPI，自动调整窗口大小、基础字号、标题字号、按钮内边距、页签内边距、列表卡片尺寸、弹窗尺寸和二维码尺寸；切换显示器或系统缩放变化后会刷新字体与控件尺寸。
+- **卡片式结果展示** - 搜索结果、每日影视、API 预览和收藏不再使用窄列表格，而是改为可换行资源卡片；标题、来源、提取码、搜索词、链接、收藏、失效标记、质量评分和快捷操作都在同一张卡片内呈现，避免列宽压缩造成按钮残缺、文字被裁切或大面积留白。
+- **聚合搜索对齐网页端** - 支持 `all`、`netdisk`、`baidu`、`quark`、`aliyun`、`tianyi`、`uc`、`mobile`、`115`、`pikpak`、`xunlei`、`123`、`magnet`、`ed2k`，并按网页端逻辑拆分空格关键词、合并去重、限制频率以降低 429 风险。
+- **API 生成器** - 生成 `https://selfemo.github.io/ShortDramaSearch/?q=关键词&from=来源&format=json` 链接，可复制、打开，并在桌面端预览与网页 API 字段结构一致的 JSON。
+- **热度榜卡片** - 支持短剧热度榜与夸克短剧热搜榜。
+- **我的收藏** - 收藏保存在本机 `~/.short_drama_search/favorites.json`，支持搜索、导入、导出和清空。
+- **卡片式搜索历史** - 自动保存最近 50 条搜索记录，历史项以关键词、结果数、时间和“重搜”按钮组成卡片，关闭横向滚动，支持双击重搜、导入、导出和清空。
+- **统一美化自动隐藏滚动条** - 资源列表、历史列表、JSON 预览、榜单卡片、详情弹窗和用户条例弹窗都使用细圆角滚动条；无滚动范围时自动隐藏，有滚动时按需显示，停止操作后淡出。
+- **本地失效标记与质量评分** - 可对链接做本地失效标记、隐藏失效链接，并为资源设置 0-5 星本地质量评分。
+- **二维码与快捷操作** - 每张资源卡片内可直接打开链接、复制链接、复制密码、查看详情或调用二维码接口生成分享二维码。
+- **浅色 / 深色 / 跟随系统主题** - “视图”菜单提供“浅色模式”“深色模式”“跟随系统（默认）”三种互斥选项；首次启动默认跟随系统，后续会保存用户选择，主题样式中的字号、控件尺寸、卡片背景、历史卡片、选中状态和榜单卡片颜色会使用当前屏幕缩放指标和有效主题动态生成。
+
+### 本次桌面列表重构说明
+
+旧版桌面列表沿用了表格思路，把“收藏”“失效”“评分”“来源”“名称”“链接”“密码”“搜索词/时间”全部塞进同一行。这个结构在资源标题很长、DPI 缩放较大或窗口分栏较窄时天然容易出现列宽互相抢占，最终表现为按钮被裁切、评分列挤压、链接看不全、历史记录出现横向滚动条。新版改为“资源卡片 + 历史卡片”：每条资源独占一张卡片，操作按钮内联在卡片中，历史记录也用关键词、结果数、时间和“重搜”按钮分层显示。这样牺牲少量纵向密度，换取更稳定的阅读性和操作可达性。
+
+热度榜也已经从 `QTableWidget` 改为 `RankList + RankCard`。因为短剧热度榜和夸克热搜榜经常只返回排名与关键词，没有可展示的“热度 / 说明”字段，表格会产生一整列空白；同时“操作”列在高 DPI 或窗口较窄时会把“搜索”按钮压成逐字竖排。卡片式榜单按“排名徽章 + 关键词 + 可选说明 + 聚合搜索按钮”组织信息；没有说明时直接省略副文本，不再为每条结果重复显示“点击搜索”提示，也不再保留空列。
+
+### 本次主题模式调整说明
+
+桌面端主题入口已从单个“切换深浅主题”动作改为三项互斥菜单：“浅色模式”“深色模式”“跟随系统（默认）”。`settings.json` 中保存的是 `theme_mode`，其中 `system` 表示跟随系统偏好；没有 `theme_mode` 时默认按 `system` 处理，旧版本自动写入的 `theme=dark` 不再被当作用户主动选择，同时仍保留实际生效的 `theme` 字段用于兼容旧版本配置。Windows 下优先读取系统应用主题注册表，macOS 下读取 `AppleInterfaceStyle`，其他平台会结合环境变量和 Qt 调色板兜底。
+
+资源卡片、每日影视卡片、API 预览卡片、收藏卡片和热度榜卡片在重建列表前都会调用 `set_visual_theme(current_theme)`，确保新增卡片与当前主题一致。卡片外框不再用 QSS 的 `background + border-radius` 直接绘制，而是通过 `paintEvent` 自绘圆角矩形；列表项选中背景保持透明，列表 viewport 负责填充当前主题背景，从而避免浅色模式下出现“深色卡片未切换”或“圆角后面还有方角底色”的问题。
+
+### 本次悬浮状态提示与滚动条重构说明
+
+主标题下方的独立状态提示行已经删除，底部 `QStatusBar` 也不再使用。`MainWindow.set_status()` 现在写入左下角悬浮 Toast：它是主窗口的子控件，不参与任何布局计算，因此不会占用页面高度，也不会挤压资源列表、历史列表或页签内容。忙碌状态使用 `timeout=0` 保持到任务结束，并由后续状态覆盖或清空；普通状态默认 5 秒后自动消失。二维码弹窗关闭时只清空二维码相关 Toast，不再显示“二维码窗口已关闭”这类无意义提示。
+
+所有主要滚动区域新增 `ui/scrollbar.py` 中的 `AutoHideScrollBar`。它只替换 Qt 滚动条对象，不改变搜索、收藏、热度榜、JSON 预览等业务控件本身；有可滚动内容时才显示，鼠标悬停、拖动或滚轮操作时淡入，停止操作后自动淡出。全局 QSS 同时重新设计了浅色/深色主题下的细圆角滚动条颜色、尺寸和轨道样式，避免系统原生滚动条破坏桌面端整体视觉。
+
+
+### 本次用户使用条例弹窗调整说明
+
+用户使用条例正文较短，旧版使用 `QTextEdit` 作为可拉伸内容区并把对话框固定到较大的自适应高度，导致正文下面出现大量空白。新版将条例正文区改为固定紧凑高度，并让对话框按 `sizeHint()` 计算最终高度，只保留必要的阅读边距和底部确认按钮区域；小屏设备仍会受自适应高度上限保护。
+
+### 本次按钮与下拉框修正说明
+
+上一版按钮虽然减少了部分 padding，但 `QPushButton` 仍可能在 `QHBoxLayout` 中被横向拉伸，所以“清空”等短按钮会显得过宽。新版统一给按钮设置紧凑尺寸策略，让按钮按文字和自适应 padding 计算尺寸，不再主动占据多余空白。下拉框不再用 QSS 边框拼三角形，因为该做法在 Windows / Qt5 下可能渲染成难以理解的小横块；现在改用 `resources/icons/chevron_down_light.svg` 与 `chevron_down_dark.svg` 作为深浅主题箭头。`StableComboBox` 同时将下拉列表的 `autoScroll` 关闭，并把可见项数量收敛为 8，避免来源列表过长贴到屏幕底部；弹层窗口会额外应用圆角遮罩，弥补 Qt5 仅靠 QSS 难以稳定裁剪下拉列表底部圆角的问题。
 
 ### 安装步骤
 
 #### 前提条件
 
-- Python 3.7 或更高版本
-- pip 包管理工具
+- Python 3.8 或更高版本
+- pip 或 conda 包管理工具
+- 可以访问第三方酷乐 API 的网络环境
 
 #### 1. 安装依赖
 
@@ -399,173 +432,165 @@ cd desktop_version
 pip install -r requirements.txt
 ```
 
+Conda 环境推荐：
+
+```bash
+conda activate py
+conda install -c conda-forge pyqt
+pip install requests pyinstaller qt-material fontawesome
+```
+
+> 注意：当前PyQt5 桌面版不需要 `PyQtWebEngine`。如果运行时仍出现 `PyQt5.QtWebEngineWidgets` 相关报错，说明本地文件仍是旧的 WebEngine 壳层版本，请覆盖为最新 `desktop_version` 代码。
+
 #### 2. 运行应用
 
 ```bash
 python main.py
 ```
 
-#### 3. 打包为可执行文件（可选）
+首次启动时桌面版会根据当前主屏幕自动缩放界面。缩放逻辑同时参考：
+
+- 屏幕分辨率，例如 1366x768、1920x1080、2560x1440、3840x2160。
+- 系统 DPI / 缩放比例，例如 Windows 100%、125%、150%。
+- 可用工作区大小，避免任务栏占用空间后窗口被裁切。
+
+如果应用被移动到另一块显示器，或系统 DPI/分辨率发生变化，窗口会刷新字体、紧凑按钮、下拉框箭头区域、资源卡片、历史卡片、榜单卡片和弹窗尺寸。
+
+也可以通过启动参数复刻网页 URL 参数体验：
 
 ```bash
-# 使用内置打包脚本
-python build.py
-
-# 或直接使用PyInstaller
-# Windows 示例
-pyinstaller --name=ShortDramaSearch --windowed --onefile --icon=resources/icons/app.ico --add-data="resources;resources" main.py
-# macOS 示例
-pyinstaller --name=ShortDramaSearch --windowed --onefile --icon=resources/icons/app.icns --add-data="resources:resources" main.py
-# Linux 示例
-pyinstaller --name=short-drama-search --windowed --onefile --add-data="resources:resources" main.py
+python main.py --q "飞驰人生3" --from netdisk
+python main.py --q "飞驰人生3" --from netdisk --json
 ```
+
+其中：
+
+- `--q / --keyword / --name / --search`：启动后自动搜索关键词。
+- `--from / --source`：搜索来源，取值与网页端 `from` 参数一致。
+- `--json`：启动后进入“API生成器”并预览 JSON。
+
+#### 3. PowerShell 语法检查
+
+PowerShell 不会把 `desktop_version/core/*.py` 直接展开给 `py_compile`。请使用以下命令：
+
+```powershell
+Get-ChildItem desktop_version -Recurse -Filter *.py | ForEach-Object { python -m py_compile $_.FullName }
+```
+
+跨平台写法：
+
+```bash
+python -c "import pathlib, py_compile; [py_compile.compile(str(p), doraise=True) for p in pathlib.Path('desktop_version').rglob('*.py')]"
+```
+
+#### 4. 打包为可执行文件（可选）
+
+```bash
+cd desktop_version
+python build.py
+```
+
+或直接使用 PyInstaller：
+
+```bash
+# Windows
+pyinstaller --name=ShortDramaSearch --windowed --onefile --icon=resources/icons/API.ico --add-data="resources;resources" main.py
+
+# macOS
+pyinstaller --name=ShortDramaSearch --windowed --onefile --icon=resources/icons/API.icns --add-data="resources:resources" main.py
+
+# Linux
+pyinstaller --name=short-drama-search --windowed --onefile --icon=resources/icons/API.png --add-data="resources:resources" main.py
+```
+
+生成的可执行文件位于 `desktop_version/dist/` 目录。
 
 ### 使用说明
 
-#### 基本搜索
+#### 聚合搜索
 
-1. 在搜索输入框中输入短剧名称
-2. 点击"搜索"按钮或按回车键开始搜索
-3. 查看下方表格中显示的搜索结果
+1. 打开“聚合搜索”。
+2. 输入短剧 / 影视资源关键词。
+3. 选择搜索来源，例如“全局聚合”“网盘聚合”“夸克网盘”。
+4. 点击“搜索”或按回车。
+5. 搜索结果会以资源卡片展示，每张卡片包含名称、来源、提取码、搜索词/时间、链接、收藏、失效标记、质量评分和快捷操作。
+6. 标题和链接过长时会在卡片中做适度截断并保留 tooltip；点击“详情”可查看完整原始字段。
 
-#### 界面功能
+#### API 生成器
 
-- **搜索区域** - 包含搜索输入框、搜索按钮和清空按钮
-- **搜索结果表格** - 显示短剧名称、更新时间和网盘链接
-- **操作按钮** - 每个结果行的"打开链接"按钮可直接打开网盘页面
-- **状态栏** - 实时显示搜索状态和结果数量信息
-- **进度指示** - 搜索过程中显示进度条
+1. 打开“API生成器”。
+2. 输入关键词并选择来源。
+3. 点击“生成 API 链接”可生成 GitHub Pages JSON API 链接。
+4. 点击“预览 JSON 结果”会在桌面端请求同一聚合接口，并展示最多 5 条预览数据，字段结构保持：
 
-#### 数据管理
-
-- **自动缓存** - 搜索结果会自动缓存，相同关键词再次搜索会更快
-- **搜索历史** - 自动记录搜索历史，可在历史记录中查看
-- **本地存储** - 所有数据存储在用户目录下的应用数据文件夹中
-
-### 自定义配置
-
-修改 `desktop_version/core/api_client.py` 中的API配置：
-
-```python
-class ApiClient:
-    def __init__(self):
-        self.base_url = "https://api.kuleu.com/api/bddj"  # API地址
-        self.timeout = 60  # 请求超时时间（秒）
-
-    def search_drama(self, keyword):
-        """搜索短剧"""
-        params = {
-            "text": keyword
-        }  # 搜索参数配置
-        # ......
-
-    # ......
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "keyword": "飞驰人生3",
+  "type": "netdisk",
+  "total": 6,
+  "data": {
+    "quark": [],
+    "baidu": []
+  }
+}
 ```
 
-修改 `desktop_version/ui/main_window.py` 中的界面配置：
+#### 每日影视
 
-```python
-# 窗口标题和尺寸
-self.setWindowTitle("短剧搜索 - 桌面版")
-self.setGeometry(50, 100, 1600, 900)  # 窗口位置和大小，位置(50,100)，大小(1600x900)
+1. 打开“每日影视”。
+2. 首次进入会自动请求每日资源，也可以点击“刷新”。
+3. 使用顶部输入框按名称或链接进行本地过滤。
 
-# 表格列宽调整
-table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)  # 名称列自适应
+#### 热度榜
+
+1. 打开“热度榜”。
+2. 在“短剧热度榜”和“夸克热搜榜”之间切换。
+3. 榜单以卡片展示排名、关键词和可选说明；如果接口没有说明字段，不会再出现空白说明列。
+4. 双击榜单卡片或点击“聚合搜索”，会跳转到“聚合搜索”并自动搜索该关键词。
+
+#### 我的收藏
+
+- 收藏、搜索历史、失效标记、质量评分和主题设置都保存在本机用户目录：`~/.short_drama_search/`。
+- 收藏和历史均支持导入 / 导出 JSON，便于备份或迁移。
+
+### 文件职责
+
+```text
+desktop_version/
+├── main.py                         # PyQt5 桌面入口，处理启动参数、应用图标和主窗口初始化
+├── core/
+│   ├── api_client.py               # 酷乐 API 客户端、聚合搜索、每日影视、榜单、二维码、JSON 预览数据构建
+│   ├── data_manager.py             # 本地历史、收藏、失效标记、质量评分、主题设置和缓存管理
+│   └── utils.py                    # 资源路径、平台判断、时间格式化、分辨率/DPI、悬浮状态提示与滚动条尺寸指标
+├── ui/
+│   ├── main_window.py              # PyQt5 多页主窗口、资源卡片列表、历史卡片、悬浮状态提示和全部交互逻辑
+│   ├── detail_dialog.py            # 资源详情弹窗
+│   └── scrollbar.py                # 统一细圆角自动隐藏滚动条
+├── resources/                      # 图标、字体和可选样式资源
+├── build.py                        # 跨平台 PyInstaller 打包脚本
+├── build.spec                      # PyInstaller 构建配置
+├── ShortDramaSearch.spec           # Windows 可执行文件构建配置
+└── requirements.txt                # PyQt5 桌面版依赖，不包含 PyQtWebEngine
 ```
 
-修改 `desktop_version/core/data_manager.py` 中的缓存配置：
+### 与 Online-Webpage 版本的关系
 
-```python
-# 缓存过期时间（秒）
-CACHE_EXPIRE_TIME = 3600  # 1小时
-```
+- Online-Webpage 版本仍由 `docs/index.html` 提供。
+- Desktop 版本只参考 `docs/index.html` 的功能设计、接口参数、字段结构和用户体验，不嵌入网页、不打开本地 HTML、不依赖浏览器内核；结果展示采用更适合桌面端宽屏阅读的资源卡片，而不是强行复制网页表格。
+- 桌面端“API生成器”生成的是 Online-Webpage 的 JSON API 链接；桌面端“预览 JSON”则由 Python 直接调用同一酷乐 API 后构造等价 JSON。
 
 ---
 
-## 🗂️ 项目文件结构
-
-```
-ShortDramaSearch/
-├── README.md                      # 项目说明文档
-├── requirements.txt               # Python依赖包列表
-│
-├── docs                           # Online-Website版本文件夹
-│   └── index.html                 # Online-Website版本网页（单文件）
-│
-│
-├── flask_version/                 # Flask版本
-│   ├── app.py                     # Flask主应用文件
-│   └── templates/                 # 网页模板目录
-│       └── index.html             # 主页面模板
-│
-├── streamlit_version/             # Streamlit版本
-│   ├── app.py                     # Streamlit入口：启动保护、URL参数与页面跳转
-│   ├── .streamlit/                # Streamlit配置
-│   │   └── config.toml            # 深色主题与默认端口
-│   ├── pages/                     # Streamlit多页面文件
-│   │   ├── 1_search.py            # 聚合搜索页
-│   │   ├── 2_api.py               # API生成器页
-│   │   ├── 3_daily.py             # 每日影视页
-│   │   ├── 4_rank.py              # 热度榜页
-│   │   ├── 5_favorites.py         # 我的收藏页
-│   │   └── 6_policy.py            # 用户条例页
-│   └── services/                  # 业务服务层与通用UI组件
-│       ├── api_client.py          # API请求、榜单、每日影视与预览数据
-│       ├── component_map.py       # docs/index.html组件静态映射
-│       ├── constants.py           # 常量、来源、页面配置
-│       ├── normalizers.py         # 数据清洗与提取码修复
-│       ├── pages.py               # 页面渲染逻辑
-│       ├── runtime.py             # 启动与URL参数工具
-│       ├── state.py               # 会话状态管理
-│       └── ui.py                  # 深色主题、侧边栏与结果卡片
-│
-└── desktop_version/               # 桌面应用版本
-    ├── main.py                    # 应用入口点
-    ├── ui/                        # 界面模块
-    │   ├── main_window.py         # 主窗口类
-    │   ├── details_dialog.py      # 详情对话类
-    │   └── components.py          # 自定义组件
-    ├── core/                      # 核心逻辑
-    │   ├── api_client.py          # API客户端
-    │   ├── data_manager.py        # 数据管理
-    │   └── utils.py               # 工具函数
-    ├── resources/                 # 资源文件
-    │   ├── icons/                 # 图标资源
-    │   │   ├── API.svg            # API图标（SVG格式）
-    │   │   ├── API.png            # API图标（PNG格式）
-    │   │   ├── API.ico            # API图标（ICO格式）
-    │   │   ├── API.icns           # API图标（ICNS格式）
-    │   │   └── ...                # 其他图标文件
-    │   ├── images/                # 其他图片资源
-    │   └── styles/                # 其他样式文件（可能包括CSS等）
-    ├── build.py                   # 打包脚本（简化版本）
-    ├── build.spec                 # PyInstaller构建规范文件（build.py 的打包配置）
-    ├── build/                     # 构建输出
-    ├── dist/                      # 分发文件
-    ├── ...                        # 其他构建相关文件，或构建日志等
-    └── requirements.txt           # 依赖列表
-```
-
-### 文件说明
+## 🗂️ 项目文件结构说明
 
 - **flask_version** - Flask版本主目录
-    - **flask_version/app.py** - Flask后端逻辑，处理API请求和路由
-    - **flask_version/templates/index.html** - 前端界面，包含HTML、CSS和JavaScript
 - **streamlit_version** - Streamlit版本主目录
-    - **streamlit_version/app.py** - Streamlit入口文件，负责启动保护、URL参数兼容和跳转到多页面入口
-    - **streamlit_version/pages/** - 聚合搜索、API生成器、每日影视、热度榜、我的收藏和用户条例页面
-    - **streamlit_version/services/** - API层、数据清洗、状态管理、组件映射和通用UI组件
-- **desktop_version** - 桌面应用主目录
-    - **desktop_version/main.py** - 桌面应用入口，初始化应用和主窗口
-    - **desktop_version/ui/main_window.py** - 主窗口类，定义界面布局和交互
-    - **desktop_version/core/api_client.py** - 负责与第三方API通信
-    - **desktop_version/core/data_manager.py** - 管理数据缓存和本地存储
-    - **desktop_version/core/utils.py** - 工具函数，如时间格式化等
-    - **desktop_version/resources/icons/** - 存放应用图标的目录，包含多种格式
-    - **desktop_version/build.py** - 简化的打包脚本，使用PyInstaller进行打包
-    - **desktop_version/build.spec** - PyInstaller的构建规范文件，定义打包配置
+- **desktop_version** - PyQt5 原生桌面应用主目录
 - **docs** - Github Pages 官方设置的除 /(root) 目录下的默认二级目录，为了避免 Github Pages 设置为 /(root) 目录时默认网页为 README.md文件
-    - **index.html** - Github Pages 官方默认 html 入口文件，Online-Webpages 版本利用单文件（HTML、CSS 和 JS 内联开发）实现
+  - **index.html** - 在线网页版本入口文件
+  - **index.assets/** - 在线网页版本静态资源目录，包含 app.js 和 style.css
 - **requirements.txt** - 项目依赖包列表
 - **README.md** - 项目详细说明文档
 

@@ -1,133 +1,112 @@
+# -*- coding: utf-8 -*-
+
+from typing import Dict, Any
+
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDesktopServices, QFont
 from PyQt5.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
     QApplication,
-    QWidget,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QDesktopServices, QClipboard
-from PyQt5.QtCore import QUrl
+
+from core.api_client import TYPE_LABEL
+from core.utils import build_ui_metrics
+from ui.scrollbar import install_auto_hide_scrollbars
 
 
 class DetailDialog(QDialog):
-    def __init__(self, drama_data, link_field="", parent=None):
+    """资源详情弹窗。"""
+
+    def __init__(self, resource: Dict[str, Any], parent=None):
         super().__init__(parent)
-        self.drama_data = drama_data
-        self.link = link_field
+        self.resource = resource or {}
+        self.ui_metrics = getattr(parent, "ui_metrics", build_ui_metrics(QApplication.instance()))
+        self.setWindowTitle("资源详情")
+        self.resize(self.ui_metrics.get("detail_dialog_width", 680), self.ui_metrics.get("detail_dialog_height", 420))
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("详情")
-        self.resize(500, 400)
-
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)
+        layout.setContentsMargins(self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14))
+        layout.setSpacing(self.ui_metrics.get("layout_spacing", 10))
 
-        # 标题
-        title = (
-            self.drama_data.get("name")
-            or self.drama_data.get("content_title")
-            or "未知标题"
-        )
-        title_label = QLabel(f"<h2>{title}</h2>")
-        title_label.setWordWrap(True)
-        layout.addWidget(title_label)
+        title = QLabel(self.resource.get("name", "未知资源"))
+        title.setWordWrap(True)
+        title.setObjectName("dialogTitle")
+        # 中文：详情弹窗跟随主窗口的缩放指标，避免大屏主界面放大后弹窗标题仍保持小字号。
+        # English: The detail dialog follows the main window scaling metrics so its title does not stay tiny when the main UI is enlarged.
+        title.setFont(QFont("Microsoft YaHei", self.ui_metrics.get("dialog_title_font_size", 17), QFont.Bold))
+        layout.addWidget(title)
 
-        # 详细信息
-        info_html = "<div style='line-height: 1.6;'>"
+        form = QFormLayout()
+        form.setLabelAlignment(Qt.AlignRight)
 
-        # 添加所有字段
-        field_mapping = {
-            "name": "名称",
-            "title": "标题",
-            "addtime": "更新时间",
-            "hot": "热度",
-            "hots": "热度值",
-            "source": "来源",
-            "type": "类型",
-            "size": "大小",
-            "content_rank": "排名",
-            "content_type": "内容类型",
-        }
+        self.name_edit = self._readonly_line(self.resource.get("name", ""))
+        self.type_edit = self._readonly_line(TYPE_LABEL.get(self.resource.get("type", ""), self.resource.get("type", "")))
+        self.url_edit = self._readonly_line(self.resource.get("url", ""))
+        self.pwd_edit = self._readonly_line(self.resource.get("pwd", ""))
+        self.time_edit = self._readonly_line(self.resource.get("addtime", ""))
 
-        for key, value in self.drama_data.items():
-            if key in ("viewlink", "url", "link", "image_url"):
-                continue
+        form.addRow("名称：", self.name_edit)
+        form.addRow("来源：", self.type_edit)
+        form.addRow("链接：", self.url_edit)
+        form.addRow("密码：", self.pwd_edit)
+        form.addRow("更新：", self.time_edit)
+        layout.addLayout(form)
 
-            label = field_mapping.get(key, key)
-            if value:
-                info_html += f"<p><b>{label}:</b> {value}</p>"
+        raw_label = QLabel("原始数据：")
+        layout.addWidget(raw_label)
+        raw_text = QTextEdit()
+        raw_text.setReadOnly(True)
+        # 中文：详情页原始数据也使用统一自动隐藏滚动条，避免弹窗里出现和主界面风格割裂的系统滚动条。
+        # English: Raw data in the detail dialog also uses the unified auto-hide scrollbar, avoiding system scrollbars that visually conflict with the main window.
+        install_auto_hide_scrollbars(raw_text, horizontal=False)
+        raw_text.setPlainText("\n".join(f"{key}: {value}" for key, value in self.resource.items()))
+        layout.addWidget(raw_text, 1)
 
-        info_html += "</div>"
+        actions = QHBoxLayout()
+        copy_link_btn = QPushButton("复制链接")
+        copy_pwd_btn = QPushButton("复制密码")
+        open_btn = QPushButton("打开链接")
+        copy_link_btn.clicked.connect(lambda: self.copy_text(self.resource.get("url", ""), "链接已复制"))
+        copy_pwd_btn.clicked.connect(lambda: self.copy_text(self.resource.get("pwd", ""), "密码已复制"))
+        open_btn.clicked.connect(self.open_link)
+        actions.addWidget(copy_link_btn)
+        actions.addWidget(copy_pwd_btn)
+        actions.addWidget(open_btn)
+        actions.addStretch(1)
+        layout.addLayout(actions)
 
-        info_label = QLabel(info_html)
-        info_label.setWordWrap(True)
-        layout.addWidget(info_label)
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
 
-        # 添加弹性空间
-        layout.addStretch()
+    def _readonly_line(self, text: str) -> QLineEdit:
+        widget = QLineEdit(str(text or ""))
+        widget.setReadOnly(True)
+        return widget
 
-        # 按钮区域
-        btn_widget = QWidget()
-        btn_layout = QHBoxLayout(btn_widget)
-
-        if self.link:
-            open_btn = QPushButton("打开链接")
-            open_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: #3b82f6;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 14px;
-                }
-                QPushButton:hover {
-                    background-color: #2563eb;
-                }
-            """
-            )
-            open_btn.clicked.connect(self.open_link)
-
-            copy_btn = QPushButton("复制链接")
-            copy_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: #10b981;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 14px;
-                }
-                QPushButton:hover {
-                    background-color: #059669;
-                }
-            """
-            )
-            copy_btn.clicked.connect(self.copy_link)
-
-            btn_layout.addWidget(open_btn)
-            btn_layout.addWidget(copy_btn)
-
-        close_btn = QPushButton("关闭")
-        close_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(close_btn)
-
-        layout.addWidget(btn_widget)
+    def copy_text(self, text: str, message: str):
+        if not text:
+            QMessageBox.information(self, "提示", "没有可复制的内容。")
+            return
+        QApplication.clipboard().setText(str(text))
+        QMessageBox.information(self, "提示", message)
 
     def open_link(self):
-        """打开链接"""
-        if self.link:
-            QDesktopServices.openUrl(QUrl(self.link))
-
-    def copy_link(self):
-        """复制链接到剪贴板"""
-        if self.link:
-            clipboard = QApplication.clipboard()
-            clipboard.setText(self.link)
-            self.accept()
+        url = self.resource.get("url", "")
+        if not url:
+            QMessageBox.information(self, "提示", "没有可打开的链接。")
+            return
+        # 中文：网盘链接仍交给系统默认浏览器打开，桌面程序不承载下载或转存行为。
+        # English: Net-disk links are opened by the system browser because the desktop app does not download or transfer resources.
+        QDesktopServices.openUrl(QUrl(url))

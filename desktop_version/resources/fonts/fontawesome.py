@@ -1,0 +1,20 @@
+# 字体图标 Unicode 映射
+ICONS = {
+    "search": "\uf002",
+    "download": "\uf019",
+    "star": "\uf005",
+    "heart": "\uf004",
+    "link": "\uf0c1",
+    "copy": "\uf0c5",
+    "close": "\uf00d",
+    "check": "\uf00c",
+    "warning": "\uf071",
+    "info": "\uf05a",
+    "film": "\uf008",
+    "tv": "\uf26c",
+    "play": "\uf04b",
+    "pause": "\uf04c",
+    "stop": "\uf04d",
+    "forward": "\uf04e",
+    "backward": "\uf04a",
+}
