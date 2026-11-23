@@ -1,8 +1,17 @@
-# Python caches & build artifacts
+# Python caches, environments & test artifacts
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Desktop / PyInstaller build artifacts
 dist/
 build/
 *.spec
@@ -12,6 +21,22 @@ build/
 *.save.html
 *.old.html
 
-# Runtime local data
+# Environment variables & local secrets
+.env
+.env.*
+!.env.example
+
+# Runtime local data & logs
 *.corrupt.*.json
+*.log
+logs/
+
+# IDE & OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+desktop.ini
