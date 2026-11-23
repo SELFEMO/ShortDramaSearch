@@ -1,7 +1,7 @@
 /* ==================== Extracted style block 1 ==================== */
 :root {
-            --bg: #0a0a0f; --bg-secondary: #12121a; --fg: #f0f0f5; --muted: #6b6b80;
-            --accent: #ff6b35; --accent-glow: rgba(255, 107, 53, 0.4);
+            --bg: #0a0a0f; --bg-secondary: #12121a; --fg: #f0f0f5; --muted: #9ca3af;
+            --accent: #c2410c; --accent-glow: rgba(255, 107, 53, 0.4);
             --card: #1a1a24; --border: #2a2a3a; --error: #ef4444;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -9,7 +9,7 @@
 
         /* ==================== 主页滚动条：隐藏原生滚动条 ==================== */
         html {
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: thin; /* Firefox */
         }
 
         html::-webkit-scrollbar,
@@ -988,7 +988,7 @@
         }
 
         .api-preview-link-pwd {
-            color: #f59e0b;
+            color: #b45309;
             font-weight: 600;
         }
 
@@ -1250,7 +1250,7 @@
             overscroll-behavior: contain;
 
             /* 隐藏原生滚动条：Firefox */
-            scrollbar-width: none;
+            scrollbar-width: thin;
 
             /* 隐藏原生滚动条：IE / Edge Legacy */
             -ms-overflow-style: none;
@@ -1959,7 +1959,7 @@
         }
 
         .theme-icon-light {
-            color: #f59e0b;
+            color: #b45309;
             opacity: 0;
             transform: rotate(-50deg) scale(0.64);
         }
@@ -2197,7 +2197,7 @@
             --muted: #4b5563;
             --card: #ffffff;
             --border: #d7dde8;
-            --accent: #ff6b35;
+            --accent: #c2410c;
             --accent-glow: rgba(255, 107, 53, 0.22);
             --error: #dc2626;
         }
@@ -2759,7 +2759,7 @@
         }
 
         .quality-star.is-active {
-            color: #f59e0b;
+            color: #b45309;
         }
 
         .quality-text {
@@ -2785,10 +2785,47 @@
         }
 
         html.theme-light .quality-star.is-active {
-            color: #f59e0b;
+            color: #b45309;
         }
 
         html.theme-light .result-item.is-local-broken {
             background: #fff7f7;
             border-color: rgba(220, 38, 38, 0.28);
         }
+
+
+/* === A11y & Contrast Enhancements === */
+:focus-visible {
+    outline: 2px solid var(--accent, #c2410c);
+    outline-offset: 2px;
+}
+button.user-policy-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+@media (max-width: 480px) {
+    .search-box {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .search-input {
+        padding-right: 16px !important;
+    }
+    .type-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

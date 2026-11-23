@@ -56,8 +56,8 @@
                 const VTQUARK_API = 'https://api.kuleu.com/api/vtquark?tag=短剧';
                 const ICO_API = 'https://api.kuleu.com/api/ico';
                 const QRCODE_API = 'https://api.kuleu.com/api/qrcode';
-                const CORS_PROXIES = ['https://cors.sh/', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?'];
-                const SEARCH_TIMEOUT = 15000;
+                const CORS_PROXIES = (typeof window.__KULEU_CORS_PROXY__ === 'string' && window.__KULEU_CORS_PROXY__.trim()) ? [window.__KULEU_CORS_PROXY__.trim()] : [];
+                const SEARCH_TIMEOUT = 8000;
                 const TYPE_LABEL = { baidu: '百度网盘', aliyun: '阿里云盘', quark: '夸克网盘', tianyi: '天翼云盘', uc: 'UC网盘', mobile: '移动云盘', '115': '115网盘', pikpak: 'PikPak', xunlei: '迅雷网盘', '123': '123网盘', magnet: '磁力链接', ed2k: '电驴链接' };
                 const TYPE_PRESETS = { all: ['baidu','aliyun','quark','tianyi','uc','mobile','115','pikpak','xunlei','123','magnet','ed2k'], netdisk: ['baidu','aliyun','quark','tianyi','uc','mobile','115','pikpak','xunlei','123'], baidu: ['baidu'], quark: ['quark'], aliyun: ['aliyun'], tianyi: ['tianyi'], uc: ['uc'], mobile: ['mobile'], '115': ['115'], pikpak: ['pikpak'], xunlei: ['xunlei'], '123': ['123'], magnet: ['magnet'], ed2k: ['ed2k'] };
 
@@ -265,8 +265,43 @@
                     });
                 }
 
-                function showStatus(message, duration = 2000) { searchStatus.textContent = message; searchStatus.classList.add('show'); setTimeout(() => searchStatus.classList.remove('show'), duration); }
+                let _statusTimer = null;
+                function showStatus(message, duration = 2000) { if (!searchStatus) return; searchStatus.textContent = message; searchStatus.classList.add('show'); if (_statusTimer) clearTimeout(_statusTimer); _statusTimer = setTimeout(() => { searchStatus.classList.remove('show'); _statusTimer = null; }, duration); }
                 function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s])); }
+
+                function sanitizeUrl(rawUrl) {
+                    if (!rawUrl) return '';
+                    const cleaned = String(rawUrl).replace(/[\x00-\x1F\x7F]/g, '').trim();
+                    if (!cleaned || cleaned.length > 2048) return '';
+                    try {
+                        const parsed = new URL(cleaned);
+                        const protocol = (parsed.protocol || '').toLowerCase();
+                        if (protocol === 'http:' || protocol === 'https:') {
+                            return parsed.host ? cleaned : '';
+                        }
+                        if (protocol === 'magnet:' || protocol === 'ed2k:') {
+                            return cleaned;
+                        }
+                        return '';
+                    } catch (_) {
+                        return '';
+                    }
+                }
+                const _localCache = new Map();
+                function safeSetLocalStorage(key, value) {
+                    try {
+                        window.localStorage.setItem(key, value);
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+                window.addEventListener('storage', (ev) => {
+                    if (ev && ev.key && _localCache.has(ev.key)) {
+                        _localCache.delete(ev.key);
+                    }
+                });
+
 
                 function safeJsonParse(text, fallback) {
                     try {
@@ -285,12 +320,19 @@
                 };
 
                 function readLocalList(key) {
-                    const data = safeJsonParse(localStorage.getItem(key), []);
-                    return Array.isArray(data) ? data : [];
+                    if (_localCache.has(key)) return _localCache.get(key);
+                    let raw = null;
+                    try { raw = window.localStorage.getItem(key); } catch (_) { raw = null; }
+                    const data = safeJsonParse(raw, []);
+                    const list = Array.isArray(data) ? data : [];
+                    _localCache.set(key, list);
+                    return list;
                 }
 
                 function writeLocalList(key, list) {
-                    localStorage.setItem(key, JSON.stringify(list));
+                    const capped = Array.isArray(list) ? list.slice(0, 500) : [];
+                    _localCache.set(key, capped);
+                    safeSetLocalStorage(key, JSON.stringify(capped));
                 }
 
                 function makeResourceId(link) {
@@ -580,7 +622,7 @@
                         const pwd = item.pwd || '';
                         return `
                     <div class="result-item ${isBrokenMarked(item.link) ? 'is-local-broken' : ''}" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(item.link)}">
-                        <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(item.link)}')">
+                        <button class="qr-toggle-btn" title="分享二维码" type="button" data-action="open-qr" data-link="${escapeHtml(sanitizeUrl(item.link) || item.link)}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="7" height="7"/>
                                 <rect x="14" y="3" width="7" height="7"/>
@@ -599,7 +641,7 @@
                             </div>
                             <div class="info-item">
                                 <span class="info-label">链接:</span>
-                                <a href="${escapeHtml(item.link)}" target="_blank" class="info-link">${escapeHtml(item.link)}</a>
+                                <a href="${escapeHtml(sanitizeUrl(item.link) || '#')}" target="_blank" rel="noopener noreferrer" class="info-link">${escapeHtml(item.link)}</a>
                             </div>
                             ${pwd ? `<div class="info-item">
                                 <span class="info-label">密码:</span>
@@ -1223,20 +1265,19 @@
                 // function openQrModal(link) { if (!link) return; qrModalImage.style.display = 'none'; qrModalError.style.display = 'none'; qrModalImage.src = buildQrCodeUrl(link, 260); qrModalImage.onload = () => { qrModalImage.style.display = 'block'; }; qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; }; qrModalOverlay.classList.add('show'); }
                 // function closeQrModal() { qrModalOverlay.classList.remove('show'); }
                 function openQrModal(link) {
-                    if (!link || !qrModalOverlay) return;
-
+                    const safeLink = sanitizeUrl(link);
+                    if (!safeLink || !qrModalOverlay) {
+                        showStatus('无效的资源链接，无法生成二维码');
+                        return;
+                    }
                     qrModalImage.style.display = 'none';
                     qrModalError.style.display = 'none';
-                    qrModalImage.src = buildQrCodeUrl(link, 260);
-
-                    qrModalImage.onload = () => {
+                    qrModalImage.onload = () => { qrModalImage.style.display = 'block'; };
+                    qrModalImage.onerror = () => { qrModalError.style.display = 'flex'; };
+                    qrModalImage.src = buildQrCodeUrl(safeLink, 260);
+                    if (qrModalImage.complete && qrModalImage.naturalWidth > 0) {
                         qrModalImage.style.display = 'block';
-                    };
-
-                    qrModalImage.onerror = () => {
-                        qrModalError.style.display = 'flex';
-                    };
-
+                    }
                     showModalAnimated(qrModalOverlay);
                 }
                 function closeQrModal() {
@@ -1640,8 +1681,9 @@
                     for (let proxy of CORS_PROXIES) {
                         const controller = new AbortController();
 
+                        let localTimeoutId = null;
                         const timeoutPromise = new Promise((_, reject) => {
-                            timeoutId = setTimeout(() => {
+                            localTimeoutId = setTimeout(() => {
                                 controller.abort();
                                 reject({ errorType: 'timeout' });
                             }, SEARCH_TIMEOUT);
@@ -1671,7 +1713,7 @@
                             }
                             continue;
                         } finally {
-                            clearTimeouts();
+                            if (localTimeoutId) clearTimeout(localTimeoutId);
                         }
                     }
 
@@ -1973,7 +2015,7 @@
 
                     return `
                 <div class="result-item ${broken ? 'is-local-broken' : ''} ${isHideBrokenEnabled() && broken ? 'is-broken-hidden' : ''}" style="animation-delay: ${index * 0.05}s" data-link="${escapeHtml(link)}">
-                    <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')">
+                    <button class="qr-toggle-btn" title="分享二维码" type="button" data-action="open-qr" data-link="${escapeHtml(sanitizeUrl(link) || link)}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"/>
                             <rect x="14" y="3" width="7" height="7"/>
@@ -1997,8 +2039,8 @@
 
                         <div class="info-item">
                             <span class="info-label">链接:</span>
-                            <a href="${escapeHtml(link)}" target="_blank" class="info-link">
-                                ${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}
+                            <a href="${escapeHtml(sanitizeUrl(link) || '#')}" target="_blank" rel="noopener noreferrer" class="info-link">
+                                ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" class="source-icon" onerror="this.style.display='none'">` : ''}
                                 ${escapeHtml(link)}
                             </a>
                         </div>
@@ -2564,7 +2606,10 @@
                     dailyStats.textContent = '正在加载...'; 
                     dailyResultsArea.innerHTML = `<div class="status-message"><div class="spinner"></div><p>正在加载今日影视资源...</p></div>`; 
                     try { 
-                        const [baiduData, quarkData] = await Promise.all([fetchDailyApi('baidu'), fetchDailyApi('quark')]); 
+                        const [baiduRes, quarkRes] = await Promise.allSettled([fetchDailyApi('baidu'), fetchDailyApi('quark')]);
+                        const baiduData = baiduRes.status === 'fulfilled' ? baiduRes.value : [];
+                        const quarkData = quarkRes.status === 'fulfilled' ? quarkRes.value : [];
+                        if (baiduRes.status === 'rejected' && quarkRes.status === 'rejected') throw baiduRes.reason; 
                         dailyData = [...(baiduData || []), ...(quarkData || [])]; 
                         dailyData.sort((a, b) => (new Date(b.addtime).getTime() || 0) - (new Date(a.addtime).getTime() || 0)); 
                         filteredDaily = dailyData; 
@@ -2574,14 +2619,15 @@
 
                 async function fetchDailyApi(source) { 
                     const controller = new AbortController(); 
-                    const timeoutPromise = new Promise((_, reject) => { timeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); 
+                    let localTimeoutId = null;
+                    const timeoutPromise = new Promise((_, reject) => { localTimeoutId = setTimeout(() => { controller.abort(); reject({ errorType: 'timeout' }); }, SEARCH_TIMEOUT); }); 
                     try { 
                         const response = await Promise.race([fetch(`${YINGSHI_API}?${source}`, { signal: controller.signal }), timeoutPromise]); 
                         if (!response.ok) throw { errorType: 'server' }; 
                         const json = await response.json(); 
                         if (json && json.code === 1 && Array.isArray(json.data)) return json.data.map(item => ({ ...item, _source: source })); 
                         return []; 
-                    } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; throw error; } finally { clearTimeouts(); } 
+                    } catch (error) { if (error.name === 'AbortError') throw { errorType: 'timeout' }; throw error; } finally { if (localTimeoutId) clearTimeout(localTimeoutId); } 
                 }
 
                 function renderDailyResults(data) { 
@@ -2618,11 +2664,11 @@
                             const name = item.name || '未知'; const link = item.viewlink || '#'; const addtime = item.addtime || '';
                             const domain = extractDomain(link); const iconUrl = domain ? `${ICO_API}?url=https://${domain}` : '';
                             html += `<div class="result-item" style="animation-delay: ${index * 0.03}s" data-link="${escapeHtml(link)}">
-                                <button class="qr-toggle-btn" title="分享二维码" onclick="event.stopPropagation(); openQrModal('${escapeHtml(link)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                                <button class="qr-toggle-btn" title="分享二维码" type="button" data-action="open-qr" data-link="${escapeHtml(sanitizeUrl(link) || link)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
                                 <div class="drama-title">${escapeHtml(name)}</div>
                                 <div class="info-list">
                                     <div class="info-item"><span class="info-label">更新:</span><span>${escapeHtml(addtime)}</span></div>
-                                    <div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(link)}" target="_blank" class="info-link">${iconUrl ? `<img src="${iconUrl}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>
+                                    <div class="info-item"><span class="info-label">链接:</span><a href="${escapeHtml(sanitizeUrl(link) || '#')}" target="_blank" rel="noopener noreferrer" class="info-link">${iconUrl ? `<img src="${escapeHtml(iconUrl)}" class="source-icon" onerror="this.style.display='none'">` : ''}${escapeHtml(link)}</a></div>
                                 </div>
                             </div>`;
                         });
@@ -2635,7 +2681,7 @@
                 }
 
                 dailySearchInput.addEventListener('input', () => { const k = dailySearchInput.value.trim().toLowerCase(); filteredDaily = k ? dailyData.filter(i => (i.name || '').toLowerCase().includes(k) || (i.viewlink || '').toLowerCase().includes(k)) : dailyData; renderDailyResults(filteredDaily); });
-                dailyRefreshBtn.addEventListener('click', () => { window.location.hash = '#/daily'; window.location.reload(); });
+                dailyRefreshBtn.addEventListener('click', () => { dailyData = []; loadDailyResources(); });
 
                 // ==================== API 生成器逻辑 ====================
                 // function getCurrentPageBaseUrl() {
@@ -2996,10 +3042,6 @@
                     }).join('');
 
                     bindApiPreviewLinkActions();
-                }
-
-                function sleep(ms) {
-                    return new Promise(resolve => setTimeout(resolve, ms));
                 }
 
                 function getValidApiPresetName(presetName) {

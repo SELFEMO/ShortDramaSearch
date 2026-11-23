@@ -7,8 +7,8 @@
     --bg: #f7f7f2;
     --bg-secondary: #ffffff;
     --fg: #0c0c0c;
-    --muted: #8d8d8d;
-    --accent: #ff4f2e;
+    --muted: #595959;
+    --accent: #c22e12;
     --accent-2: #125cff;
     --accent-soft: rgba(255, 79, 46, 0.12);
     --blue-soft: rgba(18, 92, 255, 0.12);
@@ -47,7 +47,7 @@ html:not(.theme-light) {
 }
 
 html {
-    scrollbar-width: none;
+    scrollbar-width: thin;
 }
 
 html::-webkit-scrollbar,
@@ -3069,5 +3069,42 @@ html:not(.theme-light) .theme-switch-thumb {
         margin-top: 18px;
         padding: 14px;
         border-radius: 16px;
+    }
+}
+
+
+/* === A11y & Contrast Enhancements === */
+:focus-visible {
+    outline: 2px solid var(--accent, #c2410c);
+    outline-offset: 2px;
+}
+button.user-policy-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+@media (max-width: 480px) {
+    .search-box {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .search-input {
+        padding-right: 16px !important;
+    }
+    .type-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }

@@ -236,13 +236,13 @@ pip install streamlit requests pandas
 #### 2. 推荐运行方式
 
 ```bash
-streamlit run streamlit_version/app.py
+cd streamlit_version && streamlit run app.py  # 或在根目录指定 --server.port 7777
 ```
 
 也可以使用当前 Python 环境的模块方式运行：
 
 ```bash
-python -m streamlit run streamlit_version/app.py
+python -m cd streamlit_version && streamlit run app.py  # 或在根目录指定 --server.port 7777
 ```
 
 #### 3. 访问应用
@@ -384,7 +384,7 @@ http://localhost:5000
 
 ```bash
 pip install streamlit requests pandas
-streamlit run streamlit_version/app.py
+cd streamlit_version && streamlit run app.py  # 或在根目录指定 --server.port 7777
 ```
 
 访问：
