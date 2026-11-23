@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, Any
+from typing import Any, Dict
 
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QDesktopServices, QFont
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QDialog,
@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (
 )
 
 from core.api_client import TYPE_LABEL
-from core.utils import build_ui_metrics
+from core.utils import build_ui_metrics, get_ui_font_family, safe_open_url
 from ui.scrollbar import install_auto_hide_scrollbars
 
 
@@ -31,27 +31,34 @@ class DetailDialog(QDialog):
         self.resource = resource or {}
         self.ui_metrics = getattr(parent, "ui_metrics", build_ui_metrics(QApplication.instance()))
         self.setWindowTitle("资源详情")
-        self.resize(self.ui_metrics.get("detail_dialog_width", 680), self.ui_metrics.get("detail_dialog_height", 420))
+        self.resize(
+            self.ui_metrics.get("detail_dialog_width", 680),
+            self.ui_metrics.get("detail_dialog_height", 420),
+        )
         self.init_ui()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14), self.ui_metrics.get("page_margin", 14))
+        margin = self.ui_metrics.get("page_margin", 14)
+        layout.setContentsMargins(margin, margin, margin, margin)
         layout.setSpacing(self.ui_metrics.get("layout_spacing", 10))
 
-        title = QLabel(self.resource.get("name", "未知资源"))
+        title = QLabel(str(self.resource.get("name", "未知资源")))
         title.setWordWrap(True)
         title.setObjectName("dialogTitle")
-        # 中文：详情弹窗跟随主窗口的缩放指标，避免大屏主界面放大后弹窗标题仍保持小字号。
-        # English: The detail dialog follows the main window scaling metrics so its title does not stay tiny when the main UI is enlarged.
-        title.setFont(QFont("Microsoft YaHei", self.ui_metrics.get("dialog_title_font_size", 17), QFont.Bold))
+        font_family = self.ui_metrics.get("font_family") or get_ui_font_family()
+        title.setFont(
+            QFont(font_family, self.ui_metrics.get("dialog_title_font_size", 17), QFont.Bold)
+        )
         layout.addWidget(title)
 
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignRight)
 
         self.name_edit = self._readonly_line(self.resource.get("name", ""))
-        self.type_edit = self._readonly_line(TYPE_LABEL.get(self.resource.get("type", ""), self.resource.get("type", "")))
+        self.type_edit = self._readonly_line(
+            TYPE_LABEL.get(self.resource.get("type", ""), self.resource.get("type", ""))
+        )
         self.url_edit = self._readonly_line(self.resource.get("url", ""))
         self.pwd_edit = self._readonly_line(self.resource.get("pwd", ""))
         self.time_edit = self._readonly_line(self.resource.get("addtime", ""))
@@ -67,18 +74,23 @@ class DetailDialog(QDialog):
         layout.addWidget(raw_label)
         raw_text = QTextEdit()
         raw_text.setReadOnly(True)
-        # 中文：详情页原始数据也使用统一自动隐藏滚动条，避免弹窗里出现和主界面风格割裂的系统滚动条。
-        # English: Raw data in the detail dialog also uses the unified auto-hide scrollbar, avoiding system scrollbars that visually conflict with the main window.
         install_auto_hide_scrollbars(raw_text, horizontal=False)
         raw_text.setPlainText("\n".join(f"{key}: {value}" for key, value in self.resource.items()))
         layout.addWidget(raw_text, 1)
 
         actions = QHBoxLayout()
         copy_link_btn = QPushButton("复制链接")
+        copy_link_btn.setProperty("variant", "secondary")
         copy_pwd_btn = QPushButton("复制密码")
+        copy_pwd_btn.setProperty("variant", "secondary")
         open_btn = QPushButton("打开链接")
-        copy_link_btn.clicked.connect(lambda: self.copy_text(self.resource.get("url", ""), "链接已复制"))
-        copy_pwd_btn.clicked.connect(lambda: self.copy_text(self.resource.get("pwd", ""), "密码已复制"))
+        open_btn.setProperty("variant", "primary")
+        copy_link_btn.clicked.connect(
+            lambda: self.copy_text(self.resource.get("url", ""), "链接已复制")
+        )
+        copy_pwd_btn.clicked.connect(
+            lambda: self.copy_text(self.resource.get("pwd", ""), "密码已复制")
+        )
         open_btn.clicked.connect(self.open_link)
         actions.addWidget(copy_link_btn)
         actions.addWidget(copy_pwd_btn)
@@ -87,6 +99,10 @@ class DetailDialog(QDialog):
         layout.addLayout(actions)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        close_btn = buttons.button(QDialogButtonBox.Close)
+        if close_btn is not None:
+            close_btn.setText("关闭")
+            close_btn.setProperty("variant", "ghost")
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
@@ -107,6 +123,6 @@ class DetailDialog(QDialog):
         if not url:
             QMessageBox.information(self, "提示", "没有可打开的链接。")
             return
-        # 中文：网盘链接仍交给系统默认浏览器打开，桌面程序不承载下载或转存行为。
-        # English: Net-disk links are opened by the system browser because the desktop app does not download or transfer resources.
-        QDesktopServices.openUrl(QUrl(url))
+        ok, err_msg = safe_open_url(url)
+        if not ok:
+            QMessageBox.warning(self, "安全提示", err_msg)

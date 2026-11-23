@@ -50,7 +50,7 @@ from core.api_client import (
     TYPE_PRESETS,
 )
 from core.data_manager import DataManager
-from core.utils import build_ui_metrics, format_timestamp, get_system_theme_name, resource_path
+from core.utils import build_ui_metrics, format_timestamp, get_system_theme_name, get_ui_font_family, resource_path, safe_open_url
 from ui.detail_dialog import DetailDialog
 from ui.scrollbar import install_auto_hide_scrollbars
 
@@ -417,10 +417,10 @@ class ResourceCard(QFrame):
             colors["combo_bg"],
             colors["text"],
             colors["card_border"],
-            "#ff6b35",
+            "#c2410c",
             colors["combo_bg"],
             colors["chip_bg"],
-            "#ff6b35",
+            "#c2410c",
             "#ffffff",
             colors["muted_text"],
             colors["ghost_button_bg"],
@@ -475,9 +475,9 @@ class ResourceCard(QFrame):
                 min-height: 0px;
             }}
             QPushButton#resourceCardPrimaryButton {{
-                background: #ff6b35;
+                background: #c2410c;
                 color: #ffffff;
-                border: 1px solid #ff6b35;
+                border: 1px solid #c2410c;
             }}
             QPushButton#resourceCardGhostButton {{
                 background: {colors["ghost_button_bg"]};
@@ -791,16 +791,16 @@ class RankCard(QFrame):
                 font-size: {small_font}px;
             }}
             QPushButton#rankSearchButton {{
-                background: #ff6b35;
+                background: #c2410c;
                 color: #ffffff;
-                border: 1px solid #ff6b35;
+                border: 1px solid #c2410c;
                 border-radius: {max(5, radius // 2)}px;
                 padding: {padding_v}px {padding_h}px;
                 min-height: 0px;
             }}
             QPushButton#rankSearchButton:hover {{
-                background: #ff8555;
-                border-color: #ff8555;
+                background: #ea580c;
+                border-color: #ea580c;
             }}
         """)
         self.update()
@@ -1017,7 +1017,7 @@ class FloatingStatusLabel(QLabel):
             """
         # 中文：Toast 使用子控件悬浮显示而不是 QStatusBar，因为 QStatusBar 会占用窗口底部布局高度。
         # English: The toast is rendered as a floating child widget instead of QStatusBar because QStatusBar consumes bottom layout height.
-        self.setFont(QFont("Microsoft YaHei", font_size))
+        self.setFont(QFont(get_ui_font_family(), font_size))
         self.setStyleSheet(style)
         self.reposition()
 
@@ -1141,7 +1141,7 @@ class MainWindow(QMainWindow):
 
     def apply_widget_metrics(self):
         metrics = self.ui_metrics
-        self.setFont(QFont("Microsoft YaHei", metrics["base_font_size"]))
+        self.setFont(QFont(get_ui_font_family(), metrics["base_font_size"]))
         if hasattr(self, "floating_status"):
             self.floating_status.update_visual_theme(getattr(self, "current_theme", "dark"), metrics)
         self.apply_layout_spacing()
@@ -1228,7 +1228,7 @@ class MainWindow(QMainWindow):
 
         title = QLabel("酷乐短剧 / 影视资源 · PyQt5")
         title.setObjectName("appTitle")
-        title.setFont(QFont("Microsoft YaHei", self.ui_metrics["title_font_size"], QFont.Bold))
+        title.setFont(QFont(get_ui_font_family(), self.ui_metrics["title_font_size"], QFont.Bold))
         root.addWidget(title)
 
         # 中文：顶部标题区不再放置状态文本，避免主内容上方长期残留“正在...”这类过期提示。
@@ -1421,7 +1421,7 @@ class MainWindow(QMainWindow):
         copy_btn = compact_button_policy(QPushButton("复制链接"))
         copy_btn.clicked.connect(lambda: self.copy_text(self.api_url_output.text(), "API 链接已复制。"))
         open_btn = compact_button_policy(QPushButton("打开在线 JSON"))
-        open_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.api_url_output.text())) if self.api_url_output.text() else None)
+        open_btn.clicked.connect(lambda: safe_open_url(self.api_url_output.text()) if self.api_url_output.text() else None)
         preview_btn = compact_button_policy(QPushButton("预览 JSON 结果"))
         preview_btn.clicked.connect(self.preview_api_json)
         help_btn = compact_button_policy(QPushButton("API 使用说明"))
@@ -1585,17 +1585,31 @@ class MainWindow(QMainWindow):
     def preset_from_combo(self, combo: QComboBox) -> str:
         return combo.currentData() or "all"
 
+    def _on_task_finished(self):
+        self.search_button.setEnabled(True)
+        self.current_thread = None
+
+    def closeEvent(self, event):
+        thread = getattr(self, "current_thread", None)
+        if thread is not None and thread.isRunning():
+            thread.requestInterruption()
+            thread.quit()
+            thread.wait(1500)
+        super().closeEvent(event)
+
     def run_task(self, task: Callable[[], Any], on_success: Callable[[Any], None], busy_message: str):
         if self.current_thread and self.current_thread.isRunning():
             QMessageBox.information(self, "提示", "已有任务正在执行，请稍后。")
             return
         self.set_status(busy_message, timeout=0)
-        self.current_thread = TaskThread(task, self)
-        self.current_thread.success.connect(on_success)
-        self.current_thread.failure.connect(self.on_task_error)
-        self.current_thread.finished.connect(lambda: self.search_button.setEnabled(True))
+        thread = TaskThread(task, self)
+        self.current_thread = thread
+        thread.success.connect(on_success)
+        thread.failure.connect(self.on_task_error)
+        thread.finished.connect(self._on_task_finished)
+        thread.finished.connect(thread.deleteLater)
         self.search_button.setEnabled(False)
-        self.current_thread.start()
+        thread.start()
 
     def on_task_error(self, message: str):
         self.set_status(f"操作失败：{message}")
@@ -1875,7 +1889,9 @@ class MainWindow(QMainWindow):
         if not url:
             QMessageBox.information(self, "提示", "该资源没有链接。")
             return
-        QDesktopServices.openUrl(QUrl(url))
+        ok, err_msg = safe_open_url(url)
+        if not ok:
+            QMessageBox.warning(self, "安全提示", err_msg)
 
     def copy_text(self, text: str, message: str = "已复制。"):
         if not text:
@@ -1918,16 +1934,23 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", default_name, "JSON 文件 (*.json)")
         if not path:
             return
-        with open(path, "w", encoding="utf-8") as file:
-            json.dump(data, file, ensure_ascii=False, indent=2)
-        self.set_status(f"已导出：{path}")
+        try:
+            with open(path, "w", encoding="utf-8") as file:
+                json.dump(data, file, ensure_ascii=False, indent=2)
+            self.set_status(f"已导出：{path}")
+        except OSError as exc:
+            QMessageBox.warning(self, "导出失败", f"无法写入文件：{exc}")
 
     def import_json(self) -> Optional[Any]:
         path, _ = QFileDialog.getOpenFileName(self, "导入 JSON", "", "JSON 文件 (*.json)")
         if not path:
             return None
-        with open(path, "r", encoding="utf-8") as file:
-            return json.load(file)
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except (OSError, json.JSONDecodeError) as exc:
+            QMessageBox.warning(self, "导入失败", f"文件读取或 JSON 解析失败：{exc}")
+            return None
 
     def export_current_results(self):
         self.export_json("shortdrama_results.json", self.current_records)
@@ -2002,11 +2025,11 @@ class MainWindow(QMainWindow):
         content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # 中文：条例内容较短，正文区按内容固定为紧凑高度，避免 QTextEdit 在垂直布局中吃掉剩余空间形成大面积留白。
         # English: The policy text is short, so the text area uses a compact fixed height instead of letting QTextEdit consume remaining vertical space and create large blanks.
-        content.setFixedHeight(content_height)
+        content.setMinimumHeight(content_height)
         install_auto_hide_scrollbars(content, horizontal=False)
         content.setHtml(
             "<style>"
-            "body{margin:0;line-height:1.55;}"
+            "body{margin:0;line-height:1.55;font-family:\"PingFang SC\",\"Microsoft YaHei\",\"Noto Sans CJK SC\",sans-serif;}"
             "h2{margin:0 0 12px 0;font-size:22px;}"
             "p{margin:0 0 10px 0;}"
             "</style>"
@@ -2073,7 +2096,7 @@ class MainWindow(QMainWindow):
     def update_system_theme_timer(self):
         if not hasattr(self, "system_theme_timer"):
             return
-        if getattr(self, "theme_mode", "system") == "system":
+        if getattr(self, "theme_mode", "system") == "system" and sys.platform != "darwin":
             if not self.system_theme_timer.isActive():
                 # 中文：Qt5 在部分平台不会主动通知系统主题变化，定时轻量检查能让“跟随系统”在运行中也保持有效。
                 # English: Qt5 does not reliably notify system theme changes on every platform, so a lightweight timer keeps system mode effective while the app is running.
@@ -2103,7 +2126,7 @@ class MainWindow(QMainWindow):
         if application:
             # 中文：同时设置 QApplication 字体和 QSS 字体，确保原生控件、菜单和弹窗都按同一缩放基准渲染。
             # English: Setting both QApplication font and QSS font keeps native widgets, menus, and dialogs rendered from the same scaling baseline.
-            application.setFont(QFont("Microsoft YaHei", metrics["base_font_size"]))
+            application.setFont(QFont(get_ui_font_family(), metrics["base_font_size"]))
 
         base_font = metrics["base_font_size"]
         small_font = metrics["small_font_size"]
@@ -2130,10 +2153,10 @@ class MainWindow(QMainWindow):
             "#ffffff",
             "#172033",
             "#cbd5e1",
-            "#ff6b35",
+            "#c2410c",
             "#ffffff",
             "#f1f5f9",
-            "#ff6b35",
+            "#c2410c",
             "#ffffff",
             "#475569",
             "#f8fafc",
@@ -2145,10 +2168,10 @@ class MainWindow(QMainWindow):
             "#1a1a24",
             "#f0f0f5",
             "#2a2a3a",
-            "#ff6b35",
+            "#c2410c",
             "#1a1a24",
             "#242436",
-            "#ff6b35",
+            "#c2410c",
             "#ffffff",
             "#c7c7d6",
             "#20202e",
@@ -2168,8 +2191,10 @@ class MainWindow(QMainWindow):
                 QTableWidget::item:selected {{ background-color: #2563eb; color: #ffffff; }}
                 {light_combo_qss}
                 QPlainTextEdit, QTextEdit {{ font-family: 'Consolas', 'Microsoft YaHei'; font-size: {metrics["mono_font_size"]}px; }}
-                QPushButton {{ background: #ff6b35; color: white; border: none; border-radius: 6px; padding: {button_v}px {button_h}px; min-height: 0px; }}
-                QPushButton:hover {{ background: #ff8555; }}
+                QPushButton {{ background: #c2410c; color: #ffffff; border: none; border-radius: 6px; padding: {button_v}px {button_h}px; min-height: 0px; }}
+            QPushButton:pressed {{ background: #9a3412; }}
+            QPushButton:disabled {{ background: #6b7280; color: #e5e7eb; }}
+                QPushButton:hover {{ background: #ea580c; }}
                 QTabWidget::pane, QGroupBox {{ border: 1px solid #cbd5e1; border-radius: 8px; }}
                 QGroupBox {{ margin-top: {group_top}px; padding: {group_padding}px; }}
                 QGroupBox::title {{ subcontrol-origin: margin; left: {group_padding}px; padding: 0 {max(5, group_padding // 2)}px; }}
@@ -2204,8 +2229,10 @@ class MainWindow(QMainWindow):
                 QTableWidget::item:selected {{ background-color: #0284c7; color: #ffffff; }}
                 {dark_combo_qss}
                 QPlainTextEdit, QTextEdit {{ font-family: 'Consolas', 'Microsoft YaHei'; font-size: {metrics["mono_font_size"]}px; }}
-                QPushButton {{ background: #ff6b35; color: white; border: none; border-radius: 6px; padding: {button_v}px {button_h}px; min-height: 0px; }}
-                QPushButton:hover {{ background: #ff8555; }}
+                QPushButton {{ background: #c2410c; color: #ffffff; border: none; border-radius: 6px; padding: {button_v}px {button_h}px; min-height: 0px; }}
+            QPushButton:pressed {{ background: #9a3412; }}
+            QPushButton:disabled {{ background: #6b7280; color: #e5e7eb; }}
+                QPushButton:hover {{ background: #ea580c; }}
                 QTabWidget::pane, QGroupBox {{ border: 1px solid #2a2a3a; border-radius: 8px; }}
                 QGroupBox {{ margin-top: {group_top}px; padding: {group_padding}px; }}
                 QGroupBox::title {{ subcontrol-origin: margin; left: {group_padding}px; padding: 0 {max(5, group_padding // 2)}px; }}

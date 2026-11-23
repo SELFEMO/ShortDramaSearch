@@ -2,11 +2,19 @@
 
 import json
 import re
+import sys
+import threading
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from shared.kuleu_core import ThreadSafeTTLCache, build_search_terms as _shared_build_search_terms, sanitize_url
 
 BASE_API = "https://api.kuleu.com/api"
 JHSJ_API = f"{BASE_API}/jhsj"
@@ -109,8 +117,10 @@ class ApiClient:
         self.timeout = timeout
         self.min_interval = min_interval
         self._last_request_time = 0.0
-        self._cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
-        self.cache_ttl = 60.0
+        self._lock = threading.RLock()
+        self._cache = ThreadSafeTTLCache(maxsize=128, ttl=60)
+        self.cache_ttl = 60
+        self.max_response_bytes = 5 * 1024 * 1024.0
         self.session = requests.Session()
         self.session.headers.update(
             {
@@ -124,13 +134,13 @@ class ApiClient:
         )
 
     def _wait_interval(self) -> None:
-        # 中文：网页端对搜索接口做了节流；桌面端同样节流，避免连续请求触发第三方接口 429。
-        # English: The web page throttles search calls; the desktop client keeps the same guard to avoid third-party API 429 responses.
-        now = time.time()
-        elapsed = now - self._last_request_time
-        if elapsed < self.min_interval:
-            time.sleep(self.min_interval - elapsed)
-        self._last_request_time = time.time()
+        with self._lock:
+            now = time.monotonic()
+            elapsed = now - self._last_request_time
+            wait_for = self.min_interval - elapsed
+            if wait_for > 0:
+                time.sleep(wait_for)
+            self._last_request_time = time.monotonic()
 
     def _cache_key(self, url: str, params: Optional[Dict[str, Any]]) -> str:
         if not params:
@@ -191,17 +201,47 @@ class ApiClient:
             raise ApiError(f"API 返回数据不是有效 JSON: {exc}", "parse") from exc
         return self._normalize_pwd_fields_deep(data)
 
+    def _read_bounded_text(self, response: requests.Response, max_bytes: int) -> str:
+        chunks = []
+        total = 0
+        for chunk in response.iter_content(chunk_size=16384):
+            if not chunk:
+                continue
+            total += len(chunk)
+            if total > max_bytes:
+                raise ApiError("接口响应体超出大小限制。", "server")
+            chunks.append(chunk)
+        encoding = response.encoding or "utf-8"
+        return b"".join(chunks).decode(encoding, errors="replace")
+
     def request_json(self, url: str, params: Optional[Dict[str, Any]] = None, use_cache: bool = True) -> Dict[str, Any]:
         cache_key = self._cache_key(url, params)
         if use_cache:
             cached = self._cache.get(cache_key)
-            if cached and time.time() - cached[0] <= self.cache_ttl:
-                return cached[1]
+            if cached is not None:
+                return cached
 
         self._wait_interval()
 
         try:
-            response = self.session.get(url, params=params, timeout=self.timeout)
+            with self._lock:
+                resp_ctx = self.session.get(
+                    url,
+                    params=params,
+                    timeout=(5, self.timeout),
+                    allow_redirects=False,
+                    stream=True,
+                )
+            with resp_ctx as response:
+                if response.status_code == 429:
+                    raise ApiError("接口请求过于频繁，请稍后再试。", "rate_limited")
+                if 300 <= response.status_code < 400:
+                    raise ApiError("接口返回异常重定向。", "server")
+                if not response.ok:
+                    raise ApiError(f"接口返回 HTTP {response.status_code}", "server")
+                raw_text = self._read_bounded_text(response, self.max_response_bytes)
+        except ApiError:
+            raise
         except requests.Timeout as exc:
             raise ApiError("请求超时，请稍后重试。", "timeout") from exc
         except requests.ConnectionError as exc:
@@ -209,14 +249,9 @@ class ApiClient:
         except requests.RequestException as exc:
             raise ApiError(f"请求失败: {exc}", "network") from exc
 
-        if response.status_code == 429:
-            raise ApiError("接口请求过于频繁，请稍后再试。", "rate_limited")
-        if not response.ok:
-            raise ApiError(f"接口返回 HTTP {response.status_code}", "server")
-
-        data = self._loads_json(response.text)
+        data = self._loads_json(raw_text)
         if use_cache:
-            self._cache[cache_key] = (time.time(), data)
+            self._cache.set(cache_key, data)
         return data
 
     @staticmethod
@@ -233,7 +268,7 @@ class ApiClient:
         if len(parts) > 1:
             terms.update(parts)
 
-        return sorted(terms, key=lambda item: (item != input_text, -len(item)))
+        return _shared_build_search_terms(input_text, max_terms=4)
 
     @staticmethod
     def extract_pwd_from_link(link: str) -> str:
@@ -280,7 +315,7 @@ class ApiClient:
             "type": resource_type or str(data.get("type") or data.get("source") or "").strip(),
         }
 
-    def fetch_and_merge_data(self, keyword: str, preset_name: str = "all", limit: int = 200) -> Dict[str, Any]:
+    def fetch_and_merge_data(self, keyword: str, preset_name: str = "all", limit: int = 200, use_cache: bool = True) -> Dict[str, Any]:
         term = self.normalize_search_keyword(keyword)
         if not term:
             raise ApiError("请输入搜索关键词。", "missing_keyword")
@@ -302,7 +337,7 @@ class ApiClient:
                 failed_count += 1
                 failed_terms.append(search_term)
                 if exc.error_type == "rate_limited":
-                    break
+                    raise
                 continue
 
             if not self.is_code(data, 0):
@@ -362,7 +397,7 @@ class ApiClient:
 
         for index in range(max(1, attempts)):
             try:
-                result = self.fetch_and_merge_data(keyword, safe_preset)
+                result = self.fetch_and_merge_data(keyword, safe_preset, use_cache=(index == 0))
                 last_result = result
                 if result.get("total", 0) > 0 and result.get("typeList"):
                     result["effectivePreset"] = safe_preset
@@ -463,8 +498,37 @@ class ApiClient:
         return f"{QRCODE_API}?{urlencode({'frame': 1, 'e': 'L', 'text': text or '', 'size': size})}"
 
     def get_qrcode_image_bytes(self, text: str, size: int = 260) -> bytes:
-        url = self.build_qrcode_url(text, size)
+        safe_text = sanitize_url(text)
+        if not safe_text:
+            raise ApiError("无效的资源链接，无法生成二维码。", "invalid_input")
+        url = self.build_qrcode_url(safe_text, size)
         self._wait_interval()
-        response = self.session.get(url, timeout=self.timeout)
-        response.raise_for_status()
-        return response.content
+        try:
+            with self._lock:
+                resp_ctx = self.session.get(
+                    url,
+                    timeout=(5, self.timeout),
+                    allow_redirects=False,
+                    stream=True,
+                )
+            with resp_ctx as response:
+                if response.status_code == 429:
+                    raise ApiError("二维码接口请求过于频繁，请稍后再试。", "rate_limited")
+                response.raise_for_status()
+                ctype = (response.headers.get("Content-Type") or "").lower()
+                if ctype and not ctype.startswith("image/"):
+                    raise ApiError("二维码接口返回非图片内容。", "server")
+                chunks = []
+                total = 0
+                for chunk in response.iter_content(chunk_size=16384):
+                    if not chunk:
+                        continue
+                    total += len(chunk)
+                    if total > 1024 * 1024:
+                        raise ApiError("二维码图片体积过大。", "server")
+                    chunks.append(chunk)
+                return b"".join(chunks)
+        except ApiError:
+            raise
+        except requests.RequestException as exc:
+            raise ApiError(f"获取二维码失败: {exc}", "network") from exc

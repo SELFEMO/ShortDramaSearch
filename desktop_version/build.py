@@ -1,57 +1,56 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
 import platform
 import sys
 from PyInstaller.__main__ import run
 
+BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parent
 
-def add_data_arg(source: str, target: str) -> str:
-    # 中文：PyInstaller 在 Windows 与类 Unix 系统使用不同分隔符，集中封装避免手写配置出错。
-    # English: PyInstaller uses different data separators on Windows and Unix-like systems, so centralizing this avoids platform mistakes.
+
+def add_data_arg(source: Path, target: str) -> str:
     sep = ";" if platform.system() == "Windows" else ":"
     return f"{source}{sep}{target}"
+
+
+def common_opts(name: str, icon_rel: str, onefile: bool = True):
+    opts = [
+        str(BASE_DIR / "main.py"),
+        f"--name={name}",
+        "--windowed",
+        "--onefile" if onefile else "--onedir",
+        f"--icon={BASE_DIR / icon_rel}",
+        f"--add-data={add_data_arg(BASE_DIR / 'resources', 'resources')}",
+        f"--add-data={add_data_arg(REPO_ROOT / 'shared', 'shared')}",
+        f"--paths={BASE_DIR}",
+        f"--paths={REPO_ROOT}",
+        "--hidden-import=PyQt5.QtSvg",
+        "--exclude-module=tkinter",
+        "--exclude-module=PyQt5.QtWebEngineWidgets",
+        "--clean",
+        "--noconfirm",
+    ]
+    return opts
 
 
 def build_app():
     system = platform.system()
     if system == "Windows":
-        build_windows()
+        print("构建 Windows PyQt5 桌面版...")
+        run(common_opts("ShortDramaSearch", "resources/icons/API.ico", onefile=True))
     elif system == "Darwin":
-        build_macos()
+        print("构建 macOS PyQt5 桌面版...")
+        opts = common_opts("ShortDramaSearch", "resources/icons/API.icns", onefile=False)
+        opts.append("--osx-bundle-identifier=com.shortdramasearch.desktop")
+        run(opts)
     elif system == "Linux":
-        build_linux()
+        print("构建 Linux PyQt5 桌面版...")
+        run(common_opts("short-drama-search", "resources/icons/API.png", onefile=True))
     else:
         print(f"不支持的平台: {system}")
         sys.exit(1)
-
-
-def common_opts(name: str, icon: str):
-    return [
-        "main.py",
-        f"--name={name}",
-        "--windowed",
-        "--onefile",
-        f"--icon={icon}",
-        f"--add-data={add_data_arg('resources', 'resources')}",
-        "--clean",
-        "--noconfirm",
-    ]
-
-
-def build_windows():
-    print("构建 Windows PyQt5 桌面版...")
-    run(common_opts("ShortDramaSearch", "resources/icons/API.ico"))
-
-
-def build_macos():
-    print("构建 macOS PyQt5 桌面版...")
-    run(common_opts("ShortDramaSearch", "resources/icons/API.icns"))
-
-
-def build_linux():
-    print("构建 Linux PyQt5 桌面版...")
-    run(common_opts("short-drama-search", "resources/icons/API.png"))
 
 
 if __name__ == "__main__":
