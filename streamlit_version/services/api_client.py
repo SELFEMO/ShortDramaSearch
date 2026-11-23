@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
+from requests.adapters import HTTPAdapter
 import streamlit as st
 
 from services.constants import (
@@ -23,27 +24,65 @@ from services.normalizers import (
     normalize_search_keyword,
     ordered_types,
     parse_api_json_safely,
+    sanitize_csv_cell,
     source_label,
     valid_preset_name,
 )
 
 
-@st.cache_data(show_spinner=False, ttl=300)
-def request_api_json(url: str, params: Optional[Dict[str, Any]] = None, timeout: int = SEARCH_TIMEOUT) -> Dict[str, Any]:
-    # 中文：Streamlit 运行在服务端，不需要浏览器 CORS 代理；统一缓存可降低第三方接口压力并减少 429。
-    # English: Streamlit runs server-side and does not need browser CORS proxies; shared caching reduces third-party API pressure and 429s.
-    response = requests.get(url, params=params, timeout=timeout)
-    if response.status_code == 429:
-        raise RuntimeError("rate_limited")
-    response.raise_for_status()
-    return parse_api_json_safely(response.text)
+@st.cache_resource(show_spinner=False)
+def get_http_session() -> requests.Session:
+    session = requests.Session()
+    adapter = HTTPAdapter(pool_connections=10, pool_maxsize=20)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update({"User-Agent": "ShortDramaSearch-Streamlit/2026"})
+    return session
 
 
-def fetch_search_api(type_param: str, term: str) -> Dict[str, Any]:
-    return request_api_json(JHSJ_API, params={"type": type_param, "name": term}, timeout=SEARCH_TIMEOUT)
+def _raw_request_api_json(url: str, params: Optional[Dict[str, Any]] = None, timeout: int = SEARCH_TIMEOUT) -> Dict[str, Any]:
+    session = get_http_session()
+    with session.get(url, params=params, timeout=(5, timeout), allow_redirects=False, stream=True) as response:
+        if response.status_code == 429:
+            raise RuntimeError("rate_limited")
+        if 300 <= response.status_code < 400:
+            raise RuntimeError("unexpected_redirect")
+        response.raise_for_status()
+        chunks = []
+        total = 0
+        for chunk in response.iter_content(chunk_size=16384):
+            if not chunk:
+                continue
+            total += len(chunk)
+            if total > 5 * 1024 * 1024:
+                raise ValueError("response_too_large")
+            chunks.append(chunk)
+        raw_text = b"".join(chunks).decode(response.encoding or "utf-8", errors="replace")
+    return parse_api_json_safely(raw_text)
 
 
-def fetch_and_merge_data(term: str, preset_name: str) -> Dict[str, Any]:
+@st.cache_data(show_spinner=False, ttl=300, max_entries=256)
+def _cached_request_api_json(url: str, params_key: Tuple[Tuple[str, str], ...], timeout: int = SEARCH_TIMEOUT) -> Dict[str, Any]:
+    params = dict(params_key) if params_key else None
+    data = _raw_request_api_json(url, params=params, timeout=timeout)
+    code = data.get("code")
+    if code not in (0, 1, 200):
+        raise ValueError(f"upstream_code_{code}")
+    return data
+
+
+def request_api_json(url: str, params: Optional[Dict[str, Any]] = None, timeout: int = SEARCH_TIMEOUT, bypass_cache: bool = False) -> Dict[str, Any]:
+    if bypass_cache:
+        return _raw_request_api_json(url, params=params, timeout=timeout)
+    params_key = tuple(sorted((str(k), str(v)) for k, v in (params or {}).items()))
+    return _cached_request_api_json(url, params_key, timeout=timeout)
+
+
+def fetch_search_api(type_param: str, term: str, bypass_cache: bool = False) -> Dict[str, Any]:
+    return request_api_json(JHSJ_API, params={"type": type_param, "name": term}, timeout=SEARCH_TIMEOUT, bypass_cache=bypass_cache)
+
+
+def fetch_and_merge_data(term: str, preset_name: str, bypass_cache: bool = False) -> Dict[str, Any]:
     safe_term = normalize_search_keyword(term)
     safe_preset = valid_preset_name(preset_name)
     types = TYPE_PRESETS[safe_preset]
@@ -183,6 +222,10 @@ def fetch_daily_api(source: str) -> List[Dict[str, Any]]:
     if data.get("code") == 1 and isinstance(data.get("data"), list):
         return [{**item, "_source": source} for item in data["data"] if isinstance(item, dict)]
     return []
+
+
+def clear_daily_cache() -> None:
+    fetch_daily_api.clear()
 
 
 def load_daily_resources() -> Tuple[List[Dict[str, Any]], List[str]]:

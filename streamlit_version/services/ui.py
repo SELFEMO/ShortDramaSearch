@@ -39,7 +39,7 @@ def inject_page_style() -> None:
         "muted": "#9ca3af",
         "card": "rgba(26,26,36,0.88)",
         "border": "rgba(255,255,255,0.12)",
-        "accent": "#ff6b35",
+        "accent": "#c2410c",
         "accent_soft": "rgba(255,107,53,0.16)",
     }
 
@@ -248,7 +248,9 @@ def link_button(label: str, url: str, key: str) -> None:
     if hasattr(st, "link_button"):
         st.link_button(label, url, use_container_width=True)
     else:
-        st.markdown(f'<a href="{html.escape(url)}" target="_blank">{html.escape(label)}</a>', unsafe_allow_html=True)
+        safe_u = sanitize_url(url)
+    if safe_u:
+        st.markdown(f'<a href="{html.escape(safe_u)}" target="_blank" rel="noopener noreferrer">{html.escape(label)}</a>', unsafe_allow_html=True)
 
 
 def render_compact_copy_input(value: str, label: str = "提取码") -> None:

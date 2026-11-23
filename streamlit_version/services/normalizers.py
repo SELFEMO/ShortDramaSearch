@@ -1,6 +1,19 @@
 import hashlib
 import html
 import re
+import sys
+from pathlib import Path as _Path
+
+_REPO_ROOT = _Path(__file__).resolve().parent.parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from shared.kuleu_core import (
+    parse_api_dict_safely as _shared_parse_api_dict_safely,
+    sanitize_csv_cell,
+    sanitize_url,
+)
+
 from typing import Any, Dict, Iterable, List
 from urllib.parse import parse_qs, urlparse
 
@@ -115,13 +128,7 @@ def normalize_pwd_fields_deep(value: Any) -> Any:
 
 
 def parse_api_json_safely(text: str) -> Dict[str, Any]:
-    # 中文：保持与 docs/index.html 相同的“两段式解析”：先修复原始文本，再递归修复解析后的 pwd 字段。
-    # English: This follows docs/index.html's two-step parsing: repair raw text first, then recursively repair pwd fields after parsing.
-    import json
-
-    safe_text = protect_pwd_in_json_text(text)
-    data = json.loads(safe_text)
-    return normalize_pwd_fields_deep(data)
+    return _shared_parse_api_dict_safely(text)
 
 
 def source_label(type_name: str) -> str:

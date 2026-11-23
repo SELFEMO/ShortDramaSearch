@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -21,8 +22,11 @@ def init_state() -> None:
         "pending_keyword": "",
         "pending_preset": "",
         "run_pending_search": False,
-        "api_base_url": "http://localhost:8501/",
+        "api_base_url": os.environ.get("STREAMLIT_BASE_URL", "http://localhost:7777/"),
         "url_params_consumed": False,
+        "daily_loaded": False,
+        "api_preview_result": None,
+        "last_imported_fav_file_id": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:

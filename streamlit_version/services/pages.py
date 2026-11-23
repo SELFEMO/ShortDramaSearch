@@ -14,6 +14,7 @@ from services.api_client import (
     fetch_and_merge_data,
     fetch_and_merge_data_stable,
     flatten_preview_links,
+    clear_daily_cache,
     load_daily_resources,
     load_shortdrama_rank,
     load_vtquark_rank,
@@ -106,7 +107,7 @@ def render_search_page() -> None:
 
         save_search_history(clean_keyword)
         with st.spinner(f"正在搜索「{clean_keyword}」..."):
-            result = fetch_and_merge_data(clean_keyword, preset)
+            result = fetch_and_merge_data(clean_keyword, preset, bypass_cache=True)
             is_rate_limited = (result.get("apiStatus") or {}).get("failedReason") == "rate_limited"
             if is_rate_limited:
                 st.error("接口请求过于频繁，请稍后再试。系统不会继续自动重试，避免加重限流。")
@@ -114,7 +115,7 @@ def render_search_page() -> None:
             if not result.get("total"):
                 st.info("首次未命中，正在自动重试一次...")
                 time.sleep(1.2)
-                result = fetch_and_merge_data(clean_keyword, preset)
+                result = fetch_and_merge_data(clean_keyword, preset, bypass_cache=True)
 
         st.session_state.current_results = result
         st.session_state.current_keyword = clean_keyword
@@ -142,7 +143,7 @@ def render_api_page() -> None:
     st.session_state.api_base_url = st.text_input(
         "当前页面根地址",
         value=st.session_state.api_base_url,
-        help="本地一般为 http://localhost:8501/；部署后可改成你的 Streamlit 应用地址。",
+        help="本地一般为 http://localhost:7777/；部署后可改成你的 Streamlit 应用地址。",
     )
     api_keyword = st.text_input("搜索关键词", placeholder="例如：飞驰人生3 / 庆余年 / 墨雨云间", key="api_keyword")
     api_from = st.selectbox("搜索来源", options=list(TYPE_PRESETS.keys()), format_func=lambda value: PRESET_LABELS.get(value, value), key="api_from")
@@ -264,7 +265,7 @@ def render_rank_page() -> None:
             if not title:
                 continue
             col1, col2 = st.columns([4, 1])
-            col1.markdown(f"**{item.get('ranking', index + 1)}. {html.escape(title)}**  \n<span class='muted'>热度：{html.escape(str(item.get('hots', '')))}</span>", unsafe_allow_html=True)
+            col1.markdown(f"**{html.escape(str(item.get('ranking', index + 1)))}. {html.escape(title)}**  \n<span class='muted'>热度：{html.escape(str(item.get('hots', '')))}</span>", unsafe_allow_html=True)
             if col2.button("搜索", key=f"rank_search_{index}", use_container_width=True):
                 set_pending_search(title, "all")
                 switch_page("pages/search.py")
@@ -283,7 +284,7 @@ def render_rank_page() -> None:
             if not title:
                 continue
             col1, col2 = st.columns([4, 1])
-            col1.markdown(f"**{item.get('content_rank', index + 1)}. {html.escape(title)}**  \n<span class='muted'>热度：{html.escape(str(item.get('hot', '')))}</span>", unsafe_allow_html=True)
+            col1.markdown(f"**{html.escape(str(item.get('content_rank', index + 1)))}. {html.escape(title)}**  \n<span class='muted'>热度：{html.escape(str(item.get('hot', '')))}</span>", unsafe_allow_html=True)
             if col2.button("搜索", key=f"vt_search_{index}", use_container_width=True):
                 set_pending_search(title, "all")
                 switch_page("pages/search.py")
@@ -312,9 +313,12 @@ def render_favorites_page() -> None:
     col1.download_button("导出收藏", dump_json(export_data), "kuleu-favorites.json", "application/json", use_container_width=True)
     uploaded = col2.file_uploader("导入收藏", type=["json"], key="import_favorites")
     if uploaded:
-        imported = process_imported_json(uploaded, [])
-        merge_imported_favorites(imported)
-        rerun()
+        file_id = getattr(uploaded, "file_id", None) or getattr(uploaded, "name", None)
+        if file_id != st.session_state.get("last_imported_fav_file_id"):
+            imported = process_imported_json(uploaded, [])
+            merge_imported_favorites(imported)
+            st.session_state.last_imported_fav_file_id = file_id
+            st.success(f"已导入 {len(imported)} 条收藏记录")
     if col3.button("清空收藏", use_container_width=True):
         save_favorites([])
         rerun()
