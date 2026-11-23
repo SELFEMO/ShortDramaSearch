@@ -1,0 +1,17 @@
+# Python caches & build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+dist/
+build/
+*.spec
+
+# Backup & browser-saved snapshots
+*.backup.html
+*.save.html
+*.old.html
+
+# Runtime local data
+*.corrupt.*.json
+.DS_Store
