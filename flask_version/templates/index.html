@@ -2,14 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>酷乐短剧 / 影视资源聚合搜索</title>
 
     <meta name="referrer" content="no-referrer">
 
     <!-- 中文：bootstrap 阶段必须早于 CSS 执行，才能避免主题切换时出现首屏闪烁。 -->
     <!-- English: The bootstrap phase must run before CSS to prevent first-paint flicker when theme state is restored. -->
-    <script src="{{ url_for('static', filename='index.assets/app.js') }}" data-kuleu-script-phase="bootstrap"></script>
+    <script src="{{ url_for('static', filename='index.assets/bootstrap.js') }}"></script>
 
     <link rel="icon" type="image/x-icon" href="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +33,7 @@
     </div>
 
     <!-- ==================== 用户条例弹窗 ==================== -->
-    <div id="policyModalOverlay" class="policy-modal-overlay">
+    <div id="policyModalOverlay" role="dialog" aria-modal="true" class="policy-modal-overlay">
         <div class="policy-modal-box">
             <div class="policy-modal-header">
                 <div class="policy-modal-title">用户使用条例</div>
@@ -64,7 +64,7 @@
 
                 <p>
                     <!--本项目部分功能依赖第三方接口服务（如酷乐API等）。-->
-                    本项目部分功能依赖第三方接口服务（如<a href="https://api.kuleu.com/" target="_blank" style="color: var(--accent); text-decoration: underline;">酷乐API</a>等）。
+                    本项目部分功能依赖第三方接口服务（如<a href="https://api.kuleu.com/" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">酷乐API</a>等）。
                     若相关资源、接口或内容涉及侵权问题，请优先联系对应接口平台或资源提供方进行处理。
                 </p>
 
@@ -80,7 +80,7 @@
                 <p>
                     GitHub 项目地址：
                     <br>
-                    <a href="https://github.com/SELFEMO/ShortDramaSearch" target="_blank">
+                    <a href="https://github.com/SELFEMO/ShortDramaSearch" target="_blank" rel="noopener noreferrer">
                         https://github.com/SELFEMO/ShortDramaSearch
                     </a>
                 </p>
@@ -88,7 +88,7 @@
                 <p>
                     GitHub Issues：
                     <br>
-                    <a href="https://github.com/SELFEMO/ShortDramaSearch/issues" target="_blank">
+                    <a href="https://github.com/SELFEMO/ShortDramaSearch/issues" target="_blank" rel="noopener noreferrer">
                         https://github.com/SELFEMO/ShortDramaSearch/issues
                     </a>
                 </p>
@@ -114,7 +114,7 @@
         </div>
     </div>
 
-    <div id="qrModalOverlay" class="qr-modal-overlay">
+    <div id="qrModalOverlay" role="dialog" aria-modal="true" class="qr-modal-overlay">
         <div class="qr-modal-box">
             <button class="qr-modal-close" onclick="closeQrModal()">×</button>
             <div class="qr-modal-title">扫描二维码</div>
@@ -185,15 +185,15 @@
         <section id="page-search" class="page active">
             <div class="header">
                 <div class="header-top">
-                    <img id="titleLogo" class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                    <img id="titleLogo" class="title-logo" src="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/" alt="Logo">
                     <h1 class="font-display">短剧 / 资源聚合搜索</h1>
                 </div>
                 <p>
                     基于
                     <!--酷乐API-->
-                    <a href="https://api.kuleu.com/" target="_blank" style="color: var(--accent); text-decoration: underline;">酷乐API</a>
-                    <!--<a href="https://api.kuleu.com/" target="_blank" style="color: #0d6efd; text-decoration: underline;">酷乐API</a>-->
-                    <!--<a href="https://api.kuleu.com/" target="_blank" class="api-link">-->
+                    <a href="https://api.kuleu.com/" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">酷乐API</a>
+                    <!--<a href="https://api.kuleu.com/" target="_blank" rel="noopener noreferrer" style="color: #0d6efd; text-decoration: underline;">酷乐API</a>-->
+                    <!--<a href="https://api.kuleu.com/" target="_blank" rel="noopener noreferrer" class="api-link">-->
                     <!--    酷乐API-->
                     <!--</a>-->
                     聚合资源搜索接口，支持多种网盘与磁力链接
@@ -206,9 +206,9 @@
                 <p class="user-policy-tip">
                     使用该网页/程序
                     <strong style="color: var(--accent)">默认遵守</strong>
-                    <span class="user-policy-link" onclick="openPolicyModal()">
+                    <button type="button" class="user-policy-link" data-action="open-policy">
                         用户使用条例
-                    </span>
+                    </button>
                 </p>
             </div>
             <div class="search-box">
@@ -274,7 +274,7 @@
                     <p>
                         已适配
                         <!--酷乐API-->
-                        <a href="https://api.kuleu.com/" target="_blank" class="api-link">
+                        <a href="https://api.kuleu.com/" target="_blank" rel="noopener noreferrer" class="api-link">
                             酷乐API
                         </a>
                         聚合资源搜索接口所有网盘类型与磁力/电驴链接。
@@ -288,7 +288,7 @@
             <div class="api-builder-page">
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <div class="header-top">
-                        <img class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                        <img class="title-logo" src="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/" alt="Logo">
                         <h2 class="font-display" style="font-size: 2rem;">API生成器</h2>
                     </div>
                     <p style="margin-top: 0.5rem;">配置关键词和搜索来源，一键生成 API 链接，并预览最多 5 条 JSON 结果。</p>
@@ -296,9 +296,9 @@
                     <p class="user-policy-tip">
                         使用该网页/程序
                         <strong style="color: var(--accent)">默认遵守</strong>
-                        <span class="user-policy-link" onclick="openPolicyModal()">
+                        <button type="button" class="user-policy-link" data-action="open-policy">
                             用户使用条例
-                        </span>
+                        </button>
                     </p>
                 </div>
 
@@ -412,7 +412,7 @@
             <div class="daily-page">
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <div class="header-top">
-                        <img class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                        <img class="title-logo" src="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/" alt="Logo">
                         <h2 class="font-display" style="font-size: 2rem;">每日影视资源</h2>
                     </div>
                     <p style="margin-top: 0.5rem;">仅更新每日最新影视资源和一些热门资源（短剧除外，短剧有单独的接口）</p>
@@ -420,9 +420,9 @@
                     <p class="user-policy-tip">
                         使用该网页/程序
                         <strong style="color: var(--accent)">默认遵守</strong>
-                        <span class="user-policy-link" onclick="openPolicyModal()">
+                        <button type="button" class="user-policy-link" data-action="open-policy">
                             用户使用条例
-                        </span>
+                        </button>
                     </p>
                 </div>
                 <div class="daily-toolbar">
@@ -440,7 +440,7 @@
             <div class="rank-page">
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <div class="header-top">
-                        <img class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                        <img class="title-logo" src="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/" alt="Logo">
                         <h2 class="font-display" style="font-size: 2rem;">福利热度榜</h2>
                     </div>
                     <p style="margin-top: 0.5rem;">实时更新短剧与夸克热搜榜单，双击或点击按钮可跳转搜索</p>
@@ -448,9 +448,9 @@
                     <p class="user-policy-tip">
                         使用该网页/程序
                         <strong style="color: var(--accent)">默认遵守</strong>
-                        <span class="user-policy-link" onclick="openPolicyModal()">
+                        <button type="button" class="user-policy-link" data-action="open-policy">
                             用户使用条例
-                        </span>
+                        </button>
                     </p>
                 </div>
                 <div class="rank-tabs">
@@ -468,7 +468,7 @@
             <div class="favorites-page">
                 <div class="header" style="margin-bottom: 1.5rem;">
                     <div class="header-top">
-                        <img class="title-logo" src="https://api.kuleu.com/api/ico?url=https://www.kuleu.com/" alt="Logo">
+                        <img class="title-logo" src="{{ url_for('proxy_ico') }}?url=https://www.kuleu.com/" alt="Logo">
                         <h2 class="font-display" style="font-size: 2rem;">我的收藏</h2>
                     </div>
                     <p>收藏保存在当前浏览器本地，不会上传到服务器。</p>
@@ -489,7 +489,7 @@
     </main>
 
     <!-- ==================== API 使用说明弹窗 ==================== -->
-    <div id="helpModalOverlay" class="help-modal-overlay">
+    <div id="helpModalOverlay" role="dialog" aria-modal="true" class="help-modal-overlay">
         <div class="help-modal-box">
             <div class="help-modal-header">
                 <div class="help-modal-title">网页 API 使用说明</div>
